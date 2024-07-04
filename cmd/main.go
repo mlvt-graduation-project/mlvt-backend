@@ -19,7 +19,8 @@ func main() {
 		log.Fatalf("Failed to set trusted proxies: %v", err)
 	}
 
-	//r.Use(gin.Logger())
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
 
 	routes.SetUpRoutes(r)
 

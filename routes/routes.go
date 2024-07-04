@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"mlvt/handlers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,4 +12,6 @@ func SetUpRoutes(router *gin.Engine) {
 		name := c.Param("name")
 		c.String(http.StatusOK, "Hello %s", name)
 	})
+
+	router.GET("/full_pipeline/upload", handlers.UploadVideos)
 }
