@@ -13,5 +13,5 @@ func SetUpRoutes(router *gin.Engine) {
 		c.String(http.StatusOK, "Hello %s", name)
 	})
 
-	router.GET("/full_pipeline/upload", handlers.UploadVideos)
+	router.POST("/full_pipeline/upload", handlers.UploadVideos)
 }
