@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	internal "mlvt/internal/models"
+	"mlvt/internal/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -94,7 +94,7 @@ func UploadVideos(c *gin.Context) {
 		return
 	}
 
-	video := internal.Video{
+	video := models.Video{
 		ID:         generateUUID(),
 		FilePath:   tempPath,
 		UploadedAt: time.Now(),
