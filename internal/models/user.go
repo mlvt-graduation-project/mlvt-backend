@@ -10,4 +10,5 @@ type User struct {
 	Password  string    `json:"password"`
 	CreateAt  time.Time `json:"create_at"`
 	UpdatedAt time.Time `json:"update_at"`
+	Videos    []Video   `json:"videos"` // List of videos uploaded by the user
 }

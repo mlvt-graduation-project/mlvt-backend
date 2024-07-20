@@ -1,15 +1,25 @@
-package database
+package infra
 
 import (
 	"database/sql"
+	"log"
+	"os"
 )
 
-type PostgresDBRepo struct {
-	DB *sql.DB
-}
+var DB *sql.DB
 
-//const dbTimeout = time.Second * 3
+func ConnectDatabase() {
+	var err error
+	dsn := os.Getenv("DATABASE_URL")
+	DB, err = sql.Open("postgres", dsn)
+	if err != nil {
+		log.Fatalf("Failed to connect to the database: %v", err)
+	}
 
-func (m *PostgresDBRepo) Connection() *sql.DB {
-	return m.DB
+	err = DB.Ping()
+	if err != nil {
+		log.Fatalf("Failed to ping the database: %v", err)
+	}
+
+	log.Println("Connected to the database successfully")
 }

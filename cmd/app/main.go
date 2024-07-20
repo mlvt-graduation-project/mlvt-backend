@@ -1,46 +1,77 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"log"
-	"mlvt/routes"
-	"time"
+	infra "mlvt/internal/infra/database"
+	"mlvt/internal/routes"
+	"os"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/joho/godotenv"
 )
 
-const port = "8080"
+type application struct {
+	DSN          string
+	JWTSecret    string
+	JWTIssuer    string
+	JWTAudience  string
+	CookieDomain string
+	Domain       string
+	APIKey       string
+}
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
-
-	r := gin.Default()
-	r.MaxMultipartMemory = 32 << 20
-
-	//Configure CORS middleware
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
-		AllowMethods:     []string{"GET, PUT, POST, DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		MaxAge: 12 * time.Hour,
-	}))
-
-	trustedProxies := []string{"192.168.0.1", "10.0.0.1"}
-	if err := r.SetTrustedProxies(trustedProxies); err != nil {
-		log.Fatalf("Failed to set trusted proxies: %v", err)
+	// Load environment variables from .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
 	}
 
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
+	var app application
 
-	routes.SetUpRoutes(r)
+	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=movies sslmode=disable timezone=UTC connect_timeout=5", "Postgres connection string")
+	flag.StringVar(&app.JWTSecret, "jwt-secret", "verysecret", "signing secret")
+	flag.StringVar(&app.JWTIssuer, "jwt-issuer", "example.com", "signing issuer")
+	flag.StringVar(&app.JWTAudience, "jwt-audience", "example.com", "signing audience")
+	flag.StringVar(&app.CookieDomain, "cookie-domain", "localhost", "cookie domain")
+	flag.StringVar(&app.Domain, "domain", "example.com", "domain")
+	flag.StringVar(&app.APIKey, "api-key", "", "api key")
+	flag.Parse()
 
-	log.Println("Connecting to: ", port)
+	infra.ConnectDatabase()
+	db := infra.DB
+	defer db.Close()
 
-	r.Run(":" + port)
+	// authConfig := &auth.Auth{
+	// 	Issuer:        app.JWTIssuer,
+	// 	Audience:      app.JWTAudience,
+	// 	Secret:        app.JWTSecret,
+	// 	TokenExpiry:   time.Hour * 24,
+	// 	RefreshExpiry: time.Hour * 24 * 7,
+	// 	CookieDomain:  app.CookieDomain,
+	// 	CookiePath:    "/",
+	// 	CookieName:    "refresh_token",
+	// }
+
+	// AWS S3 client setup
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(os.Getenv("AWS_REGION")))
+	if err != nil {
+		log.Fatalf("Unable to load AWS SDK config, %v", err)
+	}
+
+	s3Client := s3.NewFromConfig(cfg)
+
+	router := routes.SetupRouter(db, s3Client) //, authConfig)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	if err := router.Run(":" + port); err != nil {
+		log.Fatalf("Could not start server: %v", err)
+	}
 }
