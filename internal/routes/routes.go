@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"mlvt/handlers"
+	"mlvt/internal/handlers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
