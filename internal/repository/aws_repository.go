@@ -1,12 +1,14 @@
 package repository
 
 import (
-	"context"
+	"fmt"
 	"log"
 	"os"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
 type AWSRepository interface {
@@ -15,25 +17,31 @@ type AWSRepository interface {
 }
 
 type AWSService struct {
-	S3Client *s3.Client
+	S3Client *s3.S3
 }
 
-func NewAWSService(s3Client *s3.Client) *AWSService {
+func NewAWSService(s3Client *s3.S3) *AWSService {
 	return &AWSService{
 		S3Client: s3Client,
 	}
 }
 
-func (awsc AWSService) UploadFile(bucketName string, bucketKey string, fileName string) error {
+func (awsc AWSService) UploadFile(fileName string) error {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Println("Error opening file", err)
 	} else {
 		defer file.Close()
 
-		_, err := awsc.S3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-			Bucket: aws.String(bucketName),
-			Key:    aws.String(bucketKey),
+		sess, _ := session.NewSession(&aws.Config{
+			Region: aws.String("ap-southeast-1"),
+		})
+
+		uploader := s3manager.NewUploader(sess)
+
+		_, err := uploader.Upload(&s3manager.UploadInput{
+			Bucket: aws.String("bucket-video-file"),
+			Key:    aws.String("example"),
 			Body:   file,
 		})
 
@@ -45,13 +53,30 @@ func (awsc AWSService) UploadFile(bucketName string, bucketKey string, fileName 
 	return nil
 }
 
-func (awsc AWSService) GetFile(fileName string) error {
-	// err := awsc.GetFile(fileName)
-	// if err != nil {
-	// 	log.Println("Error getting file", err)
-	// } else {
-	// 	log.Println("Successfully got file", fileName)
-	// }
-	// return err
+func (awsc AWSService) GetFile(item string) error {
+	file, err := os.Create(item)
+	if err != nil {
+		log.Println("Error creating file", err)
+	}
+
+	defer file.Close()
+
+	sess, _ := session.NewSession(&aws.Config{
+		Region: aws.String("ap-southeast-1"),
+	})
+
+	downloader := s3manager.NewDownloader(sess)
+
+	numBytes, err := downloader.Download(file,
+		&s3.GetObjectInput{
+			Bucket: aws.String("bucket-video-file"),
+			Key:    aws.String(item),
+		})
+
+	if err != nil {
+		log.Println("Error downloading file", err)
+	}
+
+	fmt.Println("Downloaded file", file.Name(), numBytes, "bytes")
 	return nil
 }
