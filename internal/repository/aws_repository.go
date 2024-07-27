@@ -28,27 +28,40 @@ func NewAWSService(s3Client *s3.S3) *AWSService {
 
 func (awsc AWSService) UploadFile(fileName string) error {
 	file, err := os.Open(fileName)
+
 	if err != nil {
 		log.Println("Error opening file", err)
 	} else {
 		defer file.Close()
 
-		sess, _ := session.NewSession(&aws.Config{
+		awsConfig := &aws.Config{
 			Region: aws.String("ap-southeast-1"),
+		}
+
+		// The session the S3 Uploader will use
+		sess := session.Must(session.NewSession(awsConfig))
+
+		// Create an uploader with the session and custom options
+		uploader := s3manager.NewUploader(sess, func(u *s3manager.Uploader) {
+			u.PartSize = 5 * 1024 * 1024 // The minimum/default allowed part size is 5MB
+			u.Concurrency = 2            // default is 5
 		})
 
-		uploader := s3manager.NewUploader(sess)
-
-		_, err := uploader.Upload(&s3manager.UploadInput{
-			Bucket: aws.String("bucket-video-file"),
+		// Upload the file to S3.
+		result, err := uploader.Upload(&s3manager.UploadInput{
+			Bucket: aws.String("video-bucket-file"),
 			Key:    aws.String("example"),
 			Body:   file,
 		})
 
+		// In case it fails to upload
 		if err != nil {
-			log.Println("Error uploading file", err)
+			fmt.Printf("Failed to upload file, %v", err)
+			return nil
 		}
+		fmt.Printf("File uploaded to, %s\n", result.Location)
 	}
+
 	log.Println("Successfully uploaded file", fileName)
 	return nil
 }
