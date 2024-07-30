@@ -3,7 +3,7 @@ package routes
 import (
 	"database/sql"
 	"log"
-	"mlvt/internal/handlers"
+	handlers_rest1 "mlvt/internal/handlers/rest/v1"
 	"mlvt/internal/repository"
 	"mlvt/internal/service"
 	"net/http"
@@ -13,6 +13,7 @@ import (
 )
 
 func SetupRouter(db *sql.DB, awsClient *s3.Client) *gin.Engine {
+	//func SetupRouter(db *sql.DB) *gin.Engine {
 	router := gin.Default()
 
 	trustedProxies := []string{"192.168.0.1", "10.0.0.1"}
@@ -41,7 +42,7 @@ func SetupRouter(db *sql.DB, awsClient *s3.Client) *gin.Engine {
 	// Handlers
 	//userHandler := handlers.NewUserHandler(userService)
 	//authHandler := handlers.NewAuthHandler(authService)
-	videoHandler := handlers.NewVideoHandler(videoService)
+	videoHandler := handlers_rest1.NewVideoHandler(videoService)
 
 	// User routes
 	//router.POST("/users", userHandler.RegisterUser)
