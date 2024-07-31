@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	handlers_rest1 "mlvt/internal/handlers/rest/v1"
+	"mlvt/internal/pkg/auth"
 	"mlvt/internal/repository"
 	"mlvt/internal/service"
 	"net/http"
@@ -12,8 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(db *sql.DB, awsClient *s3.Client) *gin.Engine {
-	//func SetupRouter(db *sql.DB) *gin.Engine {
+func SetupRouter(db *sql.DB, awsClient *s3.Client, authConfig *auth.Auth) *gin.Engine {
 	router := gin.Default()
 
 	trustedProxies := []string{"192.168.0.1", "10.0.0.1"}
@@ -30,28 +30,28 @@ func SetupRouter(db *sql.DB, awsClient *s3.Client) *gin.Engine {
 	})
 
 	// Repositories
-	//userRepo := repository.NewPostgresUserRepository(db)
+	userRepo := repository.NewPostgresUserRepository(db)
 	videoRepo := repository.NewPostgresVideoRepository(db)
 	awsRepo := repository.NewAWSService(awsClient)
 
 	// Services
-	//authService := service.NewAuthService(userRepo, authConfig)
-	//userService := service.NewUserService(userRepo)
+	authService := service.NewAuthService(userRepo, authConfig)
+	userService := service.NewUserService(userRepo)
 	videoService := service.NewVideoService(videoRepo, awsRepo)
 
 	// Handlers
-	//userHandler := handlers.NewUserHandler(userService)
-	//authHandler := handlers.NewAuthHandler(authService)
+	userHandler := handlers_rest1.NewUserHandler(userService)
+	authHandler := handlers_rest1.NewAuthHandler(authService)
 	videoHandler := handlers_rest1.NewVideoHandler(videoService)
 
 	// User routes
-	//router.POST("/users", userHandler.RegisterUser)
-	//router.POST("/login", authHandler.Login)
-	//router.POST("/logout", authHandler.Logout)
+	router.POST("/users", userHandler.RegisterUser)
+	router.POST("/login", authHandler.Login)
+	router.POST("/logout", authHandler.Logout)
 
 	// Video routes
 	authGroup := router.Group("/auth")
-	//authGroup.Use(auth.AuthMiddleware(userRepo))
+	authGroup.Use(auth.AuthMiddleware(userRepo))
 	{
 		authGroup.POST("/videos", videoHandler.UploadVideos)
 		authGroup.GET("/videos/user/:userID", videoHandler.GetUserVideos)
