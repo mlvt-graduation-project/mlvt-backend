@@ -1,0 +1,10 @@
+2024-08-26 15:50:31.708	error	/home/bao/code/go-test/cmd/server/main.go:56	Zap logger initialized successfully
+2024-08-26 15:50:31.708	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-26 15:50:31.709	info	/home/bao/code/go-test/cmd/server/main.go:70	Migrations applied successfully!
+2024-08-26 15:51:27.813	error	/home/bao/code/go-test/cmd/server/main.go:57	Zap logger initialized successfully
+2024-08-26 15:51:27.813	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-26 15:51:27.813	info	/home/bao/code/go-test/cmd/server/main.go:71	Migrations applied successfully!
+2024-08-26 16:03:07.173	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-26 16:03:07.173	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-26 16:03:07.173	info	/home/bao/code/go-test/cmd/server/main.go:75	Migrations applied successfully!
+2024-08-26 16:03:36.256	info	/home/bao/code/go-test/cmd/server/main.go:98	Shutting down server...

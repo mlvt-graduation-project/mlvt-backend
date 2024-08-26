@@ -1,0 +1,469 @@
+definitions:
+  entity.User:
+    properties:
+      created_at:
+        description: Timestamp of when the user was created
+        type: string
+      email:
+        description: User's email address
+        type: string
+      first_name:
+        description: User's first name
+        type: string
+      id:
+        description: Unique identifier for the user
+        type: integer
+      last_name:
+        description: User's last name
+        type: string
+      password:
+        description: User's hashed password
+        type: string
+      status:
+        description: Status of the user (available, suspended, deleted)
+        type: integer
+      updated_at:
+        description: Timestamp of the last update to the user's data
+        type: string
+    type: object
+  schema.AddVideoRequest:
+    properties:
+      duration:
+        type: integer
+      link:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - duration
+    - link
+    - user_id
+    type: object
+  schema.GetVideosResponse:
+    properties:
+      videos:
+        items:
+          $ref: '#/definitions/schema.Video'
+        type: array
+    type: object
+  schema.LoginResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: integer
+      last_name:
+        type: string
+      token:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  schema.LoginUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  schema.RegisterUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
+  schema.Video:
+    properties:
+      created_at:
+        description: Timestamp of when the video was created
+        type: string
+      duration:
+        description: Duration of the video in seconds
+        type: integer
+      id:
+        type: integer
+      link:
+        description: URL to the video on AWS S3
+        type: string
+      updated_at:
+        description: Timestamp of the last update to the video
+        type: string
+      user_id:
+        description: ID of the user who uploaded the video
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Get details of a user by their ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            $ref: '#/definitions/entity.User'
+        "400":
+          description: Invalid user ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update the details of an existing user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated user details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schema.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid user ID or request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update user details
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user with email and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/schema.LoginUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token
+          schema:
+            $ref: '#/definitions/schema.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: User login
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with the provided details
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/schema.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - users
+  /videos:
+    post:
+      consumes:
+      - application/json
+      description: Add a new video for a specific user
+      parameters:
+      - description: Video details
+        in: body
+        name: video
+        required: true
+        schema:
+          $ref: '#/definitions/schema.AddVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Video added successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add a new video
+      tags:
+      - videos
+  /videos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a video by its ID
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Video deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid video ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete video
+      tags:
+      - videos
+    get:
+      consumes:
+      - application/json
+      description: Get details of a video by its ID
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Video details
+          schema:
+            $ref: '#/definitions/schema.Video'
+        "400":
+          description: Invalid video ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Video not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get video by ID
+      tags:
+      - videos
+    put:
+      consumes:
+      - application/json
+      description: Update the details of an existing video
+      parameters:
+      - description: Video ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated video details
+        in: body
+        name: video
+        required: true
+        schema:
+          $ref: '#/definitions/schema.AddVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Video updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid video ID or request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update video details
+      tags:
+      - videos
+  /videos/user/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Get all videos uploaded by a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of videos
+          schema:
+            $ref: '#/definitions/schema.GetVideosResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get videos by user ID
+      tags:
+      - videos
+swagger: "2.0"

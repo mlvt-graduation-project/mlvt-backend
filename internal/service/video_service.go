@@ -1,117 +1,89 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
-	"log"
-	"mlvt/internal/models"
-	"mlvt/internal/repository"
-	"os"
-	"os/exec"
-	"strconv"
-	"strings"
-	"time"
-
-	"github.com/google/uuid"
+	"mlvt/internal/entity"
+	"mlvt/internal/repo"
 )
 
+// VideoService handles video-related business logic
 type VideoService struct {
-	videoRepo repository.VideoRepository
-	awsRepo   repository.AWSRepository
+	videoRepo repo.VideoRepository
 }
 
-func NewVideoService(videoRepo repository.VideoRepository, awsRepo repository.AWSRepository) *VideoService {
+// NewVideoService creates a new instance of VideoService
+func NewVideoService(videoRepo repo.VideoRepository) *VideoService {
 	return &VideoService{
 		videoRepo: videoRepo,
-		awsRepo:   awsRepo,
 	}
 }
 
-func generateUUID() string {
-	return uuid.New().String()
+// AddVideo adds a new video for a user
+func (s *VideoService) AddVideo(userID uint64, link string, duration int) error {
+	if link == "" {
+		return errors.New("video link cannot be empty")
+	}
+	if duration <= 0 {
+		return errors.New("video duration must be positive")
+	}
+
+	video := &entity.Video{
+		UserID:   userID,
+		Link:     link,
+		Duration: duration,
+	}
+	return s.videoRepo.CreateVideo(video)
 }
 
-func getVideoDuration(output string) (float64, error) {
-	durationIdx := strings.Index(output, "Duration: ")
-	if durationIdx == -1 {
-		return 0, errors.New("cannot find duration in FFmpeg output")
-	}
-
-	durationStr := output[durationIdx+10 : durationIdx+21] // expected format "00:00:00.00"
-	timeParts := strings.Split(durationStr, ":")
-	if len(timeParts) != 3 {
-		return 0, errors.New("unexpected duration format")
-	}
-
-	hours, err := strconv.Atoi(strings.TrimSpace(timeParts[0]))
+// GetVideo retrieves a video by ID
+func (s *VideoService) GetVideo(id uint64) (*entity.Video, error) {
+	video, err := s.videoRepo.GetVideoByID(id)
 	if err != nil {
-		return 0, err
-	}
-	minutes, err := strconv.Atoi(strings.TrimSpace(timeParts[1]))
-	if err != nil {
-		return 0, err
-	}
-	secondsParts := strings.Split(timeParts[2], ".")
-	seconds, err := strconv.Atoi(strings.TrimSpace(secondsParts[0]))
-	if err != nil {
-		return 0, err
-	}
-
-	return float64(hours*3600 + minutes*60 + seconds), nil
-}
-
-func getVideoMetadata(filePath string) (duration float64, fileSize int64, err error) {
-	fileInfo, err := os.Stat(filePath)
-	if err != nil {
-		return 0, 0, err
-	}
-	fileSize = fileInfo.Size()
-
-	cmd := exec.Command("ffmpeg", "-i", filePath, "-f", "null", "-")
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("FFmpeg output: \n%s", output)
-		return 0, fileSize, err
-	}
-
-	duration, err = getVideoDuration(string(output))
-	if err != nil {
-		return 0, fileSize, err
-	}
-
-	return duration, fileSize, nil
-}
-
-func (s *VideoService) ProcessVideo(filePath string) (*models.Video, error) {
-	duration, fileSize, err := getVideoMetadata(filePath)
-	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("video not found")
+		}
 		return nil, err
 	}
-
-	video := &models.Video{
-		ID:         generateUUID(),
-		FilePath:   filePath,
-		UploadedAt: time.Now(),
-		Size:       fileSize,
-		Duration:   int64(duration),
-	}
-
 	return video, nil
 }
 
-func (s *VideoService) UploadAndSaveVideo(video *models.Video, bucketName string) error {
-	bucketKey := video.ID + ".mp4"
-	err := s.awsRepo.UploadFile(bucketName, bucketKey, video.FilePath)
+// UpdateVideo updates an existing video's details
+func (s *VideoService) UpdateVideo(id uint64, link string, duration int) error {
+	if link == "" {
+		return errors.New("video link cannot be empty")
+	}
+	if duration <= 0 {
+		return errors.New("video duration must be positive")
+	}
+
+	video, err := s.videoRepo.GetVideoByID(id)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return errors.New("video not found")
+		}
 		return err
 	}
 
-	video.FilePath = bucketKey //"s3://" + bucketName + "/" + bucketKey
-	video.UploadedAt = time.Now()
+	video.Link = link
+	video.Duration = duration
 
-	log.Printf("Video metadata file uploaded - ID: %s, S3 Path: %s", video.ID, video.FilePath)
-	return nil
+	return s.videoRepo.UpdateVideo(video)
 }
 
-func (s *VideoService) GetUserVideos(userID string) ([]models.Video, error) {
-	return s.videoRepo.GetVideosByUserID(userID)
+// DeleteVideo removes a video
+func (s *VideoService) DeleteVideo(id uint64) error {
+	return s.videoRepo.DeleteVideo(id)
+}
+
+// GetVideosByUser fetches all videos for a specific user
+func (s *VideoService) GetVideosByUser(userID uint64) ([]entity.Video, error) {
+	videos, err := s.videoRepo.GetVideosByUserID(userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("no videos found for user")
+		}
+		return nil, err
+	}
+	return videos, nil
 }
