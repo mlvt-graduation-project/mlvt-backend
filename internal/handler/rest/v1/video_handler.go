@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"errors"
 	"mlvt/internal/entity"
+	"mlvt/internal/pkg/json"
 	"mlvt/internal/schema"
 	"mlvt/internal/service"
 	"net/http"
@@ -36,17 +38,17 @@ func NewVideoController(videoService *service.VideoService) *VideoController {
 func (vc *VideoController) AddVideo(ctx *gin.Context) {
 	var req schema.AddVideoRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusBadRequest)
 		return
 	}
 
 	err := vc.videoService.AddVideo(req.UserID, req.Link, req.Duration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "Video added successfully"})
+	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": "Video added successfully"})
 }
 
 // GetVideo fetches video details by ID
@@ -63,20 +65,20 @@ func (vc *VideoController) AddVideo(ctx *gin.Context) {
 func (vc *VideoController) GetVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid video ID"), http.StatusBadRequest)
 		return
 	}
 
 	video, err := vc.videoService.GetVideo(id)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
+		json.ErrorJSON(ctx, errors.New("Video not found"), http.StatusNotFound)
 		return
 	}
 
 	// Convert entity.Video to schema.Video for response
 	schemaVideo := convertEntityVideoToSchemaVideo(*video)
 
-	ctx.JSON(http.StatusOK, schemaVideo)
+	json.WriteJSON(ctx, http.StatusOK, schemaVideo)
 }
 
 // UpdateVideo handles updating video details
@@ -94,23 +96,24 @@ func (vc *VideoController) GetVideo(ctx *gin.Context) {
 func (vc *VideoController) UpdateVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid video ID"), http.StatusBadRequest)
 		return
 	}
 
 	var req schema.AddVideoRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusBadRequest)
 		return
 	}
 
 	err = vc.videoService.UpdateVideo(id, req.Link, req.Duration)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Video updated successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "Video updated successfully"})
+
 }
 
 // DeleteVideo handles deleting a video by ID
@@ -127,17 +130,17 @@ func (vc *VideoController) UpdateVideo(ctx *gin.Context) {
 func (vc *VideoController) DeleteVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid video ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid video ID"), http.StatusBadRequest)
 		return
 	}
 
 	err = vc.videoService.DeleteVideo(id)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Video deleted successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "Video deleted successfully"})
 }
 
 // GetVideosByUser handles fetching all videos for a specific user
@@ -154,13 +157,13 @@ func (vc *VideoController) DeleteVideo(ctx *gin.Context) {
 func (vc *VideoController) GetVideosByUser(ctx *gin.Context) {
 	userID, err := strconv.ParseUint(ctx.Param("userID"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
 		return
 	}
 
 	videos, err := vc.videoService.GetVideosByUser(userID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -170,7 +173,7 @@ func (vc *VideoController) GetVideosByUser(ctx *gin.Context) {
 		schemaVideos = append(schemaVideos, convertEntityVideoToSchemaVideo(v))
 	}
 
-	ctx.JSON(http.StatusOK, schema.GetVideosResponse{Videos: schemaVideos})
+	json.WriteJSON(ctx, http.StatusOK, schema.GetVideosResponse{Videos: schemaVideos})
 }
 
 // Helper function to convert entity.Video to schema.Video

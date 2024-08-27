@@ -1,0 +1,8 @@
+2024-08-27 15:57:52.528	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:31:15.256	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:31:21.420	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:42:38.948	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:43:56.335	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:47:32.156	error	/home/bao/code/go-test/internal/pkg/json/json_handler.go:53	Error occurred error Invalid user ID
+2024-08-27 16:48:34.450	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-27 16:48:37.266	error	/home/bao/code/go-test/internal/pkg/json/json_handler.go:53	Error occurred error: Invalid user ID

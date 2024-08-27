@@ -8,3 +8,8 @@
 2024-08-26 16:03:07.173	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
 2024-08-26 16:03:07.173	info	/home/bao/code/go-test/cmd/server/main.go:75	Migrations applied successfully!
 2024-08-26 16:03:36.256	info	/home/bao/code/go-test/cmd/server/main.go:98	Shutting down server...
+2024-08-26 16:31:37.984	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-08-26 16:31:37.985	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-26 16:31:37.985	info	/home/bao/code/go-test/cmd/server/main.go:75	Migrations applied successfully!
+2024-08-26 16:31:44.973	info	/home/bao/code/go-test/cmd/server/main.go:98	Shutting down server...
+2024-08-26 16:31:44.974	info	/home/bao/code/go-test/cmd/server/main.go:102	Server exiting

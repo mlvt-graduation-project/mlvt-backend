@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"mlvt/internal/pkg/json"
 	"mlvt/internal/schema"
 	"mlvt/internal/service"
 	"net/http"
@@ -35,17 +37,17 @@ func NewUserController(userService *service.UserService) *UserController {
 func (uc *UserController) RegisterUser(ctx *gin.Context) {
 	var req schema.RegisterUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusBadRequest)
 		return
 	}
 
 	err := uc.userService.RegisterUser(req.FirstName, req.LastName, req.Email, req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
+	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
 // Login handles user login
@@ -62,17 +64,17 @@ func (uc *UserController) RegisterUser(ctx *gin.Context) {
 func (uc *UserController) Login(ctx *gin.Context) {
 	var req schema.LoginUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusBadRequest)
 		return
 	}
 
 	token, err := uc.userService.Login(req.Email, req.Password)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusUnauthorized)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, schema.LoginResponse{Token: token})
+	json.WriteJSON(ctx, http.StatusOK, schema.LoginResponse{Token: token})
 }
 
 // GetUser fetches user details by ID
@@ -89,17 +91,17 @@ func (uc *UserController) Login(ctx *gin.Context) {
 func (uc *UserController) GetUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
 		return
 	}
 
 	user, err := uc.userService.GetUser(id)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		json.ErrorJSON(ctx, errors.New("User not found"), http.StatusNotFound)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	json.WriteJSON(ctx, http.StatusOK, user)
 }
 
 // UpdateUser handles updating user details
@@ -117,23 +119,23 @@ func (uc *UserController) GetUser(ctx *gin.Context) {
 func (uc *UserController) UpdateUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
 		return
 	}
 
 	var req schema.RegisterUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusBadRequest)
 		return
 	}
 
 	err = uc.userService.UpdateUser(id, req.FirstName, req.LastName, req.Email, req.Password, 1) // Assuming 1 is active status
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "User updated successfully"})
 }
 
 // DeleteUser handles deleting a user by ID
@@ -150,15 +152,15 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 func (uc *UserController) DeleteUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
 		return
 	}
 
 	err = uc.userService.DeleteUser(id)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "User deleted successfully"})
 }

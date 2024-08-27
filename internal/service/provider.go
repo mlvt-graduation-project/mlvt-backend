@@ -2,7 +2,7 @@ package service
 
 import "github.com/google/wire"
 
-const SecretKey = "your-secret-key"
+const SecretKey = "veryvery"
 
 // ProviderSetService is providers.
 var ProviderSetService = wire.NewSet(

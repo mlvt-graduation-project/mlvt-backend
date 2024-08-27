@@ -19,7 +19,7 @@ func Migrate(db *sql.DB) error {
 		return err
 	}
 
-	// Define your migrations
+	// Define migrations
 	migrations := []Migration{
 		{
 			ID:   1,
