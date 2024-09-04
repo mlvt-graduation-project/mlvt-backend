@@ -7,6 +7,7 @@ import (
 // Video represents the schema for video data
 type Video struct {
 	ID        uint64    `json:"id"`
+	Title     string    `json:"title"`      // Title of the video
 	Duration  int       `json:"duration"`   // Duration of the video in seconds
 	Link      string    `json:"link"`       // URL to the video on AWS S3
 	UserID    uint64    `json:"user_id"`    // ID of the user who uploaded the video
@@ -17,6 +18,7 @@ type Video struct {
 // AddVideoRequest is used to add a new video link for a user
 type AddVideoRequest struct {
 	UserID   uint64 `json:"user_id" validate:"required"`
+	Title    string `json:"title" validate:"required"` // Add Title field
 	Link     string `json:"link" validate:"required,url"`
 	Duration int    `json:"duration" validate:"required"`
 }

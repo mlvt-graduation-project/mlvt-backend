@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "Ungültige Anfrage"
+    internal_server_error: "Interner Serverfehler"
+    invalid_user_id: "Ungültige Benutzer-ID"
+    not_found: "Benutzer nicht gefunden"
+    unauthorized: "Unbefugt"
+  video:
+    invalid_request: "Ungültige Anfrage"
+    internal_server_error: "Interner Serverfehler"
+    invalid_video_id: "Ungültige Video-ID"
+    not_found: "Video nicht gefunden"
+  general:
+    failed_to_initialize_db: "Datenbankinitialisierung fehlgeschlagen"
+    migration_failed: "Migration fehlgeschlagen"
+    failed_to_initialize_aws_s3: "Fehler bei der Initialisierung des AWS S3-Clients"
+    server_shutdown: "Server wird heruntergefahren..."
+    server_start_failed: "Fehler beim Starten des Servers"
+    server_forced_shutdown: "Server wurde zum Herunterfahren gezwungen"
+
+success:
+  user:
+    registered: "Benutzer erfolgreich registriert"
+    updated: "Benutzer erfolgreich aktualisiert"
+    deleted: "Benutzer erfolgreich gelöscht"
+  video:
+    added: "Video erfolgreich hinzugefügt"
+    updated: "Video erfolgreich aktualisiert"
+    deleted: "Video erfolgreich gelöscht"
+  general:
+    migrations_applied: "Migrationen erfolgreich angewendet!"
+    server_start: "Server erfolgreich gestartet"

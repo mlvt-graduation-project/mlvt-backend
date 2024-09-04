@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "Solicitud inválida"
+    internal_server_error: "Error interno del servidor"
+    invalid_user_id: "ID de usuario inválido"
+    not_found: "Usuario no encontrado"
+    unauthorized: "No autorizado"
+  video:
+    invalid_request: "Solicitud inválida"
+    internal_server_error: "Error interno del servidor"
+    invalid_video_id: "ID de vídeo inválido"
+    not_found: "Vídeo no encontrado"
+  general:
+    failed_to_initialize_db: "Error al inicializar la base de datos"
+    migration_failed: "Migración fallida"
+    failed_to_initialize_aws_s3: "Error al inicializar el cliente de AWS S3"
+    server_shutdown: "Apagando el servidor..."
+    server_start_failed: "Error al iniciar el servidor"
+    server_forced_shutdown: "Servidor obligado a apagar"
+
+success:
+  user:
+    registered: "Usuario registrado con éxito"
+    updated: "Usuario actualizado con éxito"
+    deleted: "Usuario eliminado con éxito"
+  video:
+    added: "Vídeo añadido con éxito"
+    updated: "Vídeo actualizado con éxito"
+    deleted: "Vídeo eliminado con éxito"
+  general:
+    migrations_applied: "Migraciones aplicadas con éxito!"
+    server_start: "Servidor iniciado con éxito"

@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "Richiesta non valida"
+    internal_server_error: "Errore del server interno"
+    invalid_user_id: "ID utente non valido"
+    not_found: "Utente non trovato"
+    unauthorized: "Non autorizzato"
+  video:
+    invalid_request: "Richiesta non valida"
+    internal_server_error: "Errore del server interno"
+    invalid_video_id: "ID video non valido"
+    not_found: "Video non trovato"
+  general:
+    failed_to_initialize_db: "Impossibile inizializzare il database"
+    migration_failed: "Migrazione fallita"
+    failed_to_initialize_aws_s3: "Impossibile inizializzare il client AWS S3"
+    server_shutdown: "Spegnimento del server..."
+    server_start_failed: "Impossibile avviare il server"
+    server_forced_shutdown: "Server forzato allo spegnimento"
+
+success:
+  user:
+    registered: "Utente registrato con successo"
+    updated: "Utente aggiornato con successo"
+    deleted: "Utente eliminato con successo"
+  video:
+    added: "Video aggiunto con successo"
+    updated: "Video aggiornato con successo"
+    deleted: "Video eliminato con successo"
+  general:
+    migrations_applied: "Migrazioni applicate con successo!"
+    server_start: "Server avviato con successo"

@@ -1,0 +1,178 @@
+2024-09-04 11:45:15.354	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:45:15.355	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 11:45:15.734	info	/home/bao/code/go-test/cmd/server/main.go:81	success.general.migrations_applied
+2024-09-04 11:46:12.014	info	/home/bao/code/go-test/cmd/server/main.go:111	Shutting down server...
+2024-09-04 11:46:13.642	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:46:13.642	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 11:46:13.992	info	/home/bao/code/go-test/cmd/server/main.go:81	success.general.migrations_applied
+2024-09-04 11:47:09.848	info	/home/bao/code/go-test/cmd/server/main.go:111	Shutting down server...
+2024-09-04 11:47:11.661	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:47:11.662	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 11:47:12.041	info	/home/bao/code/go-test/cmd/server/main.go:81	success.general.migrations_applied
+2024-09-04 11:51:37.320	info	/home/bao/code/go-test/cmd/server/main.go:111	Shutting down server...
+2024-09-04 11:51:38.947	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:51:38.947	error	/home/bao/code/go-test/internal/infra/reason/reason.go:50	Cannot open file language.
+2024-09-04 11:51:55.014	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:51:55.014	error	/home/bao/code/go-test/internal/infra/reason/reason.go:50	Cannot open file language.
+2024-09-04 11:52:49.344	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:52:49.344	error	/home/bao/code/go-test/internal/infra/reason/reason.go:50	Cannot open file language.
+2024-09-04 11:53:08.583	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 11:53:08.583	info	/home/bao/code/go-test/internal/infra/reason/reason.go:54	Get file language successfully
+2024-09-04 13:02:43.502	error	/home/bao/code/go-test/cmd/server/main.go:67	Zap logger initialized successfully
+2024-09-04 13:02:43.503	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:02:43.946	info	/home/bao/code/go-test/cmd/server/main.go:87	success.general.migrations_applied
+2024-09-04 13:03:53.347	info	/home/bao/code/go-test/cmd/server/main.go:117	Shutting down server...
+2024-09-04 13:03:53.347	info	/home/bao/code/go-test/cmd/server/main.go:121	Server exiting
+2024-09-04 13:03:54.792	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:03:54.792	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:03:55.161	info	/home/bao/code/go-test/cmd/server/main.go:81	success.general.migrations_applied
+2024-09-04 13:04:33.774	info	/home/bao/code/go-test/cmd/server/main.go:111	Shutting down server...
+2024-09-04 13:05:07.247	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:05:07.247	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:05:07.616	info	/home/bao/code/go-test/cmd/server/main.go:83	success.general.migrations_applied
+2024-09-04 13:07:14.318	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:07:16.486	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:07:45.284	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:07:45.284	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:07:45.663	info	/home/bao/code/go-test/cmd/server/main.go:83	success.general.migrations_applied
+2024-09-04 13:12:18.103	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:12:19.372	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:12:19.372	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:12:19.742	info	/home/bao/code/go-test/cmd/server/main.go:83	success.general.migrations_applied
+2024-09-04 13:13:21.477	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:13:23.128	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:13:23.129	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:13:23.502	info	/home/bao/code/go-test/cmd/server/main.go:83	success.general.migrations_applied
+2024-09-04 13:13:32.990	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:13:32.990	info	/home/bao/code/go-test/cmd/server/main.go:117	Server exiting
+2024-09-04 13:15:35.398	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:15:35.399	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:15:35.720	info	/home/bao/code/go-test/cmd/server/main.go:83	{success.general.migrations_applied }
+2024-09-04 13:16:27.802	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:16:29.350	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:16:29.351	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:16:29.748	info	/home/bao/code/go-test/cmd/server/main.go:83	{success.general.migrations_applied }
+2024-09-04 13:16:52.982	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:16:54.484	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:16:54.485	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:16:54.876	info	/home/bao/code/go-test/cmd/server/main.go:83	
+2024-09-04 13:19:05.745	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:19:07.150	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:19:07.151	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:19:07.519	info	/home/bao/code/go-test/cmd/server/main.go:83	
+2024-09-04 13:21:00.378	info	/home/bao/code/go-test/cmd/server/main.go:113	Shutting down server...
+2024-09-04 13:21:02.618	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:21:24.466	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:21:59.646	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:22:26.467	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:32:11.459	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:32:11.459	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:32:11.808	info	/home/bao/code/go-test/cmd/server/main.go:77	Message not found
+2024-09-04 13:35:58.033	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:35:59.415	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:35:59.415	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:35:59.794	info	/home/bao/code/go-test/cmd/server/main.go:77	Message not found
+2024-09-04 13:40:02.384	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:40:04.799	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:40:04.799	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:40:05.184	info	/home/bao/code/go-test/cmd/server/main.go:77	Message not found
+2024-09-04 13:41:21.506	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:41:23.290	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:41:23.290	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:41:23.661	info	/home/bao/code/go-test/cmd/server/main.go:77	Message not found
+2024-09-04 13:42:24.884	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:42:26.514	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:42:26.514	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:42:26.890	info	/home/bao/code/go-test/cmd/server/main.go:77	Message not found
+2024-09-04 13:43:03.746	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:43:05.160	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:43:05.160	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:43:05.785	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations applied successfully!
+2024-09-04 13:46:45.851	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:46:47.461	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:46:47.461	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:46:47.476	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.485	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.493	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.502	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.507	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.512	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.517	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.522	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.528	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.536	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.541	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.546	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.551	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.556	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.562	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.571	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.576	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.580	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.589	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.595	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.600	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.605	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.610	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.622	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.627	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.632	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.650	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.659	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.668	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.678	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.685	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.693	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.700	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.707	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.715	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.722	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.730	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.738	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.746	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.753	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.761	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.769	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.778	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.785	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.793	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.801	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.809	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.816	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.824	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.831	info	/home/bao/code/go-test/cmd/migration/migration.go:101	Insert sample data success.
+2024-09-04 13:46:47.832	info	/home/bao/code/go-test/cmd/server/main.go:77	Di chuyển được áp dụng thành công!
+2024-09-04 13:47:32.375	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:47:32.375	info	/home/bao/code/go-test/cmd/server/main.go:111	Server exiting
+2024-09-04 13:47:33.951	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:47:33.952	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:47:34.309	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 13:47:34.309	info	/home/bao/code/go-test/cmd/server/main.go:77	Di chuyển được áp dụng thành công!
+2024-09-04 13:48:22.310	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 13:48:23.797	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 13:48:23.798	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 13:48:24.176	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 13:48:24.176	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations được áp dụng thành công!
+2024-09-04 14:07:50.457	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 14:12:37.823	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 14:12:37.824	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 14:12:38.202	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 14:12:38.202	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations được áp dụng thành công!
+2024-09-04 14:18:28.589	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 14:18:29.927	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 14:18:29.928	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 14:18:30.286	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 14:18:30.286	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations applied successfully!
+2024-09-04 14:19:42.657	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 14:19:44.107	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 14:19:44.108	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 14:19:44.514	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 14:19:44.514	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations applied successfully!
+2024-09-04 14:21:00.754	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 14:21:00.754	info	/home/bao/code/go-test/cmd/server/main.go:111	Server exiting
+2024-09-04 15:12:09.507	error	/home/bao/code/go-test/cmd/server/main.go:61	Zap logger initialized successfully
+2024-09-04 15:12:09.510	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-09-04 15:12:09.884	info	/home/bao/code/go-test/cmd/migration/migration.go:102	Insert sample data success.
+2024-09-04 15:12:09.884	info	/home/bao/code/go-test/cmd/server/main.go:77	Migrations applied successfully!
+2024-09-04 15:12:11.692	info	/home/bao/code/go-test/cmd/server/main.go:107	Shutting down server...
+2024-09-04 15:12:11.692	info	/home/bao/code/go-test/cmd/server/main.go:111	Server exiting

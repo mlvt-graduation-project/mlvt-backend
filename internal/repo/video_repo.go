@@ -3,6 +3,7 @@ package repo
 import (
 	"database/sql"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/zap-logging/log"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type VideoRepository interface {
 	GetVideosByUserID(userID uint64) ([]entity.Video, error)
 	UpdateVideo(video *entity.Video) error
 	DeleteVideo(id uint64) error
+	SaveVideo(video *entity.Video) error
 }
 
 // VideoRepo implements VideoRepository for working with video data
@@ -54,8 +56,8 @@ func (repo *VideoRepo) GetVideosByUserID(userID uint64) ([]entity.Video, error) 
 func (repo *VideoRepo) CreateVideo(video *entity.Video) error {
 	video.CreatedAt = time.Now()
 	video.UpdatedAt = time.Now()
-	query := `INSERT INTO videos (duration, link, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
-	_, err := repo.DB.Exec(query, video.Duration, video.Link, video.UserID, video.CreatedAt, video.UpdatedAt)
+	query := `INSERT INTO videos (title, duration, link, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
+	_, err := repo.DB.Exec(query, video.Title, video.Duration, video.Link, video.UserID, video.CreatedAt, video.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -92,6 +94,18 @@ func (repo *VideoRepo) DeleteVideo(id uint64) error {
 	query := `DELETE FROM videos WHERE id = ?`
 	_, err := repo.DB.Exec(query, id)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SaveVideo saves a video record in the database using the Video entity
+func (repo *VideoRepo) SaveVideo(video *entity.Video) error {
+	log.Infof("Saving video with title: %s and S3 link: %s", video.Title, video.Link)
+	query := `INSERT INTO videos (title, link) VALUES (?, ?)`
+	_, err := repo.DB.Exec(query, video.Title, video.Link)
+	if err != nil {
+		log.Errorf("Failed to save video link: %v", err)
 		return err
 	}
 	return nil

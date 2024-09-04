@@ -7,6 +7,7 @@ package main
 import (
 	"database/sql"
 	handler "mlvt/internal/handler/rest/v1"
+	"mlvt/internal/infra/aws"
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo"
 	"mlvt/internal/router"
@@ -15,7 +16,7 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
+func InitializeApp(db *sql.DB, s3Client *aws.S3Client) (*router.AppRouter, error) {
 	wire.Build(
 		repo.ProviderSetRepository,
 		service.ProviderSetService,

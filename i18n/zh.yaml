@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "请求无效"
+    internal_server_error: "内部服务器错误"
+    invalid_user_id: "用户ID无效"
+    not_found: "未找到用户"
+    unauthorized: "未经授权"
+  video:
+    invalid_request: "请求无效"
+    internal_server_error: "内部服务器错误"
+    invalid_video_id: "视频ID无效"
+    not_found: "未找到视频"
+  general:
+    failed_to_initialize_db: "初始化数据库失败"
+    migration_failed: "迁移失败"
+    failed_to_initialize_aws_s3: "初始化AWS S3客户端失败"
+    server_shutdown: "服务器正在关闭..."
+    server_start_failed: "启动服务器失败"
+    server_forced_shutdown: "服务器被迫关闭"
+
+success:
+  user:
+    registered: "用户注册成功"
+    updated: "用户更新成功"
+    deleted: "用户删除成功"
+  video:
+    added: "视频添加成功"
+    updated: "视频更新成功"
+    deleted: "视频删除成功"
+  general:
+    migrations_applied: "迁移成功应用!"
+    server_start: "服务器启动成功"

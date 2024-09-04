@@ -25,12 +25,17 @@ clean:
 # Generate wire and then build
 wire-build: wire build
 
+# Swagger
+swag:
+	cd $(CMD_DIR) && swag init -g main.go
+
 # Help
 help:
 	@echo "Makefile for $(APP_NAME)"
 	@echo
 	@echo "Usage:"
 	@echo "  make run         Run the application"
+	@echo "  make swag		  Run the swagger"
 	@echo "  make build       Build the application"
 	@echo "  make wire        Generate dependencies with Wire"
 	@echo "  make clean       Clean the generated binaries"

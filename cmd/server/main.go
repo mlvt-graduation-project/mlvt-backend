@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"mlvt/cmd/migration"
+	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db"
+	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/server/http"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/infra/zap-logging/zap"
@@ -47,8 +49,6 @@ func main() {
 	logLevel = os.Getenv("LOG_LEVEL")
 	logPath = os.Getenv("LOG_PATH")
 
-	fmt.Println("LOG_PATH:", logPath) // Debug: print the log path
-
 	// Ensure the log directory exists
 	logDir := filepath.Dir(logPath)
 	if _, err := os.Stat(logDir); os.IsNotExist(err) {
@@ -72,9 +72,18 @@ func main() {
 		log.Errorf("Migration failed: %v", err)
 	}
 
-	log.Info("Migrations applied successfully!")
+	fmt.Println(reason.InvalidUserID.Message())
 
-	appRouter, err := InitializeApp(dbConn)
+	log.Info(reason.MigrationsApplied.Message())
+
+	// Initialize AWS S3 client
+	s3Client, err := aws.NewS3Client()
+	if err != nil {
+		log.Errorf("Failed to initialize AWS S3 client: %v", err)
+		os.Exit(1)
+	}
+
+	appRouter, err := InitializeApp(dbConn, s3Client)
 	if err != nil {
 		log.Errorf("Failed to initialize app: %v", err)
 		os.Exit(1)

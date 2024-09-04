@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "Yêu cầu không hợp lệ"
+    internal_server_error: "Lỗi máy chủ nội bộ"
+    invalid_user_id: "ID người dùng không hợp lệ"
+    not_found: "Không tìm thấy người dùng"
+    unauthorized: "Không có quyền truy cập"
+  video:
+    invalid_request: "Yêu cầu không hợp lệ"
+    internal_server_error: "Lỗi máy chủ nội bộ"
+    invalid_video_id: "ID video không hợp lệ"
+    not_found: "Không tìm thấy video"
+  general:
+    failed_to_initialize_db: "Khởi tạo cơ sở dữ liệu thất bại"
+    migration_failed: "Di chuyển thất bại"
+    failed_to_initialize_aws_s3: "Khởi tạo AWS S3 client thất bại"
+    server_shutdown: "Đang tắt máy chủ..."
+    server_start_failed: "Không thể khởi động máy chủ"
+    server_forced_shutdown: "Máy chủ bị buộc tắt"
+
+success:
+  user:
+    registered: "Đăng ký người dùng thành công"
+    updated: "Cập nhật người dùng thành công"
+    deleted: "Xóa người dùng thành công"
+  video:
+    added: "Thêm video thành công"
+    updated: "Cập nhật video thành công"
+    deleted: "Xóa video thành công"
+  general:
+    migrations_applied: "Migrations được áp dụng thành công!"
+    server_start: "Máy chủ khởi động thành công"

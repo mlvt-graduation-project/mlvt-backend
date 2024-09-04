@@ -32,7 +32,7 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	}
 
 	protected := r.Group("/users")
-	protected.Use(a.authMiddleware.MustAuth()) // Directly use the middleware from the struct field
+	protected.Use(a.authMiddleware.MustAuth())
 	{
 		protected.GET("/:id", a.userController.GetUser)
 		protected.PUT("/:id", a.userController.UpdateUser)
@@ -43,12 +43,13 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 // RegisterVideoRoutes sets up the routes for video-related operations
 func (a *AppRouter) RegisterVideoRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/videos")
-	protected.Use(a.authMiddleware.MustAuth()) // Directly use the middleware from the struct field
+	protected.Use(a.authMiddleware.MustAuth())
 	{
 		protected.POST("/", a.videoController.AddVideo)
 		protected.PUT("/:id", a.videoController.UpdateVideo)
 		protected.GET("/:id", a.videoController.GetVideo)
 		protected.DELETE("/:id", a.videoController.DeleteVideo)
 		protected.GET("/user/:userID", a.videoController.GetVideosByUser)
+		protected.POST("/generate-presigned-url", a.videoController.GeneratePresignedURLHandler)
 	}
 }

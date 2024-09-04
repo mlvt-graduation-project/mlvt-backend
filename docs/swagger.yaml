@@ -32,12 +32,50 @@ definitions:
         type: integer
       link:
         type: string
+      title:
+        description: Add Title field
+        type: string
       user_id:
         type: integer
     required:
     - duration
     - link
+    - title
     - user_id
+    type: object
+  schema.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  schema.GeneratePresignedURLRequest:
+    properties:
+      duration:
+        description: Expected duration of the video
+        type: integer
+      file_name:
+        description: Name of the video file to be uploaded
+        type: string
+      file_type:
+        description: Type of the video file (e.g., video/mp4)
+        type: string
+      title:
+        description: Title of the video
+        type: string
+      user_id:
+        description: ID of the user uploading the video
+        type: integer
+    required:
+    - duration
+    - file_name
+    - file_type
+    - title
+    - user_id
+    type: object
+  schema.GeneratePresignedURLResponse:
+    properties:
+      presignedUrl:
+        type: string
     type: object
   schema.GetVideosResponse:
     properties:
@@ -102,6 +140,9 @@ definitions:
         type: integer
       link:
         description: URL to the video on AWS S3
+        type: string
+      title:
+        description: Title of the video
         type: string
       updated_at:
         description: Timestamp of the last update to the video
@@ -433,6 +474,37 @@ paths:
       summary: Update video details
       tags:
       - videos
+  /videos/generate-presigned-url:
+    post:
+      consumes:
+      - application/json
+      description: Generates a pre-signed URL for uploading a video to AWS S3 and
+        registers the video with initial data
+      parameters:
+      - description: Video upload details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema.GeneratePresignedURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.GeneratePresignedURLResponse'
+        "400":
+          description: Invalid request format
+          schema:
+            $ref: '#/definitions/schema.ErrorResponse'
+        "500":
+          description: Failed to generate presigned URL or Failed to add video
+          schema:
+            $ref: '#/definitions/schema.ErrorResponse'
+      summary: Generate a pre-signed URL for video uploads
+      tags:
+      - Videos
   /videos/user/{userID}:
     get:
       consumes:

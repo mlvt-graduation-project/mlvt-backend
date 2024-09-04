@@ -338,6 +338,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/videos/generate-presigned-url": {
+            "post": {
+                "description": "Generates a pre-signed URL for uploading a video to AWS S3 and registers the video with initial data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Videos"
+                ],
+                "summary": "Generate a pre-signed URL for video uploads",
+                "parameters": [
+                    {
+                        "description": "Video upload details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.GeneratePresignedURLRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.GeneratePresignedURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request format",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate presigned URL or Failed to add video",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/videos/user/{userID}": {
             "get": {
                 "description": "Get all videos uploaded by a specific user",
@@ -593,6 +639,7 @@ const docTemplate = `{
             "required": [
                 "duration",
                 "link",
+                "title",
                 "user_id"
             ],
             "properties": {
@@ -602,8 +649,60 @@ const docTemplate = `{
                 "link": {
                     "type": "string"
                 },
+                "title": {
+                    "description": "Add Title field",
+                    "type": "string"
+                },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "schema.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "schema.GeneratePresignedURLRequest": {
+            "type": "object",
+            "required": [
+                "duration",
+                "file_name",
+                "file_type",
+                "title",
+                "user_id"
+            ],
+            "properties": {
+                "duration": {
+                    "description": "Expected duration of the video",
+                    "type": "integer"
+                },
+                "file_name": {
+                    "description": "Name of the video file to be uploaded",
+                    "type": "string"
+                },
+                "file_type": {
+                    "description": "Type of the video file (e.g., video/mp4)",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title of the video",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "ID of the user uploading the video",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.GeneratePresignedURLResponse": {
+            "type": "object",
+            "properties": {
+                "presignedUrl": {
+                    "type": "string"
                 }
             }
         },
@@ -699,6 +798,10 @@ const docTemplate = `{
                 },
                 "link": {
                     "description": "URL to the video on AWS S3",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "Title of the video",
                     "type": "string"
                 },
                 "updated_at": {

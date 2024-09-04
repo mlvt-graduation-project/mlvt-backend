@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"mlvt/internal/infra/reason"
 	"mlvt/internal/pkg/json"
 	"mlvt/internal/schema"
 	"mlvt/internal/service"
@@ -47,7 +48,7 @@ func (uc *UserController) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": "User registered successfully"})
+	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": reason.UserRegistered.Message()})
 }
 
 // Login handles user login
@@ -91,13 +92,13 @@ func (uc *UserController) Login(ctx *gin.Context) {
 func (uc *UserController) GetUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
+		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
 		return
 	}
 
 	user, err := uc.userService.GetUser(id)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New("User not found"), http.StatusNotFound)
+		json.ErrorJSON(ctx, errors.New(reason.UserNotFound.Message()), http.StatusNotFound)
 		return
 	}
 
@@ -119,7 +120,7 @@ func (uc *UserController) GetUser(ctx *gin.Context) {
 func (uc *UserController) UpdateUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
+		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
 		return
 	}
 
@@ -135,7 +136,7 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "User updated successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.UserUpdated.Message()})
 }
 
 // DeleteUser handles deleting a user by ID
@@ -152,7 +153,7 @@ func (uc *UserController) UpdateUser(ctx *gin.Context) {
 func (uc *UserController) DeleteUser(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New("Invalid user ID"), http.StatusBadRequest)
+		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
 		return
 	}
 
@@ -162,5 +163,5 @@ func (uc *UserController) DeleteUser(ctx *gin.Context) {
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": "User deleted successfully"})
+	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.UserDeleted.Message()})
 }

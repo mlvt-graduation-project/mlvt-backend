@@ -2,6 +2,7 @@ package json
 
 import (
 	"errors"
+	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/zap-logging/log"
 	"net/http"
 
@@ -27,18 +28,18 @@ func WriteJSON(ctx *gin.Context, status int, data interface{}) {
 	// Write the JSON response
 	ctx.JSON(status, respBody)
 
-	log.Info("Response written ", "status: ", status, " data: ", data)
+	log.Info(reason.ResponseWritten.Message(), reason.Status.Message()+": ", status, reason.Data.Message()+" : ", data)
 }
 
 // ReadJSON reads and binds a JSON request body to a struct.
 func ReadJSON(ctx *gin.Context, data interface{}) error {
 	// Attempt to bind JSON data to the provided struct
 	if err := ctx.ShouldBindJSON(data); err != nil {
-		log.Errorf("Failed to bind JSON: %s", err.Error())
-		return errors.New("request format error: " + err.Error())
+		log.Errorf(reason.FailedToBindJSON.Message()+": %s", err.Error())
+		return errors.New(reason.RequestFormatError.Message() + ": " + err.Error())
 	}
 
-	log.Info("JSON request body read successfully ", "data: ", data)
+	log.Info(reason.JSONRequestBodyRead.Message(), reason.Data.Message()+": ", data)
 	return nil
 }
 
@@ -50,7 +51,7 @@ func ErrorJSON(ctx *gin.Context, err error, status ...int) {
 		statusCode = status[0]
 	}
 
-	log.Error("Error occurred ", "error: ", err.Error())
+	log.Error(reason.ErrorOccurred.Message(), reason.Error.Message()+": ", err.Error())
 
 	// Create a response payload
 	payload := JSONResponse{

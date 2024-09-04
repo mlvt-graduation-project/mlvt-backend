@@ -1,0 +1,38 @@
+2024-08-30 09:24:23.568	error	/home/bao/code/go-test/cmd/server/main.go:62	Zap logger initialized successfully
+2024-08-30 09:24:23.568	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 09:24:23.569	error	/home/bao/code/go-test/cmd/server/main.go:73	Migration failed: failed to insert sample video 'Introduction to Go': table videos has no column named title
+2024-08-30 09:24:23.569	info	/home/bao/code/go-test/cmd/server/main.go:76	Migrations applied successfully!
+2024-08-30 09:24:31.288	info	/home/bao/code/go-test/cmd/server/main.go:106	Shutting down server...
+2024-08-30 09:32:30.523	error	/home/bao/code/go-test/cmd/server/main.go:62	Zap logger initialized successfully
+2024-08-30 09:32:30.524	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 09:32:30.524	error	/home/bao/code/go-test/cmd/server/main.go:73	Migration failed: failed to insert sample video 'Learning AWS S3 Basics - Part 1': table videos has no column named title
+2024-08-30 09:32:30.524	info	/home/bao/code/go-test/cmd/server/main.go:76	Migrations applied successfully!
+2024-08-30 09:33:47.540	info	/home/bao/code/go-test/cmd/server/main.go:106	Shutting down server...
+2024-08-30 09:33:49.788	error	/home/bao/code/go-test/cmd/server/main.go:62	Zap logger initialized successfully
+2024-08-30 09:33:49.788	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 09:33:50.189	info	/home/bao/code/go-test/cmd/server/main.go:76	Migrations applied successfully!
+2024-08-30 11:33:37.693	info	/home/bao/code/go-test/cmd/server/main.go:106	Shutting down server...
+2024-08-30 15:50:36.382	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 15:50:36.383	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 15:50:36.759	info	/home/bao/code/go-test/cmd/server/main.go:79	Migrations applied successfully!
+2024-08-30 15:51:50.279	info	/home/bao/code/go-test/cmd/server/main.go:109	Shutting down server...
+2024-08-30 15:52:03.337	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 15:52:03.338	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 15:52:03.718	info	/home/bao/code/go-test/cmd/server/main.go:79	Migrations applied successfully!
+2024-08-30 15:54:49.792	info	/home/bao/code/go-test/cmd/server/main.go:109	Shutting down server...
+2024-08-30 15:54:51.297	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 15:54:51.297	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 15:54:51.682	info	/home/bao/code/go-test/cmd/server/main.go:79	Migrations applied successfully!
+2024-08-30 15:55:35.584	info	/home/bao/code/go-test/cmd/server/main.go:109	Shutting down server...
+2024-08-30 15:55:37.106	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 15:55:37.106	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 15:55:37.512	info	/home/bao/code/go-test/cmd/server/main.go:79	Migrations applied successfully!
+2024-08-30 16:20:33.251	info	/home/bao/code/go-test/cmd/server/main.go:109	Shutting down server...
+2024-08-30 16:20:34.616	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 16:20:34.617	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 16:20:35.003	info	/home/bao/code/go-test/cmd/server/main.go:79	Message not found for key: success.general.migrations_applied
+2024-08-30 16:20:36.175	info	/home/bao/code/go-test/cmd/server/main.go:109	Shutting down server...
+2024-08-30 16:20:36.176	info	/home/bao/code/go-test/cmd/server/main.go:113	Server exiting
+2024-08-30 16:25:26.245	error	/home/bao/code/go-test/cmd/server/main.go:65	Zap logger initialized successfully
+2024-08-30 16:25:26.245	info	/home/bao/code/go-test/internal/infra/db/database.go:35	Database connection established successfully!
+2024-08-30 16:25:26.607	info	/home/bao/code/go-test/cmd/server/main.go:79	Migrations applied successfully!

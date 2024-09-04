@@ -1,0 +1,32 @@
+error:
+  user:
+    invalid_request: "Demande invalide"
+    internal_server_error: "Erreur serveur interne"
+    invalid_user_id: "ID utilisateur invalide"
+    not_found: "Utilisateur non trouvé"
+    unauthorized: "Non autorisé"
+  video:
+    invalid_request: "Demande invalide"
+    internal_server_error: "Erreur serveur interne"
+    invalid_video_id: "ID vidéo invalide"
+    not_found: "Vidéo non trouvée"
+  general:
+    failed_to_initialize_db: "Échec de l'initialisation de la base de données"
+    migration_failed: "La migration a échoué"
+    failed_to_initialize_aws_s3: "Échec de l'initialisation du client AWS S3"
+    server_shutdown: "Arrêt du serveur..."
+    server_start_failed: "Échec du démarrage du serveur"
+    server_forced_shutdown: "Le serveur a été forcé de s'arrêter"
+
+success:
+  user:
+    registered: "Utilisateur enregistré avec succès"
+    updated: "Utilisateur mis à jour avec succès"
+    deleted: "Utilisateur supprimé avec succès"
+  video:
+    added: "Vidéo ajoutée avec succès"
+    updated: "Vidéo mise à jour avec succès"
+    deleted: "Vidéo supprimée avec succès"
+  general:
+    migrations_applied: "Migrations appliquées avec succès !"
+    server_start: "Serveur démarré avec succès"
