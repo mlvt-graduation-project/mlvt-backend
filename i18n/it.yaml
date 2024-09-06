@@ -1,22 +1,50 @@
 error:
   user:
     invalid_request: "Richiesta non valida"
-    internal_server_error: "Errore del server interno"
+    invalid_request_format: "Formato richiesta non valido"
+    internal_server_error: "Errore interno del server"
     invalid_user_id: "ID utente non valido"
     not_found: "Utente non trovato"
     unauthorized: "Non autorizzato"
+    email_already_registered: "Email già registrata"
+    invalid_credentials: "Credenziali non valide"
+    failed_to_generate_token: "Impossibile generare il token"
+    unexpected_signing_method: "Metodo di firma inaspettato"
+    invalid_token: "Token non valido"
+    invalid_token_claims: "Dichiarazioni del token non valide"
+    invalid_userid_type_in_token: "Tipo di ID utente non valido nel token"
   video:
     invalid_request: "Richiesta non valida"
-    internal_server_error: "Errore del server interno"
+    internal_server_error: "Errore interno del server"
     invalid_video_id: "ID video non valido"
     not_found: "Video non trovato"
-  general:
-    failed_to_initialize_db: "Impossibile inizializzare il database"
+    failed_to_add_video: "Impossibile aggiungere il video"
+    video_link_cannot_be_empty: "Il link del video non può essere vuoto"
+    video_duration_must_be_positive: "La durata del video deve essere positiva"
+    video_title_cannot_be_empty: "Il titolo del video non può essere vuoto"
+    no_video_for_user: "Nessun video trovato per l'utente"
+  data:
+    insert_sample: "Impossibile inserire il video di esempio"
     migration_failed: "Migrazione fallita"
     failed_to_initialize_aws_s3: "Impossibile inizializzare il client AWS S3"
-    server_shutdown: "Spegnimento del server..."
+    failed_to_initialize_db: "Impossibile inizializzare il database"
+    failed_to_create_presigned_url: "Impossibile creare l'URL presigned"
+    failed_to_generate_presigned_url: "Impossibile generare l'URL presigned"
+    failed_to_presign_put_object_request: "Impossibile firmare in anticipo la richiesta di caricamento"
+    request_format_error: "Errore nel formato della richiesta"
+    error_reading_yaml: "Errore nella lettura del file YAML"
+    error_unmarshaling_yaml: "Errore nel deserializzare i dati YAML"
+  env:
+    unable_to_load_aws_config: "Impossibile caricare la configurazione AWS"
+    error_loading_env: "Errore nel caricare il file .env"
+    i18n_path_not_set: "La variabile d'ambiente I18N_PATH non è impostata"
+  general:
     server_start_failed: "Impossibile avviare il server"
-    server_forced_shutdown: "Server forzato allo spegnimento"
+    error_occurred: "Si è verificato un errore"
+    failed_to_bind_json: "Impossibile associare JSON"
+    key_not_found_or_type_mismatch: "Chiave non trovata o tipo non corrispondente"
+    key_not_found: "Chiave non trovata"
+    message_not_found: "Messaggio non trovato"
 
 success:
   user:
@@ -30,3 +58,22 @@ success:
   general:
     migrations_applied: "Migrazioni applicate con successo!"
     server_start: "Server avviato con successo"
+    json_request_body_read: "Corpo della richiesta JSON letto con successo"
+    database_connection_established: "Connessione al database stabilita con successo!"
+    insert_sample: "Dati di esempio inseriti con successo"
+
+common:
+  info:
+    error: "errore"
+    status: "stato"
+    data: "dati"
+    type: "tipo"
+    migration: "migrazione"
+    already_applied: "già applicata!"
+    applying_migration: "Applicazione migrazione"
+    response_written: "Risposta scritta"
+    loaded_messages_for_language: "Messaggi caricati per la lingua"
+    server_shutdown: "Spegnimento del server..."
+    server_forced_shutdown: "Spegnimento forzato del server"
+    generated_presigned_url: "URL presigned generata"
+    generated_presigned_url_for_file: "Generazione di URL presigned per il file"

@@ -1,22 +1,50 @@
 error:
   user:
     invalid_request: "Ungültige Anfrage"
+    invalid_request_format: "Ungültiges Anforderungsformat"
     internal_server_error: "Interner Serverfehler"
     invalid_user_id: "Ungültige Benutzer-ID"
     not_found: "Benutzer nicht gefunden"
-    unauthorized: "Unbefugt"
+    unauthorized: "Nicht autorisiert"
+    email_already_registered: "E-Mail bereits registriert"
+    invalid_credentials: "Ungültige Anmeldedaten"
+    failed_to_generate_token: "Token konnte nicht generiert werden"
+    unexpected_signing_method: "Unerwartete Signaturmethode"
+    invalid_token: "Ungültiges Token"
+    invalid_token_claims: "Ungültige Token-Ansprüche"
+    invalid_userid_type_in_token: "Ungültiger Benutzer-ID-Typ im Token"
   video:
     invalid_request: "Ungültige Anfrage"
     internal_server_error: "Interner Serverfehler"
     invalid_video_id: "Ungültige Video-ID"
     not_found: "Video nicht gefunden"
-  general:
-    failed_to_initialize_db: "Datenbankinitialisierung fehlgeschlagen"
+    failed_to_add_video: "Video konnte nicht hinzugefügt werden"
+    video_link_cannot_be_empty: "Videolink darf nicht leer sein"
+    video_duration_must_be_positive: "Videodauer muss positiv sein"
+    video_title_cannot_be_empty: "Videotitel darf nicht leer sein"
+    no_video_for_user: "Keine Videos für Benutzer gefunden"
+  data:
+    insert_sample: "Einfügen des Muster-Videos fehlgeschlagen"
     migration_failed: "Migration fehlgeschlagen"
-    failed_to_initialize_aws_s3: "Fehler bei der Initialisierung des AWS S3-Clients"
-    server_shutdown: "Server wird heruntergefahren..."
-    server_start_failed: "Fehler beim Starten des Servers"
-    server_forced_shutdown: "Server wurde zum Herunterfahren gezwungen"
+    failed_to_initialize_aws_s3: "AWS S3-Client konnte nicht initialisiert werden"
+    failed_to_initialize_db: "Datenbank konnte nicht initialisiert werden"
+    failed_to_create_presigned_url: "Erstellung der vorgesignierten URL fehlgeschlagen"
+    failed_to_generate_presigned_url: "Vorgesignierte URL konnte nicht generiert werden"
+    failed_to_presign_put_object_request: "Vorgesigniertes Put-Objekt konnte nicht angefordert werden"
+    request_format_error: "Anforderungsformatfehler"
+    error_reading_yaml: "Fehler beim Lesen der YAML-Datei"
+    error_unmarshaling_yaml: "Fehler beim Entpacken der YAML-Daten"
+  env:
+    unable_to_load_aws_config: "AWS-Konfiguration konnte nicht geladen werden"
+    error_loading_env: "Fehler beim Laden der .env-Datei"
+    i18n_path_not_set: "Umgebungsvariable I18N_PATH ist nicht gesetzt"
+  general:
+    server_start_failed: "Server konnte nicht gestartet werden"
+    error_occurred: "Es ist ein Fehler aufgetreten"
+    failed_to_bind_json: "JSON konnte nicht gebunden werden"
+    key_not_found_or_type_mismatch: "Schlüssel nicht gefunden oder Typ stimmt nicht überein"
+    key_not_found: "Schlüssel nicht gefunden"
+    message_not_found: "Nachricht nicht gefunden"
 
 success:
   user:
@@ -30,3 +58,22 @@ success:
   general:
     migrations_applied: "Migrationen erfolgreich angewendet!"
     server_start: "Server erfolgreich gestartet"
+    json_request_body_read: "JSON-Anfragekörper erfolgreich gelesen"
+    database_connection_established: "Datenbankverbindung erfolgreich hergestellt!"
+    insert_sample: "Musterdaten erfolgreich eingefügt"
+
+common:
+  info:
+    error: "Fehler"
+    status: "Status"
+    data: "Daten"
+    type: "Typ"
+    migration: "Migration"
+    already_applied: "bereits angewendet!"
+    applying_migration: "Wende Migration an"
+    response_written: "Antwort geschrieben"
+    loaded_messages_for_language: "Nachrichten für Sprache geladen"
+    server_shutdown: "Server wird heruntergefahren..."
+    server_forced_shutdown: "Server wurde zum Herunterfahren gezwungen"
+    generated_presigned_url: "Vorgesignierte URL generiert"
+    generated_presigned_url_for_file: "Vorgesignierte URL für Datei wird generiert"

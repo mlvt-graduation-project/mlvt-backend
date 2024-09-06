@@ -1,0 +1,16 @@
+*.exe
+*.orig
+*.rej
+*.so
+*~
+.DS_Store
+._*
+/.idea
+/.vscode/*.log
+/cmd/server/*.sh
+/logs
+/configs/*
+/go.work*
+/vendor
+Thumbs*.db
+tmp

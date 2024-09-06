@@ -119,7 +119,7 @@ This project supports multiple languages for error messages, success notificatio
 
 ### Changing the Language
 
-You can change the language of the application by setting the `LANGUAGE` variable in the `.env` file. Replace `x` with the appropriate language code from the supported languages list.
+You can change the language of the application by setting the `LANGUAGE` variable in the [Environment Configuration](#environment-configuration) file. Replace with the appropriate language code from the supported languages list.
 
 Example `.env` file entry:
 
@@ -130,6 +130,10 @@ LANGUAGE="fr"  # For French
 LANGUAGE="es"  # For Spanish
 LANGUAGE="it"  # For Italian
 LANGUAGE="zh"  # For Chinese (Simplified)
+LANGUAGE="ja"  # For Japanese
+LANGUAGE="ko"  # For Korean
+LANGUAGE="pt"  # For Portuguese
+LANGUAGE="ru"  # For Russian
 ```
 
 
