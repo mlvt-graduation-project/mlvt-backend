@@ -3,7 +3,6 @@ package aws
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/zap-logging/log"
 	"os"
@@ -23,11 +22,6 @@ func NewS3Client() (*S3Client, error) {
 	// Load the default AWS configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(os.Getenv("AWS_REGION")),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-			"AKIAW3MEC65J2MI7KIVU",
-			" M1mQKQxysbNKd+Yfugz5s6w4ewWrYAZfeCEed2Nw",
-			"",
-		)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf(reason.UnableToLoadAWSConfig.Message()+": %v", err)
