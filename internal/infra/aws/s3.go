@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/zap-logging/log"
 	"os"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -21,7 +23,12 @@ type S3Client struct {
 func NewS3Client() (*S3Client, error) {
 	// Load the default AWS configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(os.Getenv("AWS_REGION")),
+		config.WithRegion(env.EnvConfig.AWSRegion),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
+			env.EnvConfig.AWSAccessKeyID,
+			" "+env.EnvConfig.AWSSecretKey,
+			"",
+		)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf(reason.UnableToLoadAWSConfig.Message()+": %v", err)
