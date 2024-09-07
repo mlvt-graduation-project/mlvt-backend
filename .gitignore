@@ -13,4 +13,4 @@
 /go.work*
 /vendor
 Thumbs*.db
-tmp
+tmp.env
