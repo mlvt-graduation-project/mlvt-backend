@@ -1,8 +1,12 @@
 package service
 
-import "github.com/google/wire"
+import (
+	"mlvt/internal/infra/env"
 
-const SecretKey = "veryvery"
+	"github.com/google/wire"
+)
+
+var SecretKey = env.EnvConfig.JWTSecret
 
 // ProviderSetService is providers.
 var ProviderSetService = wire.NewSet(

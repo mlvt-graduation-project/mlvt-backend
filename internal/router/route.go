@@ -12,14 +12,16 @@ type AppRouter struct {
 	userController  *handler.UserController
 	videoController *handler.VideoController
 	authMiddleware  *middleware.AuthUserMiddleware
+	swaggerRouter   *SwaggerRouter
 }
 
 // NewAppRouter creates a new AppRouter instance
-func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, authMiddleware *middleware.AuthUserMiddleware) *AppRouter {
+func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, authMiddleware *middleware.AuthUserMiddleware, swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:  userController,
 		videoController: videoController,
 		authMiddleware:  authMiddleware,
+		swaggerRouter:   swaggerRouter,
 	}
 }
 
@@ -51,5 +53,13 @@ func (a *AppRouter) RegisterVideoRoutes(r *gin.RouterGroup) {
 		protected.DELETE("/:id", a.videoController.DeleteVideo)
 		protected.GET("/user/:userID", a.videoController.GetVideosByUser)
 		protected.POST("/generate-presigned-url", a.videoController.GeneratePresignedURLHandler)
+	}
+}
+
+// RegisterSwaggerRoutes sets up the route for Swagger API documentation
+func (a *AppRouter) RegisterSwaggerRoutes(r *gin.RouterGroup) {
+	// Check if SwaggerRouter is initialized before registering
+	if a.swaggerRouter != nil {
+		a.swaggerRouter.Register(r)
 	}
 }

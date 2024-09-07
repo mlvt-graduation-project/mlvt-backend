@@ -3,12 +3,11 @@ package localization
 import (
 	"fmt"
 	"io/ioutil"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
-	"os"
 	"strings"
 	"sync"
 
-	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
 )
 
@@ -24,21 +23,19 @@ type LocalizedString string
 
 // init loads the default language file (e.g., English) at startup
 func init() {
-	// Load environment variables from .env file
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		log.Errorf("Error loading .env file: %v", err)
-	}
-
 	// Get the language and path from environment variables
-	lang := os.Getenv("LANGUAGE")
+	lang := env.EnvConfig.Language
 	if lang == "" {
 		lang = defaultLanguage // Use default language if not set
 	}
 
-	i18nPath := os.Getenv("I18N_PATH")
+	i18nPath := env.EnvConfig.I18NPath
 	if i18nPath == "" {
 		log.Error("I18N_PATH environment variable is not set")
+	}
+
+	if i18nPath != "" && i18nPath[len(i18nPath)-1] != '/' {
+		i18nPath += "/"
 	}
 
 	// Load the YAML file for the specified language
@@ -70,7 +67,7 @@ func loadYAML(lang string, path string) {
 
 // SetLanguage switches the localization to the specified language
 func SetLanguage(lang string) {
-	i18nPath := os.Getenv("I18N_PATH")
+	i18nPath := env.EnvConfig.I18NPath
 	if i18nPath == "" {
 		log.Error("I18N_PATH environment variable is not set")
 	}
