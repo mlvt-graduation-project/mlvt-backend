@@ -6,6 +6,7 @@ import (
 	"mlvt/cmd/migration"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/server/http"
 	"mlvt/internal/infra/zap-logging/log"
@@ -16,7 +17,6 @@ import (
 	"syscall"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 var (
@@ -39,15 +39,13 @@ func init() {
 func main() {
 	flag.Parse()
 
-	// Load the .env file from the root directory
-	err := godotenv.Load("../../.env")
-	if err != nil {
-		fmt.Printf("Error loading .env file: %v", err)
+	if env.EnvConfig == nil {
+		fmt.Errorf("EnvConfig not loaded")
 	}
 
 	// Read environment variables
-	logLevel = os.Getenv("LOG_LEVEL")
-	logPath = os.Getenv("LOG_PATH")
+	logLevel = env.EnvConfig.LogLevel
+	logPath = env.EnvConfig.LogPath
 
 	// Ensure the log directory exists
 	logDir := filepath.Dir(logPath)
@@ -72,8 +70,6 @@ func main() {
 		log.Errorf("Migration failed: %v", err)
 	}
 
-	fmt.Println(reason.InvalidUserID.Message())
-
 	log.Info(reason.MigrationsApplied.Message())
 
 	// Initialize AWS S3 client
@@ -94,9 +90,10 @@ func main() {
 	api := r.Group("/api")
 	appRouter.RegisterUserRoutes(api)
 	appRouter.RegisterVideoRoutes(api)
+	appRouter.RegisterSwaggerRoutes(r.Group("/"))
 
 	// Create the http server
-	addr := ":8080" // Or read from an environment variable
+	addr := ":" + env.EnvConfig.ServerPort
 	server := http.NewServer(r, addr)
 
 	// Handle graceful shutdown
