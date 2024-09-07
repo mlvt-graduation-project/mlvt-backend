@@ -2,6 +2,7 @@
 CMD_DIR := cmd/server
 OUTPUT_DIR := internal/wire_gen
 APP_NAME := mlvt
+SCRIPT_DIR :=script/
 
 # Default target
 all: build
@@ -27,7 +28,11 @@ wire-build: wire build
 
 # Swagger
 swag:
-	cd $(CMD_DIR) && swag init -g main.go
+	swag init -g $(CMD_DIR)/main.go -o ./docs
+
+# Run all steps from the script
+run-all:
+	bash $(SCRIPT_DIR)/run_all.sh
 
 # Help
 help:

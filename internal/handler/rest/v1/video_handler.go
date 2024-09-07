@@ -27,16 +27,16 @@ func NewVideoController(videoService *service.VideoService) *VideoController {
 }
 
 // AddVideo handles adding a new video
-// @Summary Add a new video
-// @Description Add a new video for a specific user
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param video body schema.AddVideoRequest true "Video details"
-// @Success 201 {object} map[string]string "Video added successfully"
-// @Failure 400 {object} map[string]string "Invalid request"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /videos [post]
+//	@Summary		Add a new video
+//	@Description	Add a new video for a specific user
+//	@Tags			videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			video	body		schema.AddVideoRequest	true	"Video details"
+//	@Success		201		{object}	map[string]string		"Video added successfully"
+//	@Failure		400		{object}	map[string]string		"Invalid request"
+//	@Failure		500		{object}	map[string]string		"Internal server error"
+//	@Router			/videos [post]
 func (vc *VideoController) AddVideo(ctx *gin.Context) {
 	var req schema.AddVideoRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -54,16 +54,16 @@ func (vc *VideoController) AddVideo(ctx *gin.Context) {
 }
 
 // GetVideo fetches video details by ID
-// @Summary Get video by ID
-// @Description Get details of a video by its ID
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param id path int true "Video ID"
-// @Success 200 {object} schema.Video "Video details"
-// @Failure 400 {object} map[string]string "Invalid video ID"
-// @Failure 404 {object} map[string]string "Video not found"
-// @Router /videos/{id} [get]
+//	@Summary		Get video by ID
+//	@Description	Get details of a video by its ID
+//	@Tags			videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int					true	"Video ID"
+//	@Success		200	{object}	schema.Video		"Video details"
+//	@Failure		400	{object}	map[string]string	"Invalid video ID"
+//	@Failure		404	{object}	map[string]string	"Video not found"
+//	@Router			/videos/{id} [get]
 func (vc *VideoController) GetVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -84,17 +84,17 @@ func (vc *VideoController) GetVideo(ctx *gin.Context) {
 }
 
 // UpdateVideo handles updating video details
-// @Summary Update video details
-// @Description Update the details of an existing video
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param id path int true "Video ID"
-// @Param video body schema.AddVideoRequest true "Updated video details"
-// @Success 200 {object} map[string]string "Video updated successfully"
-// @Failure 400 {object} map[string]string "Invalid video ID or request"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /videos/{id} [put]
+//	@Summary		Update video details
+//	@Description	Update the details of an existing video
+//	@Tags			videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int						true	"Video ID"
+//	@Param			video	body		schema.AddVideoRequest	true	"Updated video details"
+//	@Success		200		{object}	map[string]string		"Video updated successfully"
+//	@Failure		400		{object}	map[string]string		"Invalid video ID or request"
+//	@Failure		500		{object}	map[string]string		"Internal server error"
+//	@Router			/videos/{id} [put]
 func (vc *VideoController) UpdateVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -119,16 +119,16 @@ func (vc *VideoController) UpdateVideo(ctx *gin.Context) {
 }
 
 // DeleteVideo handles deleting a video by ID
-// @Summary Delete video
-// @Description Delete a video by its ID
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param id path int true "Video ID"
-// @Success 200 {object} map[string]string "Video deleted successfully"
-// @Failure 400 {object} map[string]string "Invalid video ID"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /videos/{id} [delete]
+//	@Summary		Delete video
+//	@Description	Delete a video by its ID
+//	@Tags			videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		int					true	"Video ID"
+//	@Success		200	{object}	map[string]string	"Video deleted successfully"
+//	@Failure		400	{object}	map[string]string	"Invalid video ID"
+//	@Failure		500	{object}	map[string]string	"Internal server error"
+//	@Router			/videos/{id} [delete]
 func (vc *VideoController) DeleteVideo(ctx *gin.Context) {
 	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
@@ -146,16 +146,16 @@ func (vc *VideoController) DeleteVideo(ctx *gin.Context) {
 }
 
 // GetVideosByUser handles fetching all videos for a specific user
-// @Summary Get videos by user ID
-// @Description Get all videos uploaded by a specific user
-// @Tags videos
-// @Accept json
-// @Produce json
-// @Param userID path int true "User ID"
-// @Success 200 {object} schema.GetVideosResponse "List of videos"
-// @Failure 400 {object} map[string]string "Invalid user ID"
-// @Failure 500 {object} map[string]string "Internal server error"
-// @Router /videos/user/{userID} [get]
+//	@Summary		Get videos by user ID
+//	@Description	Get all videos uploaded by a specific user
+//	@Tags			videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		int							true	"User ID"
+//	@Success		200		{object}	schema.GetVideosResponse	"List of videos"
+//	@Failure		400		{object}	map[string]string			"Invalid user ID"
+//	@Failure		500		{object}	map[string]string			"Internal server error"
+//	@Router			/videos/user/{userID} [get]
 func (vc *VideoController) GetVideosByUser(ctx *gin.Context) {
 	userID, err := strconv.ParseUint(ctx.Param("userID"), 10, 64)
 	if err != nil {
@@ -179,16 +179,16 @@ func (vc *VideoController) GetVideosByUser(ctx *gin.Context) {
 }
 
 // GeneratePresignedURL handles the request to generate a pre-signed URL for video uploads
-// @Summary Generate a pre-signed URL for video uploads
-// @Description Generates a pre-signed URL for uploading a video to AWS S3 and registers the video with initial data
-// @Tags Videos
-// @Accept json
-// @Produce json
-// @Param request body schema.GeneratePresignedURLRequest true "Video upload details"
-// @Success 200 {object} schema.GeneratePresignedURLResponse
-// @Failure 400 {object} schema.ErrorResponse "Invalid request format"
-// @Failure 500 {object} schema.ErrorResponse "Failed to generate presigned URL or Failed to add video"
-// @Router /videos/generate-presigned-url [post]
+//	@Summary		Generate a pre-signed URL for video uploads
+//	@Description	Generates a pre-signed URL for uploading a video to AWS S3 and registers the video with initial data
+//	@Tags			Videos
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		schema.GeneratePresignedURLRequest	true	"Video upload details"
+//	@Success		200		{object}	schema.GeneratePresignedURLResponse
+//	@Failure		400		{object}	schema.ErrorResponse	"Invalid request format"
+//	@Failure		500		{object}	schema.ErrorResponse	"Failed to generate presigned URL or Failed to add video"
+//	@Router			/videos/generate-presigned-url [post]
 func (vc *VideoController) GeneratePresignedURLHandler(ctx *gin.Context) {
 	// Bind the JSON payload to the request struct and validate it
 	var req schema.GeneratePresignedURLRequest
