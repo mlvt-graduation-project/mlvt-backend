@@ -6,7 +6,6 @@ import (
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/zap-logging/log"
-	"os"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,7 +25,7 @@ func NewS3Client() (*S3Client, error) {
 		config.WithRegion(env.EnvConfig.AWSRegion),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
 			env.EnvConfig.AWSAccessKeyID,
-			" "+env.EnvConfig.AWSSecretKey,
+			env.EnvConfig.AWSSecretKey,
 			"",
 		)),
 	)
@@ -36,13 +35,19 @@ func NewS3Client() (*S3Client, error) {
 
 	// Create an S3 client
 	client := s3.NewFromConfig(cfg)
-	bucket := os.Getenv("AWS_S3_BUCKET")
+	bucket := env.EnvConfig.AWSBucket
+	log.Info("Using bucket: ", bucket)
 
 	return &S3Client{Client: client, Bucket: bucket}, nil
 }
 
 // GeneratePresignedURL generates a presigned URL for uploading a file to S3
 func (s *S3Client) GeneratePresignedURL(fileName string, fileType string) (string, error) {
+	log.Info("File name: ", fileName)
+	if fileName == "" {
+		return "", fmt.Errorf("file name must not be empty")
+	}
+
 	presignClient := s3.NewPresignClient(s.Client)
 
 	reqParams := &s3.PutObjectInput{

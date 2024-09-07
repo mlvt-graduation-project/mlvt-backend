@@ -4,6 +4,7 @@ import (
 	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/reason"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/json"
 	"mlvt/internal/schema"
 	"mlvt/internal/service"
@@ -204,8 +205,9 @@ func (vc *VideoController) GeneratePresignedURLHandler(ctx *gin.Context) {
 	}
 
 	// Use the AddVideo method to register the video with initial data
-	err = vc.videoService.AddVideo(req.UserID, req.FileName, url, req.Duration)
+	err = vc.videoService.AddVideo(req.UserID, req.Title, url, req.Duration)
 	if err != nil {
+		log.Errorf(reason.FailedToAddVideo.Message(), err)
 		json.WriteJSON(ctx, http.StatusInternalServerError, schema.ErrorResponse{Error: reason.FailedToAddVideo.Message()})
 		return
 	}
