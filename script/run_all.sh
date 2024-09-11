@@ -16,6 +16,8 @@ log_info() {
 
 # Step 1: Install dependencies
 log_info "Step 1: Installing Go module dependencies..."
+go install github.com/google/wire/cmd/wire@latest
+go install github.com/swaggo/swag/cmd/swag@latest
 go mod tidy
 go mod vendor
 

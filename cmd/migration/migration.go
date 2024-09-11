@@ -129,12 +129,12 @@ func applyMigration(db *sql.DB, migration Migration) error {
 
 	if count > 0 {
 		// Migration already applied
-		log.Infof(reason.Migration.Message() + migration.Name + reason.AlreadyApplied.Message())
+		log.Infof(reason.Migration.Message(), " ", migration.Name, " ", reason.AlreadyApplied.Message())
 		return nil
 	}
 
 	// Apply the migration
-	log.Infof(reason.ApplyingMigration.Message() + migration.Name)
+	log.Infof(reason.ApplyingMigration.Message(), " ", migration.Name)
 	_, err = db.Exec(migration.SQL)
 	if err != nil {
 		return err

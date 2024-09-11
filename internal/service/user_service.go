@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/reason"
 	"mlvt/internal/repo"
 
 	"golang.org/x/crypto/bcrypt"
@@ -32,7 +33,7 @@ func (s *UserService) RegisterUser(firstName, lastName, email, password string) 
 	// Check if the email is already registered
 	existingUser, _ := s.userRepo.GetUserByEmail(email)
 	if existingUser != nil {
-		return errors.New("email already registered")
+		return errors.New(reason.EmailAlreadyRegistered.Message())
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
