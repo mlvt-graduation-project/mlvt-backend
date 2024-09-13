@@ -15,7 +15,9 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -87,6 +89,14 @@ func main() {
 
 	// Create a new Gin router
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"}, // Đặt nguồn bạn muốn cho phép
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true, // Cho phép gửi thông tin xác thực như cookie
+		MaxAge:           12 * time.Hour,
+	}))
 	api := r.Group("/api")
 	appRouter.RegisterUserRoutes(api)
 	appRouter.RegisterVideoRoutes(api)
