@@ -8,6 +8,7 @@ type Video struct {
 	Duration    int       `json:"duration"` // Duration of the video in seconds
 	Description string    `json:"description"`
 	FileName    string    `json:"file_name"` //
+	Folder      string    `json:"folder"`
 	Image       string    `json:"image"`
 	Link        string    `json:"link"`       // URL to the video on AWS S3
 	UserID      uint64    `json:"user_id"`    // ID of the user who uploaded the video

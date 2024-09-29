@@ -7,21 +7,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AppRouter holds all controllers for routing
 type AppRouter struct {
-	userController  *handler.UserController
-	videoController *handler.VideoController
-	authMiddleware  *middleware.AuthUserMiddleware
-	swaggerRouter   *SwaggerRouter
+	userController          *handler.UserController
+	videoController         *handler.VideoController
+	transcriptionController *handler.TranscriptionController
+	authMiddleware          *middleware.AuthUserMiddleware
+	swaggerRouter           *SwaggerRouter
 }
 
-// NewAppRouter creates a new AppRouter instance
-func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, authMiddleware *middleware.AuthUserMiddleware, swaggerRouter *SwaggerRouter) *AppRouter {
+func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, transcriptionController *handler.TranscriptionController, authMiddleware *middleware.AuthUserMiddleware, swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
-		userController:  userController,
-		videoController: videoController,
-		authMiddleware:  authMiddleware,
-		swaggerRouter:   swaggerRouter,
+		userController:          userController,
+		videoController:         videoController,
+		transcriptionController: transcriptionController,
+		authMiddleware:          authMiddleware,
+		swaggerRouter:           swaggerRouter,
 	}
 }
 
@@ -53,6 +53,21 @@ func (a *AppRouter) RegisterVideoRoutes(r *gin.RouterGroup) {
 		protected.DELETE("/:id", a.videoController.DeleteVideo)
 		protected.GET("/user/:userID", a.videoController.GetVideosByUser)
 		protected.POST("/generate-presigned-url", a.videoController.GeneratePresignedURLHandler)
+	}
+}
+
+// RegisterTranscriptionRoutes sets up the routes for transcriptions-related operations
+func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
+	protected := r.Group("/transcriptions")
+	protected.Use(a.authMiddleware.MustAuth())
+	{
+		protected.POST("/", a.transcriptionController.CreateTranscription)
+		protected.POST("/generate-presigned-url/:videoID", a.transcriptionController.GeneratePresignedURL)
+		protected.GET("/:userID/:transcriptionID", a.transcriptionController.GetTranscription)
+		protected.GET("/by-user/:userID", a.transcriptionController.ListTranscriptionsByUser)
+		protected.GET("/by-video/:videoID/:transcriptionID", a.transcriptionController.GetTranscriptionByVideo)
+		protected.GET("/by-video/:videoID", a.transcriptionController.ListTranscriptionsByVideo)
+		protected.DELETE("/:transcriptionID", a.transcriptionController.DeleteTranscription)
 	}
 }
 
