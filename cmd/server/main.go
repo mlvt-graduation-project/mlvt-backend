@@ -100,6 +100,7 @@ func main() {
 	api := r.Group("/api")
 	appRouter.RegisterUserRoutes(api)
 	appRouter.RegisterVideoRoutes(api)
+	appRouter.RegisterTranscriptionRoutes(api)
 	appRouter.RegisterSwaggerRoutes(r.Group("/"))
 
 	// Create the http server

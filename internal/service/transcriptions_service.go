@@ -19,11 +19,11 @@ type TranscriptionService interface {
 
 type transcriptionService struct {
 	repo      repo.TranscriptionRepository
-	s3Client  aws.S3Client
+	s3Client  *aws.S3Client
 	videoRepo repo.VideoRepository
 }
 
-func NewTranscriptionService(repo repo.TranscriptionRepository, s3 aws.S3Client, videoRepo repo.VideoRepository) *transcriptionService {
+func NewTranscriptionService(repo repo.TranscriptionRepository, s3 *aws.S3Client, videoRepo repo.VideoRepository) TranscriptionService {
 	return &transcriptionService{
 		repo:      repo,
 		s3Client:  s3,

@@ -13,5 +13,6 @@ var ProviderSetService = wire.NewSet(
 	NewAuthService,
 	NewUserService,
 	NewVideoService,
+	NewTranscriptionService,
 	wire.Value(SecretKey),
 )

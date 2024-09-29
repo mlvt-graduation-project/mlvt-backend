@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
@@ -16,15 +15,15 @@ type TranscriptionRepository interface {
 	DeleteTranscription(transcriptionID uint64) error
 }
 
-type transcriptionRepository struct {
+type transcriptionRepo struct {
 	DB *sql.DB
 }
 
-func NewTranscriptionRepository(db *sql.DB) *transcriptionRepository {
-	return &transcriptionRepository{DB: db}
+func NewTranscriptionRepository(db *sql.DB) *transcriptionRepo {
+	return &transcriptionRepo{DB: db}
 }
 
-func (r *transcriptionRepository) CreateTranscription(tx entity.Transcription) (entity.Transcription, error) {
+func (r *transcriptionRepo) CreateTranscription(tx entity.Transcription) (entity.Transcription, error) {
 	query := `INSERT INTO transcriptions (video_id, user_id, text, lang, folder, file_name, created_at, updated_at)
 			  VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW()) RETURNING id`
 	err := r.DB.QueryRow(query, tx.VideoID, tx.UserID, tx.Text, tx.Lang, tx.Folder, tx.FileName).Scan(&tx.ID)
@@ -34,7 +33,7 @@ func (r *transcriptionRepository) CreateTranscription(tx entity.Transcription) (
 	return tx, nil
 }
 
-func (r *transcriptionRepository) GetTranscriptionByID(ctx context.Context, userID, transcriptionID uint64) (entity.Transcription, error) {
+func (r *transcriptionRepo) GetTranscriptionByID(userID, transcriptionID uint64) (entity.Transcription, error) {
 	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
 			  FROM transcriptions WHERE id = ? AND user_id = ?`
 	var tx entity.Transcription
@@ -45,7 +44,7 @@ func (r *transcriptionRepository) GetTranscriptionByID(ctx context.Context, user
 	return tx, nil
 }
 
-func (r *transcriptionRepository) GetTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
+func (r *transcriptionRepo) GetTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
 	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
 			  FROM transcriptions WHERE user_id = ?`
 	rows, err := r.DB.Query(query, userID)
@@ -68,7 +67,7 @@ func (r *transcriptionRepository) GetTranscriptionsByUserID(userID uint64) ([]en
 	return transcriptions, nil
 }
 
-func (r *transcriptionRepository) GetTranscriptionByVideoID(videoID, transcriptionID uint64) (entity.Transcription, error) {
+func (r *transcriptionRepo) GetTranscriptionByVideoID(videoID, transcriptionID uint64) (entity.Transcription, error) {
 	query := `SELECT * FROM transcriptions WHERE video_id = ? AND id = ?`
 	var tx entity.Transcription
 	err := r.DB.QueryRow(query, videoID, transcriptionID).Scan(&tx.ID, &tx.VideoID, &tx.UserID, &tx.Text, &tx.Lang, &tx.Folder, &tx.FileName, &tx.CreatedAt, &tx.UpdatedAt)
@@ -78,7 +77,7 @@ func (r *transcriptionRepository) GetTranscriptionByVideoID(videoID, transcripti
 	return tx, nil
 }
 
-func (r *transcriptionRepository) GetTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {
+func (r *transcriptionRepo) GetTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {
 	query := `SELECT * FROM transcriptions WHERE video_id = ?`
 	rows, err := r.DB.Query(query, videoID)
 	if err != nil {
@@ -100,7 +99,7 @@ func (r *transcriptionRepository) GetTranscriptionsByVideoID(videoID uint64) ([]
 	return transcriptions, nil
 }
 
-func (r *transcriptionRepository) DeleteTranscription(transcriptionID uint64) error {
+func (r *transcriptionRepo) DeleteTranscription(transcriptionID uint64) error {
 	query := `DELETE FROM transcriptions WHERE id = ?`
 	_, err := r.DB.Exec(query, transcriptionID)
 	if err != nil {

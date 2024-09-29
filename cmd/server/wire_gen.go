@@ -27,9 +27,12 @@ func InitializeApp(db *sql.DB, s3Client *aws.S3Client) (*router.AppRouter, error
 	videoRepo := repo.NewVideoRepo(db)
 	videoService := service.NewVideoService(s3Client, videoRepo)
 	videoController := handler.NewVideoController(videoService)
+	transcriptionRepo := repo.NewTranscriptionRepository(db)
+	transcriptionService := service.NewTranscriptionService(transcriptionRepo, s3Client, videoRepo)
+	transcriptionController := handler.NewTranscriptionController(transcriptionService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, authUserMiddleware, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, transcriptionController, authUserMiddleware, swaggerRouter)
 	return appRouter, nil
 }
 
