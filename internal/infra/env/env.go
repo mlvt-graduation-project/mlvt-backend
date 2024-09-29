@@ -19,24 +19,29 @@ const defaultEnvFilePath = ".env"
 
 // Config holds all the environment variables used in the application.
 type Config struct {
-	AppName        string
-	AppEnv         string
-	AppDebug       bool
-	ServerPort     string
-	LogLevel       string
-	LogPath        string
-	DBDriver       string
-	DBConnection   string
-	JWTSecret      string
-	SwaggerEnabled bool
-	SwaggerURL     string
-	AWSRegion      string
-	AWSBucket      string
-	AWSAccessKeyID string
-	AWSSecretKey   string
-	Language       string
-	I18NPath       string
-	RootDir        string
+	AppName              string
+	AppEnv               string
+	AppDebug             bool
+	ServerPort           string
+	LogLevel             string
+	LogPath              string
+	DBDriver             string
+	DBConnection         string
+	JWTSecret            string
+	SwaggerEnabled       bool
+	SwaggerURL           string
+	AWSRegion            string
+	AWSBucket            string
+	AWSAccessKeyID       string
+	AWSSecretKey         string
+	AudioFolder          string
+	AvatarFolder         string
+	VideosFolder         string
+	TranscriptionsFolder string
+	VideoFramesFolder    string
+	Language             string
+	I18NPath             string
+	RootDir              string
 }
 
 // init loads the environment variables at startup
@@ -87,24 +92,29 @@ func initializeConfig() error {
 	dbPath := resolvePath(rootDir, viper.GetString("DB_CONNECTION"))
 
 	EnvConfig = &Config{
-		AppName:        viper.GetString("APP_NAME"),
-		AppEnv:         viper.GetString("APP_ENV"),
-		AppDebug:       viper.GetBool("APP_DEBUG"),
-		ServerPort:     viper.GetString("SERVER_PORT"),
-		LogLevel:       viper.GetString("LOG_LEVEL"),
-		LogPath:        logPath,
-		DBDriver:       viper.GetString("DB_DRIVER"),
-		DBConnection:   dbPath,
-		JWTSecret:      viper.GetString("JWT_SECRET"),
-		SwaggerEnabled: viper.GetBool("SWAGGER_ENABLED"),
-		SwaggerURL:     viper.GetString("SWAGGER_URL"),
-		AWSRegion:      viper.GetString("AWS_REGION"),
-		AWSBucket:      viper.GetString("AWS_BUCKET"),
-		AWSAccessKeyID: viper.GetString("AWS_ACCESS_KEY_ID"),
-		AWSSecretKey:   viper.GetString("AWS_SECRET_KEY"),
-		Language:       viper.GetString("LANGUAGE"),
-		I18NPath:       i18nPath,
-		RootDir:        rootDir,
+		AppName:              viper.GetString("APP_NAME"),
+		AppEnv:               viper.GetString("APP_ENV"),
+		AppDebug:             viper.GetBool("APP_DEBUG"),
+		ServerPort:           viper.GetString("SERVER_PORT"),
+		LogLevel:             viper.GetString("LOG_LEVEL"),
+		LogPath:              logPath,
+		DBDriver:             viper.GetString("DB_DRIVER"),
+		DBConnection:         dbPath,
+		JWTSecret:            viper.GetString("JWT_SECRET"),
+		SwaggerEnabled:       viper.GetBool("SWAGGER_ENABLED"),
+		SwaggerURL:           viper.GetString("SWAGGER_URL"),
+		AWSRegion:            viper.GetString("AWS_REGION"),
+		AWSBucket:            viper.GetString("AWS_BUCKET"),
+		AWSAccessKeyID:       viper.GetString("AWS_ACCESS_KEY_ID"),
+		AWSSecretKey:         viper.GetString("AWS_SECRET_KEY"),
+		Language:             viper.GetString("LANGUAGE"),
+		AudioFolder:          viper.GetString("LANGUAGE"),
+		AvatarFolder:         viper.GetString("LANGUAGE"),
+		VideosFolder:         viper.GetString("LANGUAGE"),
+		TranscriptionsFolder: viper.GetString("LANGUAGE"),
+		VideoFramesFolder:    viper.GetString("LANGUAGE"),
+		I18NPath:             i18nPath,
+		RootDir:              rootDir,
 	}
 
 	if EnvConfig.JWTSecret == "" {

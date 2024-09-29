@@ -5,6 +5,7 @@ import (
 	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/reason"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo"
@@ -101,7 +102,7 @@ func (s *VideoService) GetVideosByUser(userID uint64) ([]entity.Video, error) {
 // GeneratePresignedURL generates a pre-signed URL for uploading a video
 func (s *VideoService) GeneratePresignedURL(fileName string, fileType string) (string, error) {
 	log.Infof(reason.GeneratedPresignedURLForFile.Message() + ": " + fileName + "," + reason.Type.Message() + ":" + fileType)
-	url, err := s.s3Client.GeneratePresignedURL(fileName, fileType)
+	url, err := s.s3Client.GeneratePresignedURL(env.EnvConfig.VideosFolder, fileName, fileType)
 	if err != nil {
 		log.Errorf(reason.FailedToCreatePresignedURL.Message()+": %v", err)
 		return "", err
