@@ -54,6 +54,16 @@ func Migrate(db *sql.DB) error {
 					FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 				);`,
 		},
+		// New migration to alter the videos table
+		{
+			ID:   3,
+			Name: "alter_videos_table_add_file_name_and_image",
+			SQL: `
+				ALTER TABLE videos
+				ADD COLUMN file_name TEXT NOT NULL DEFAULT '',
+				ADD COLUMN image TEXT NOT NULL DEFAULT '';
+			`,
+		},
 	}
 
 	// Apply pending migrations
@@ -92,9 +102,11 @@ func insertSampleData(db *sql.DB) error {
 		userID := userIDs[i%len(userIDs)]
 		duration := durationBase + (i * 10)
 		link := fmt.Sprintf("https://example.com/video%d.mp4", i)
+		fileName := fmt.Sprintf("video%d.mp4", i)
+		image := fmt.Sprintf("https://example.com/video%d-thumbnail.jpg", i)
 
-		query := `INSERT INTO videos (user_id, title, duration, link, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
-		_, err := db.Exec(query, userID, title, duration, link, time.Now(), time.Now())
+		query := `INSERT INTO videos (user_id, title, duration, link, file_name, image, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+		_, err := db.Exec(query, userID, title, duration, link, fileName, image, time.Now(), time.Now())
 		if err != nil {
 			return fmt.Errorf(reason.InsertSampleFailed.Message()+" '%s': %v", title, err)
 		}

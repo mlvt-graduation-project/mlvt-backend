@@ -42,17 +42,23 @@ func NewS3Client() (*S3Client, error) {
 }
 
 // GeneratePresignedURL generates a presigned URL for uploading a file to S3
-func (s *S3Client) GeneratePresignedURL(fileName string, fileType string) (string, error) {
-	log.Info("File name: ", fileName)
+func (s *S3Client) GeneratePresignedURL(folder string, fileName string, fileType string) (string, error) {
+	log.Info("Folder: ", folder, ", File name: ", fileName)
 	if fileName == "" {
 		return "", fmt.Errorf("file name must not be empty")
+	}
+
+	// Combine folder and fileName to form the S3 key (path to the file)
+	fullPath := fileName
+	if folder != "" {
+		fullPath = folder + "/" + fileName // Add the folder to the file path
 	}
 
 	presignClient := s3.NewPresignClient(s.Client)
 
 	reqParams := &s3.PutObjectInput{
 		Bucket:      aws.String(s.Bucket),
-		Key:         aws.String(fileName),
+		Key:         aws.String(fullPath), // Use full path (folder + fileName)
 		ContentType: aws.String(fileType),
 	}
 

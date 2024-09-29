@@ -60,7 +60,7 @@ go run .
 
 The API details are available after running the server at `http://localhost:8080/swagger/index.html`. See `docs/swagger.json` for more details.
 
-![Swagger UI](assets/swagger.png)
+![Swagger UI](assets/docs/swagger.png)
 
 For API testing instructions, refer to the [API Testing](#api-testing) section.
 
@@ -68,17 +68,17 @@ For API testing instructions, refer to the [API Testing](#api-testing) section.
 
 Configuration of the project is managed through environment variables in the `.env` file.
 
-For more details on environment variables, refer to the respective configuration sections under [Environment Configuration](assets/EnvironmentConfiguration.md).
+For more details on environment variables, refer to the respective configuration sections under [Environment Configuration](assets/docs/EnvironmentConfiguration.md).
 
 ## Project Architecture
 
-* [Three-Layer Architecture](assets/Three-Layer-Architecture.md)
-* [Video upload process](assets/VideoUploadProcess.md)
-* [Complete project structure](assets/ProjectStructure.md)
+* [Three-Layer Architecture](assets/docs/Three-Layer-Architecture.md)
+* [Video upload process](assets/docs/VideoUploadProcess.md)
+* [Complete project structure](assets/docs/ProjectStructure.md)
 
 ## API Testing
 
-* [Core Api Testing](assets/ApiTesting.md)
+* [Core Api Testing](assets/docs/ApiTesting.md)
 
 ## Development
 
@@ -123,7 +123,7 @@ This project supports multiple languages for error messages, success notificatio
 
 ### Changing the Language
 
-You can change the language of the application by setting the `LANGUAGE` variable in the [Environment Configuration](assets/EnvironmentConfiguration.md). Replace with the appropriate language code from the supported languages list.
+You can change the language of the application by setting the `LANGUAGE` variable in the [Environment Configuration](assets/docs/EnvironmentConfiguration.md). Replace with the appropriate language code from the supported languages list.
 
 ## Contributing
 

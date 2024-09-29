@@ -1,2 +1,0 @@
-2024-09-13 22:08:06.653	error	/Users/giabao/code/golang/mlvt/mlvt-backend/cmd/server/main.go:59	Zap logger initialized successfully
-2024-09-13 22:08:06.654	error	/Users/giabao/code/golang/mlvt/mlvt-backend/cmd/server/main.go:64	Failed to initialize the database: sql: unknown driver "" (forgotten import?)
