@@ -1,112 +1,129 @@
 package service
 
 import (
-	"database/sql"
-	"errors"
+	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
-	"mlvt/internal/infra/env"
-	"mlvt/internal/infra/reason"
-	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo"
 )
 
-// VideoService handles video-related business logic
-type VideoService struct {
-	s3Client  *aws.S3Client
-	videoRepo repo.VideoRepository
+type VideoService interface {
+	CreateVideo(video *entity.Video) error
+	GetVideoByID(videoID uint64) (*entity.Video, string, string, error) // Returns the video record and presigned URLs for video and image
+	ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error)
+	DeleteVideo(videoID uint64) error
+	UpdateVideo(video *entity.Video) error
+	GeneratePresignedUploadURLForVideo(folder, fileName, fileType string) (string, error)
+	GeneratePresignedUploadURLForImage(folder, fileName, fileType string) (string, error)
+	GeneratePresignedDownloadURLForVideo(videoID uint64) (string, error)
+	GeneratePresignedDownloadURLForImage(videoID uint64) (string, error)
 }
 
-// NewVideoService creates a new instance of VideoService
-func NewVideoService(s3Client *aws.S3Client, videoRepo repo.VideoRepository) *VideoService {
-	return &VideoService{
+type videoService struct {
+	repo     repo.VideoRepository
+	s3Client *aws.S3Client
+}
 
-		s3Client:  s3Client,
-		videoRepo: videoRepo,
+func NewVideoService(repo repo.VideoRepository, s3Client *aws.S3Client) VideoService {
+	return &videoService{
+		repo:     repo,
+		s3Client: s3Client,
 	}
 }
 
-// AddVideo adds a new video for a user
-func (s *VideoService) AddVideo(userID uint64, title string, link string, duration int) error {
-	if link == "" {
-		return errors.New(reason.VideoLinkCannotBeEmpty.Message())
-	}
-	if duration <= 0 {
-		return errors.New(reason.VideoDurationMustBePositive.Message())
-	}
-	if title == "" {
-		return errors.New(reason.VideoTitleCannotBeEmpty.Message())
-	}
-
-	video := &entity.Video{
-		UserID:   userID,
-		Title:    title,
-		Link:     link,
-		Duration: duration,
-	}
-	return s.videoRepo.CreateVideo(video)
+func (s *videoService) CreateVideo(video *entity.Video) error {
+	return s.repo.CreateVideo(video)
 }
 
-// GetVideo retrieves a video by ID
-func (s *VideoService) GetVideo(id uint64) (*entity.Video, error) {
-	video, err := s.videoRepo.GetVideoByID(id)
+func (s *videoService) GetVideoByID(videoID uint64) (*entity.Video, string, string, error) {
+	video, err := s.repo.GetVideoByID(videoID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New(reason.VideoNotFound.Message())
+		return nil, "", "", err
+	}
+	if video == nil {
+		return nil, "", "", fmt.Errorf("video not found")
+	}
+
+	// Generate presigned URLs for video and image
+	videoURL, err := s.s3Client.GeneratePresignedURL(video.Folder, video.FileName, "video/mp4")
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to generate presigned video URL: %v", err)
+	}
+	imageURL, err := s.s3Client.GeneratePresignedURL(video.Folder, video.Image, "image/jpeg")
+	if err != nil {
+		return nil, "", "", fmt.Errorf("failed to generate presigned image URL: %v", err)
+	}
+
+	return video, videoURL, imageURL, nil
+}
+
+func (s *videoService) ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error) {
+	// Fetch the videos for the user
+	videos, err := s.repo.ListVideosByUserID(userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Prepare a list of Frame objects containing presigned URLs for images
+	var frames []entity.Frame
+	for _, video := range videos {
+		// Generate the presigned URL for the video's image
+		imageURL, err := s.s3Client.GeneratePresignedURL(video.Folder, video.Image, "image/jpeg")
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to generate presigned URL for image: %v", err)
 		}
-		return nil, err
-	}
-	return video, nil
-}
 
-// UpdateVideo updates an existing video's details
-func (s *VideoService) UpdateVideo(id uint64, link string, duration int) error {
-	if link == "" {
-		return errors.New(reason.VideoLinkCannotBeEmpty.Message())
-	}
-	if duration <= 0 {
-		return errors.New(reason.VideoDurationMustBePositive.Message())
-	}
-
-	video, err := s.videoRepo.GetVideoByID(id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return errors.New(reason.VideoNotFound.Message())
+		// Create a new Frame object with the video ID and the image presigned URL
+		frame := entity.Frame{
+			VideoID: video.ID,
+			Link:    imageURL,
 		}
-		return err
+		frames = append(frames, frame)
 	}
 
-	video.Link = link
-	video.Duration = duration
-
-	return s.videoRepo.UpdateVideo(video)
+	return videos, frames, nil
 }
 
-// DeleteVideo removes a video
-func (s *VideoService) DeleteVideo(id uint64) error {
-	return s.videoRepo.DeleteVideo(id)
+func (s *videoService) DeleteVideo(videoID uint64) error {
+	return s.repo.DeleteVideo(videoID)
 }
 
-// GetVideosByUser fetches all videos for a specific user
-func (s *VideoService) GetVideosByUser(userID uint64) ([]entity.Video, error) {
-	videos, err := s.videoRepo.GetVideosByUserID(userID)
+func (s *videoService) UpdateVideo(video *entity.Video) error {
+	return s.repo.UpdateVideo(video)
+}
+
+// GeneratePresignedUploadURLForVideo generates a presigned URL for uploading a video file
+func (s *videoService) GeneratePresignedUploadURLForVideo(folder, fileName, fileType string) (string, error) {
+	return s.s3Client.GeneratePresignedURL(folder, fileName, fileType)
+}
+
+// GeneratePresignedUploadURLForImage generates a presigned URL for uploading an image file
+func (s *videoService) GeneratePresignedUploadURLForImage(folder, fileName, fileType string) (string, error) {
+	return s.s3Client.GeneratePresignedURL(folder, fileName, fileType)
+}
+
+// GeneratePresignedDownloadURLForVideo generates a presigned URL for downloading a video file
+func (s *videoService) GeneratePresignedDownloadURLForVideo(videoID uint64) (string, error) {
+	video, err := s.repo.GetVideoByID(videoID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, errors.New(reason.NoVideoForUser.Message())
-		}
-		return nil, err
-	}
-	return videos, nil
-}
-
-// GeneratePresignedURL generates a pre-signed URL for uploading a video
-func (s *VideoService) GeneratePresignedURL(fileName string, fileType string) (string, error) {
-	log.Infof(reason.GeneratedPresignedURLForFile.Message() + ": " + fileName + "," + reason.Type.Message() + ":" + fileType)
-	url, err := s.s3Client.GeneratePresignedURL(env.EnvConfig.VideosFolder, fileName, fileType)
-	if err != nil {
-		log.Errorf(reason.FailedToCreatePresignedURL.Message()+": %v", err)
 		return "", err
 	}
-	log.Infof(reason.GeneratedPresignedURL.Message()+": %s", url)
-	return url, nil
+	if video == nil {
+		return "", fmt.Errorf("video not found")
+	}
+
+	return s.s3Client.GeneratePresignedURL(video.Folder, video.FileName, "video/mp4")
+}
+
+// GeneratePresignedDownloadURLForImage generates a presigned URL for downloading an image file
+func (s *videoService) GeneratePresignedDownloadURLForImage(videoID uint64) (string, error) {
+	video, err := s.repo.GetVideoByID(videoID)
+	if err != nil {
+		return "", err
+	}
+	if video == nil {
+		return "", fmt.Errorf("video not found")
+	}
+
+	return s.s3Client.GeneratePresignedURL(video.Folder, video.Image, "image/jpeg")
 }

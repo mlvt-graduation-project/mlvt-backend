@@ -1,230 +1,210 @@
 package handler
 
 import (
-	"errors"
-	"mlvt/internal/entity"
-	"mlvt/internal/infra/reason"
-	"mlvt/internal/infra/zap-logging/log"
-	"mlvt/internal/pkg/json"
-	"mlvt/internal/schema"
-	"mlvt/internal/service"
 	"net/http"
 	"strconv"
+
+	"mlvt/internal/entity"
+	"mlvt/internal/infra/env"
+	"mlvt/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
-// VideoController manages video-related requests
 type VideoController struct {
-	videoService *service.VideoService
+	videoService service.VideoService
 }
 
-// NewVideoController creates a new VideoController
-func NewVideoController(videoService *service.VideoService) *VideoController {
-	return &VideoController{
-		videoService: videoService,
-	}
+func NewVideoController(videoService service.VideoService) *VideoController {
+	return &VideoController{videoService: videoService}
 }
 
 // AddVideo handles adding a new video
-//	@Summary		Add a new video
-//	@Description	Add a new video for a specific user
-//	@Tags			videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			video	body		schema.AddVideoRequest	true	"Video details"
-//	@Success		201		{object}	map[string]string		"Video added successfully"
-//	@Failure		400		{object}	map[string]string		"Invalid request"
-//	@Failure		500		{object}	map[string]string		"Internal server error"
-//	@Router			/videos [post]
-func (vc *VideoController) AddVideo(ctx *gin.Context) {
-	var req schema.AddVideoRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.ErrorJSON(ctx, err, http.StatusBadRequest)
+// @Summary Add a new video
+// @Description Creates a new video record in the system
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param video body entity.Video true "Video data"
+// @Success 201 {object} map[string]string "message"
+// @Failure 400 {object} map[string]string "error"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos [post]
+func (h *VideoController) AddVideo(c *gin.Context) {
+	var video entity.Video
+	if err := c.ShouldBindJSON(&video); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := vc.videoService.AddVideo(req.UserID, req.Title, req.Link, req.Duration)
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
+	if err := h.videoService.CreateVideo(&video); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": reason.VideoAdded.Message()})
+	c.JSON(http.StatusCreated, gin.H{"message": "Video added successfully"})
 }
 
-// GetVideo fetches video details by ID
-//	@Summary		Get video by ID
-//	@Description	Get details of a video by its ID
-//	@Tags			videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int					true	"Video ID"
-//	@Success		200	{object}	schema.Video		"Video details"
-//	@Failure		400	{object}	map[string]string	"Invalid video ID"
-//	@Failure		404	{object}	map[string]string	"Video not found"
-//	@Router			/videos/{id} [get]
-func (vc *VideoController) GetVideo(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+// GenerateUploadURLForVideo generates a presigned URL for uploading a video file
+// @Summary Generate presigned upload URL for a video
+// @Description Generates a presigned URL to upload a video file to S3
+// @Tags videos
+// @Produce json
+// @Param file_name query string true "Name of the video file"
+// @Param file_type query string true "Type of the video file (e.g., video/mp4)"
+// @Success 200 {object} map[string]string "upload_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/upload-url/video [post]
+func (h *VideoController) GenerateUploadURLForVideo(c *gin.Context) {
+	folder := env.EnvConfig.VideosFolder
+	fileName := c.Query("file_name")
+	fileType := c.Query("file_type")
+
+	url, err := h.videoService.GeneratePresignedUploadURLForVideo(folder, fileName, fileType)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidVideoID.Message()), http.StatusBadRequest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	video, err := vc.videoService.GetVideo(id)
-	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.VideoNotFound.Message()), http.StatusNotFound)
-		return
-	}
-
-	// Convert entity.Video to schema.Video for response
-	schemaVideo := convertEntityVideoToSchemaVideo(*video)
-
-	json.WriteJSON(ctx, http.StatusOK, schemaVideo)
+	c.JSON(http.StatusOK, gin.H{"upload_url": url})
 }
 
-// UpdateVideo handles updating video details
-//	@Summary		Update video details
-//	@Description	Update the details of an existing video
-//	@Tags			videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		int						true	"Video ID"
-//	@Param			video	body		schema.AddVideoRequest	true	"Updated video details"
-//	@Success		200		{object}	map[string]string		"Video updated successfully"
-//	@Failure		400		{object}	map[string]string		"Invalid video ID or request"
-//	@Failure		500		{object}	map[string]string		"Internal server error"
-//	@Router			/videos/{id} [put]
-func (vc *VideoController) UpdateVideo(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+// GenerateUploadURLForImage generates a presigned URL for uploading an image file
+// @Summary Generate presigned upload URL for an image
+// @Description Generates a presigned URL to upload an image (e.g., thumbnail) to S3
+// @Tags videos
+// @Produce json
+// @Param file_name query string true "Name of the image file"
+// @Param file_type query string true "Type of the image file (e.g., image/jpeg)"
+// @Success 200 {object} map[string]string "upload_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/upload-url/image [post]
+func (h *VideoController) GenerateUploadURLForImage(c *gin.Context) {
+	folder := env.EnvConfig.VideoFramesFolder
+	fileName := c.Query("file_name")
+	fileType := c.Query("file_type")
+
+	url, err := h.videoService.GeneratePresignedUploadURLForImage(folder, fileName, fileType)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidVideoID.Message()), http.StatusBadRequest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	var req schema.AddVideoRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.ErrorJSON(ctx, err, http.StatusBadRequest)
-		return
-	}
-
-	err = vc.videoService.UpdateVideo(id, req.Link, req.Duration)
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.VideoUpdated.Message()})
-
+	c.JSON(http.StatusOK, gin.H{"upload_url": url})
 }
 
-// DeleteVideo handles deleting a video by ID
-//	@Summary		Delete video
-//	@Description	Delete a video by its ID
-//	@Tags			videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int					true	"Video ID"
-//	@Success		200	{object}	map[string]string	"Video deleted successfully"
-//	@Failure		400	{object}	map[string]string	"Invalid video ID"
-//	@Failure		500	{object}	map[string]string	"Internal server error"
-//	@Router			/videos/{id} [delete]
-func (vc *VideoController) DeleteVideo(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+// GenerateDownloadURLForVideo generates a presigned URL for downloading a video file
+// @Summary Generate presigned download URL for a video
+// @Description Generates a presigned URL to download a video file from S3
+// @Tags videos
+// @Produce json
+// @Param video_id path int true "ID of the video file"
+// @Success 200 {object} map[string]string "video_download_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/{video_id}/download-url/video [get]
+func (h *VideoController) GenerateDownloadURLForVideo(c *gin.Context) {
+	videoID, _ := strconv.ParseUint(c.Param("video_id"), 10, 64)
+
+	// Call the service to generate the presigned download URL for the video
+	downloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidVideoID.Message()), http.StatusBadRequest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = vc.videoService.DeleteVideo(id)
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.VideoDeleted.Message()})
+	c.JSON(http.StatusOK, gin.H{"video_download_url": downloadURL})
 }
 
-// GetVideosByUser handles fetching all videos for a specific user
-//	@Summary		Get videos by user ID
-//	@Description	Get all videos uploaded by a specific user
-//	@Tags			videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			userID	path		int							true	"User ID"
-//	@Success		200		{object}	schema.GetVideosResponse	"List of videos"
-//	@Failure		400		{object}	map[string]string			"Invalid user ID"
-//	@Failure		500		{object}	map[string]string			"Internal server error"
-//	@Router			/videos/user/{userID} [get]
-func (vc *VideoController) GetVideosByUser(ctx *gin.Context) {
-	userID, err := strconv.ParseUint(ctx.Param("userID"), 10, 64)
+// GenerateDownloadURLForImage generates a presigned URL for downloading an image file
+// @Summary Generate presigned download URL for an image
+// @Description Generates a presigned URL to download an image (e.g., thumbnail) from S3
+// @Tags videos
+// @Produce json
+// @Param video_id path int true "ID of the video file"
+// @Success 200 {object} map[string]string "image_download_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/{video_id}/download-url/image [get]
+func (h *VideoController) GenerateDownloadURLForImage(c *gin.Context) {
+	videoID, _ := strconv.ParseUint(c.Param("video_id"), 10, 64)
+
+	// Call the service to generate the presigned download URL for the image
+	downloadURL, err := h.videoService.GeneratePresignedDownloadURLForImage(videoID)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	videos, err := vc.videoService.GetVideosByUser(userID)
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	// Convert []entity.Video to []schema.Video
-	var schemaVideos []schema.Video
-	for _, v := range videos {
-		schemaVideos = append(schemaVideos, convertEntityVideoToSchemaVideo(v))
-	}
-
-	json.WriteJSON(ctx, http.StatusOK, schema.GetVideosResponse{Videos: schemaVideos})
+	c.JSON(http.StatusOK, gin.H{"image_download_url": downloadURL})
 }
 
-// GeneratePresignedURL handles the request to generate a pre-signed URL for video uploads
-//	@Summary		Generate a pre-signed URL for video uploads
-//	@Description	Generates a pre-signed URL for uploading a video to AWS S3 and registers the video with initial data
-//	@Tags			Videos
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		schema.GeneratePresignedURLRequest	true	"Video upload details"
-//	@Success		200		{object}	schema.GeneratePresignedURLResponse
-//	@Failure		400		{object}	schema.ErrorResponse	"Invalid request format"
-//	@Failure		500		{object}	schema.ErrorResponse	"Failed to generate presigned URL or Failed to add video"
-//	@Router			/videos/generate-presigned-url [post]
-func (vc *VideoController) GeneratePresignedURLHandler(ctx *gin.Context) {
-	// Bind the JSON payload to the request struct and validate it
-	var req schema.GeneratePresignedURLRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.WriteJSON(ctx, http.StatusBadRequest, schema.ErrorResponse{Error: reason.InvalidRequestFormat.Message()})
-		return
-	}
+// GetVideoByID handles fetching a video by its ID and generating download URLs for the video and image
+// @Summary Get video by ID
+// @Description Fetches a video by its ID and generates presigned URLs for the video and image
+// @Tags videos
+// @Produce json
+// @Param video_id path int true "ID of the video"
+// @Success 200 {object} map[string]interface{} "video, video_url, image_url"
+// @Failure 404 {object} map[string]string "error"
+// @Router /videos/{video_id} [get]
+func (h *VideoController) GetVideoByID(c *gin.Context) {
+	videoID, _ := strconv.ParseUint(c.Param("video_id"), 10, 64)
 
-	// Generate a pre-signed URL for the video upload using the service layer
-	url, err := vc.videoService.GeneratePresignedURL(req.FileName, req.FileType)
+	video, videoURL, imageURL, err := h.videoService.GetVideoByID(videoID)
 	if err != nil {
-		json.WriteJSON(ctx, http.StatusInternalServerError, schema.ErrorResponse{Error: reason.FailedToGeneratePresignedURL.Message()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Video not found"})
 		return
 	}
 
-	// Use the AddVideo method to register the video with initial data
-	err = vc.videoService.AddVideo(req.UserID, req.Title, url, req.Duration)
-	if err != nil {
-		log.Errorf(reason.FailedToAddVideo.Message(), err)
-		json.WriteJSON(ctx, http.StatusInternalServerError, schema.ErrorResponse{Error: reason.FailedToAddVideo.Message()})
-		return
-	}
-
-	// Send the presigned URL back to the frontend
-	json.WriteJSON(ctx, http.StatusOK, schema.GeneratePresignedURLResponse{PresignedUrl: url})
+	c.JSON(http.StatusOK, gin.H{
+		"video":     video,
+		"video_url": videoURL,
+		"image_url": imageURL,
+	})
 }
 
-// Helper function to convert entity.Video to schema.Video
-func convertEntityVideoToSchemaVideo(entityVideo entity.Video) schema.Video {
-	return schema.Video{
-		ID:        entityVideo.ID,
-		Title:     entityVideo.Title,
-		Duration:  entityVideo.Duration,
-		Link:      entityVideo.Link,
-		UserID:    entityVideo.UserID,
-		CreatedAt: entityVideo.CreatedAt,
-		UpdatedAt: entityVideo.UpdatedAt,
+// DeleteVideo handles the deletion of a video by its ID
+// @Summary Delete a video
+// @Description Deletes a video by its ID from the system
+// @Tags videos
+// @Produce json
+// @Param video_id path int true "ID of the video"
+// @Success 200 {object} map[string]string "message"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/{video_id} [delete]
+func (h *VideoController) DeleteVideo(c *gin.Context) {
+	videoID, _ := strconv.ParseUint(c.Param("video_id"), 10, 64)
+
+	if err := h.videoService.DeleteVideo(videoID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Video deleted successfully"})
+}
+
+// ListVideosByUserID handles listing all videos for a specific user along with presigned image URLs
+// @Summary List videos by user ID
+// @Description Fetches all videos for a specific user along with presigned image URLs
+// @Tags videos
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Success 200 {object} map[string]interface{} "videos, frames"
+// @Failure 500 {object} map[string]string "error"
+// @Router /videos/user/{user_id} [get]
+func (h *VideoController) ListVideosByUserID(c *gin.Context) {
+	// Parse user ID from the URL path
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+
+	// Call the service to get the list of videos and presigned image URLs
+	videos, frames, err := h.videoService.ListVideosByUserID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return the videos and the frames with presigned URLs
+	c.JSON(http.StatusOK, gin.H{
+		"videos": videos,
+		"frames": frames,
+	})
 }

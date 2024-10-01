@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"errors"
-	"mlvt/internal/infra/reason"
-	"mlvt/internal/pkg/json"
-	"mlvt/internal/schema"
+	"mlvt/internal/entity"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/service"
 	"net/http"
 	"strconv"
@@ -12,156 +10,263 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UserController manages user-related requests
 type UserController struct {
-	userService *service.UserService
+	userService service.UserService
 }
 
-// NewUserController creates a new UserController
-func NewUserController(userService *service.UserService) *UserController {
-	return &UserController{
-		userService: userService,
-	}
+func NewUserController(userService service.UserService) *UserController {
+	return &UserController{userService: userService}
 }
 
 // RegisterUser handles user registration
-//	@Summary		Register a new user
-//	@Description	Register a new user with the provided details
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			user	body		schema.RegisterUserRequest	true	"User registration details"
-//	@Success		201		{object}	map[string]string			"User registered successfully"
-//	@Failure		400		{object}	map[string]string			"Invalid request"
-//	@Failure		500		{object}	map[string]string			"Internal server error"
-//	@Router			/users/register [post]
-func (uc *UserController) RegisterUser(ctx *gin.Context) {
-	var req schema.RegisterUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.ErrorJSON(ctx, err, http.StatusBadRequest)
+// @Summary Register a new user
+// @Description Creates a new user in the system
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body entity.User true "User data"
+// @Success 201 {object} map[string]string "message"
+// @Failure 400 {object} map[string]string "error"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/register [post]
+func (h *UserController) RegisterUser(c *gin.Context) {
+	var user entity.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := uc.userService.RegisterUser(req.FirstName, req.LastName, req.Email, req.Password)
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
+	if err := h.userService.RegisterUser(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusCreated, gin.H{"message": reason.UserRegistered.Message()})
+	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
 }
 
-// Login handles user login
-//	@Summary		User login
-//	@Description	Logs in a user with email and password
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			login	body		schema.LoginUserRequest	true	"Login credentials"
-//	@Success		200		{object}	schema.LoginResponse	"Token"
-//	@Failure		400		{object}	map[string]string		"Invalid request"
-//	@Failure		401		{object}	map[string]string		"Unauthorized"
-//	@Router			/users/login [post]
-func (uc *UserController) Login(ctx *gin.Context) {
-	var req schema.LoginUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.ErrorJSON(ctx, err, http.StatusBadRequest)
-		return
-	}
+// GenerateAvatarDownloadURL generates a presigned URL for downloading the user's avatar
+// @Summary Get presigned URL for avatar download
+// @Description Generates a presigned URL to download the user's avatar from S3
+// @Tags users
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Success 200 {object} map[string]string "avatar_download_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id}/avatar-download-url [get]
+func (h *UserController) GenerateAvatarDownloadURL(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
 
-	token, err := uc.userService.Login(req.Email, req.Password)
+	// Call the service to generate the presigned download URL for the avatar
+	url, err := h.userService.GeneratePresignedAvatarDownloadURL(userID)
 	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusUnauthorized)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusOK, schema.LoginResponse{Token: token})
+	// Return the presigned URL for the avatar image
+	c.JSON(http.StatusOK, gin.H{"avatar_download_url": url})
 }
 
-// GetUser fetches user details by ID
-//	@Summary		Get user by ID
-//	@Description	Get details of a user by their ID
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int					true	"User ID"
-//	@Success		200	{object}	entity.User			"User details"
-//	@Failure		400	{object}	map[string]string	"Invalid user ID"
-//	@Failure		404	{object}	map[string]string	"User not found"
-//	@Router			/users/{id} [get]
-func (uc *UserController) GetUser(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
-	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
+// LoginUser handles user login
+// @Summary User login
+// @Description Logs in a user with their email and password
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body object true "Email and password"
+// @Success 200 {object} map[string]string "token"
+// @Failure 400 {object} map[string]string "error"
+// @Failure 401 {object} map[string]string "error"
+// @Router /users/login [post]
+func (h *UserController) LoginUser(c *gin.Context) {
+	var credentials struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	user, err := uc.userService.GetUser(id)
+	token, err := h.userService.Login(credentials.Email, credentials.Password)
 	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.UserNotFound.Message()), http.StatusNotFound)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-// UpdateUser handles updating user details
-//	@Summary		Update user details
-//	@Description	Update the details of an existing user
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		int							true	"User ID"
-//	@Param			user	body		schema.RegisterUserRequest	true	"Updated user details"
-//	@Success		200		{object}	map[string]string			"User updated successfully"
-//	@Failure		400		{object}	map[string]string			"Invalid user ID or request"
-//	@Failure		500		{object}	map[string]string			"Internal server error"
-//	@Router			/users/{id} [put]
-func (uc *UserController) UpdateUser(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
-	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
+// ChangePassword handles password changes
+// @Summary Change user password
+// @Description Allows a user to change their password
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Param password body object true "Old and new password"
+// @Success 200 {object} map[string]string "message"
+// @Failure 400 {object} map[string]string "error"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id}/change-password [put]
+func (h *UserController) ChangePassword(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+	var request struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var req schema.RegisterUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		json.ErrorJSON(ctx, err, http.StatusBadRequest)
+	if err := h.userService.ChangePassword(userID, request.OldPassword, request.NewPassword); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = uc.userService.UpdateUser(id, req.FirstName, req.LastName, req.Email, req.Password, 1) // Assuming 1 is active status
-	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
-		return
-	}
-
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.UserUpdated.Message()})
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }
 
-// DeleteUser handles deleting a user by ID
-//	@Summary		Delete user
-//	@Description	Delete a user by their ID
-//	@Tags			users
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		int					true	"User ID"
-//	@Success		200	{object}	map[string]string	"User deleted successfully"
-//	@Failure		400	{object}	map[string]string	"Invalid user ID"
-//	@Failure		500	{object}	map[string]string	"Internal server error"
-//	@Router			/users/{id} [delete]
-func (uc *UserController) DeleteUser(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
-	if err != nil {
-		json.ErrorJSON(ctx, errors.New(reason.InvalidUserID.Message()), http.StatusBadRequest)
+// UpdateUser handles user information updates (excluding avatar)
+// @Summary Update user information
+// @Description Updates the user's information, excluding the avatar
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Param user body entity.User true "User data"
+// @Success 200 {object} map[string]string "message"
+// @Failure 400 {object} map[string]string "error"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id} [put]
+func (h *UserController) UpdateUser(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+
+	var user entity.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user.ID = userID
+
+	if err := h.userService.UpdateUser(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = uc.userService.DeleteUser(id)
+	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+}
+
+// UpdateAvatar handles avatar updates
+// @Summary Update user avatar
+// @Description Generates a presigned URL for uploading the user's avatar
+// @Tags users
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Param folder query string true "Folder for avatar storage"
+// @Param file_name query string true "File name for avatar"
+// @Success 200 {object} map[string]string "avatar_upload_url"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id}/update-avatar [put]
+func (h *UserController) UpdateAvatar(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+	folder := env.EnvConfig.AvatarFolder
+	fileName := c.Query("file_name")
+
+	url, err := h.userService.GeneratePresignedAvatarUploadURL(folder, fileName, "image/jpeg")
 	if err != nil {
-		json.ErrorJSON(ctx, err, http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	json.WriteJSON(ctx, http.StatusOK, map[string]string{"message": reason.UserDeleted.Message()})
+	// You can store the avatar path and folder for the user in the database after a successful upload
+	if err := h.userService.UpdateAvatar(userID, fileName, folder); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"avatar_upload_url": url})
+}
+
+// LoadAvatar loads the user's avatar by redirecting to the presigned URL
+// @Summary Load user avatar
+// @Description Redirects the client to the presigned URL to download the user's avatar
+// @Tags users
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Success 307 {string} string "Redirects to avatar URL"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id}/avatar [get]
+func (h *UserController) LoadAvatar(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+
+	// Call the service to generate the presigned download URL for the avatar
+	url, err := h.userService.GeneratePresignedAvatarDownloadURL(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Redirect the user to the presigned URL
+	c.Redirect(http.StatusTemporaryRedirect, url)
+}
+
+// GetUser retrieves a user by ID
+// @Summary Get user by ID
+// @Description Fetches a user's details by their ID
+// @Tags users
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Success 200 {object} entity.User "User data"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id} [get]
+func (h *UserController) GetUser(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+
+	user, err := h.userService.GetUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+// GetAllUsers retrieves all users
+// @Summary Get all users
+// @Description Retrieves a list of all users in the system
+// @Tags users
+// @Produce json
+// @Success 200 {array} entity.User "List of users"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users [get]
+func (h *UserController) GetAllUsers(c *gin.Context) {
+	users, err := h.userService.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+// DeleteUser handles user deletion (soft delete)
+// @Summary Delete user
+// @Description Soft deletes a user by updating their status
+// @Tags users
+// @Produce json
+// @Param user_id path int true "User ID"
+// @Success 200 {object} map[string]string "message"
+// @Failure 500 {object} map[string]string "error"
+// @Router /users/{user_id} [delete]
+func (h *UserController) DeleteUser(c *gin.Context) {
+	userID, _ := strconv.ParseUint(c.Param("user_id"), 10, 64)
+
+	if err := h.userService.DeleteUser(userID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }

@@ -6,82 +6,115 @@ import (
 	"time"
 )
 
-// UserRepository defines the interface for user repository methods
 type UserRepository interface {
 	CreateUser(user *entity.User) error
-	GetUserByID(id uint64) (*entity.User, error)
+	GetUserByEmail(email string) (*entity.User, error)
+	GetUserByID(userID uint64) (*entity.User, error)
 	UpdateUser(user *entity.User) error
-	DeleteUser(id uint64) error
-	GetUserByEmail(email string) (*entity.User, error) // New method for fetching user by email
+	DeleteUser(userID uint64) error
+	GetAllUsers() ([]entity.User, error)
+	UpdateUserPassword(userID uint64, hashedPassword string) error
+	UpdateUserAvatar(userID uint64, avatarPath, avatarFolder string) error
 }
 
-// UserRepo implements UserRepository for working with user data
-type UserRepo struct {
-	DB *sql.DB
+type userRepo struct {
+	db *sql.DB
 }
 
-// NewUserRepo creates a new UserRepo
-func NewUserRepo(db *sql.DB) *UserRepo {
-	return &UserRepo{DB: db}
+func NewUserRepo(db *sql.DB) UserRepository {
+	return &userRepo{db: db}
 }
 
 // CreateUser inserts a new user into the database
-func (repo *UserRepo) CreateUser(user *entity.User) error {
-	user.CreatedAt = time.Now()
-	user.UpdatedAt = time.Now()
-	query := `INSERT INTO users (first_name, last_name, email, password, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	_, err := repo.DB.Exec(query, user.FirstName, user.LastName, user.Email, user.Password, user.Status, user.CreatedAt, user.UpdatedAt)
-	if err != nil {
-		return err
-	}
-	return nil
+func (r *userRepo) CreateUser(user *entity.User) error {
+	query := `
+		INSERT INTO users (first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, user.FirstName, user.LastName, user.UserName, user.Email, user.Password, user.Status,
+		user.Premium, user.Role, user.Avatar, user.AvatarFolder, user.CreatedAt, user.UpdatedAt)
+	return err
 }
 
-// GetUserByEmail fetches a user by their email
-func (repo *UserRepo) GetUserByEmail(email string) (*entity.User, error) {
+// GetUserByEmail retrieves a user by their email address
+func (r *userRepo) GetUserByEmail(email string) (*entity.User, error) {
+	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at
+	          FROM users WHERE email = ?`
+	row := r.db.QueryRow(query, email)
+
 	user := &entity.User{}
-	query := `SELECT id, first_name, last_name, email, password, status, created_at, updated_at FROM users WHERE email = ?`
-	err := repo.DB.QueryRow(query, email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Status, &user.CreatedAt, &user.UpdatedAt)
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Email, &user.Password,
+		&user.Status, &user.Premium, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return user, err
+}
+
+// GetUserByID retrieves a user by their ID
+func (r *userRepo) GetUserByID(userID uint64) (*entity.User, error) {
+	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at
+	          FROM users WHERE id = ?`
+	row := r.db.QueryRow(query, userID)
+
+	user := &entity.User{}
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Email, &user.Password,
+		&user.Status, &user.Premium, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return user, err
+}
+
+// UpdateUser updates user information
+func (r *userRepo) UpdateUser(user *entity.User) error {
+	query := `
+		UPDATE users
+		SET first_name = ?, last_name = ?, username = ?, email = ?, status = ?, premium = ?, role = ?, updated_at = ?
+		WHERE id = ?`
+	_, err := r.db.Exec(query, user.FirstName, user.LastName, user.UserName, user.Email, user.Status, user.Premium, user.Role, user.UpdatedAt, user.ID)
+	return err
+}
+
+// DeleteUser performs a soft delete by updating the status of a user to "deleted"
+func (r *userRepo) DeleteUser(userID uint64) error {
+	query := `UPDATE users SET status = ? WHERE id = ?`
+	_, err := r.db.Exec(query, entity.UserStatusDeleted, userID)
+	return err
+}
+
+// UpdateUserPassword updates the hashed password for a user
+func (r *userRepo) UpdateUserPassword(userID uint64, hashedPassword string) error {
+	query := `UPDATE users SET password = ?, updated_at = ? WHERE id = ?`
+	_, err := r.db.Exec(query, hashedPassword, time.Now(), userID)
+	return err
+}
+
+// UpdateUserAvatar updates the user's avatar and avatar folder
+func (r *userRepo) UpdateUserAvatar(userID uint64, avatarPath, avatarFolder string) error {
+	query := `UPDATE users SET avatar = ?, avatar_folder = ?, updated_at = ? WHERE id = ?`
+	_, err := r.db.Exec(query, avatarPath, avatarFolder, time.Now(), userID)
+	return err
+}
+
+// GetAllUsers retrieves all users
+func (r *userRepo) GetAllUsers() ([]entity.User, error) {
+	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at
+	          FROM users`
+	rows, err := r.db.Query(query)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // No user found
-		}
 		return nil, err
 	}
-	return user, nil
-}
+	defer rows.Close()
 
-// GetUserByID fetches a user by their ID
-func (repo *UserRepo) GetUserByID(id uint64) (*entity.User, error) {
-	user := &entity.User{}
-	query := `SELECT id, first_name, last_name, email, status, created_at, updated_at FROM users WHERE id = ?`
-	err := repo.DB.QueryRow(query, id).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Status, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // No user found
+	var users []entity.User
+	for rows.Next() {
+		var user entity.User
+		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Email, &user.Password,
+			&user.Status, &user.Premium, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
+		users = append(users, user)
 	}
-	return user, nil
-}
-
-// UpdateUser updates an existing user's details
-func (repo *UserRepo) UpdateUser(user *entity.User) error {
-	user.UpdatedAt = time.Now()
-	query := `UPDATE users SET first_name = ?, last_name = ?, email = ?, password = ?, status = ?, updated_at = ? WHERE id = ?`
-	_, err := repo.DB.Exec(query, user.FirstName, user.LastName, user.Email, user.Password, user.Status, user.UpdatedAt, user.ID)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// DeleteUser removes a user from the database
-func (repo *UserRepo) DeleteUser(id uint64) error {
-	query := `DELETE FROM users WHERE id = ?`
-	_, err := repo.DB.Exec(query, id)
-	if err != nil {
-		return err
-	}
-	return nil
+	return users, nil
 }

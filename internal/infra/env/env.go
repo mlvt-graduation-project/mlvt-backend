@@ -127,7 +127,7 @@ func initializeConfig() error {
 func getProjectRootDir() (string, error) {
 	// Set your own root go manage the .env
 	//Ex: rootDir := "/Users/giabao/Code/golang/mlvt/mlvt-backend"
-	rootDir := "/Users/giabao/Code/golang/mlvt/mlvt-backend"
+	rootDir := "../../"
 	return filepath.Abs(rootDir)
 }
 

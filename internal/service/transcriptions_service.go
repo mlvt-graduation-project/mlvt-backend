@@ -8,74 +8,111 @@ import (
 )
 
 type TranscriptionService interface {
-	GeneratePresignedURLForTranscription(videoID uint64) (string, error)
-	CreateTranscription(videoID, userID uint64, lang, transcriptionText string) (entity.Transcription, error)
-	GetTranscription(userID, transcriptionID uint64) (entity.Transcription, error)
-	ListTranscriptionsByUser(userID uint64) ([]entity.Transcription, error)
-	GetTranscriptionByVideo(videoID, transcriptionID uint64) (entity.Transcription, error)
-	ListTranscriptionsByVideo(videoID uint64) ([]entity.Transcription, error)
+	CreateTranscription(transcription *entity.Transcription) error
+	GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, string, error)
+	GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, string, error)
+	GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, string, error)
+	ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error)
+	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
 	DeleteTranscription(transcriptionID uint64) error
+	GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error)
+	GeneratePresignedDownloadURL(transcriptionID uint64) (string, error)
 }
 
 type transcriptionService struct {
-	repo      repo.TranscriptionRepository
-	s3Client  *aws.S3Client
-	videoRepo repo.VideoRepository
+	repo     repo.TranscriptionRepository
+	s3Client *aws.S3Client
 }
 
-func NewTranscriptionService(repo repo.TranscriptionRepository, s3 *aws.S3Client, videoRepo repo.VideoRepository) TranscriptionService {
+func NewTranscriptionService(repo repo.TranscriptionRepository, s3Client *aws.S3Client) TranscriptionService {
 	return &transcriptionService{
-		repo:      repo,
-		s3Client:  s3,
-		videoRepo: videoRepo,
+		repo:     repo,
+		s3Client: s3Client,
 	}
 }
 
-// GeneratePresignedURLForTranscription generates a presigned URL for a given video
-func (s *transcriptionService) GeneratePresignedURLForTranscription(videoID uint64) (string, error) {
-	video, err := s.videoRepo.GetVideoByID(videoID)
+func (s *transcriptionService) CreateTranscription(transcription *entity.Transcription) error {
+	return s.repo.CreateTranscription(transcription)
+}
+
+func (s *transcriptionService) GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, string, error) {
+	transcription, err := s.repo.GetTranscriptionByID(transcriptionID)
 	if err != nil {
-		return "", fmt.Errorf("unable to retrieve video: %w", err)
+		return nil, "", err
 	}
+	if transcription == nil {
+		return nil, "", fmt.Errorf("transcription not found")
+	}
+
 	// Generate presigned URL
-	fileType := "text/plain" // Default file type for transcription
-	return s.s3Client.GeneratePresignedURL(video.Folder, video.FileName, fileType)
-}
-
-// CreateTranscription handles the logic to create and store a new transcription
-func (s *transcriptionService) CreateTranscription(videoID, userID uint64, lang, transcriptionText string) (entity.Transcription, error) {
-	video, err := s.videoRepo.GetVideoByID(videoID)
+	presignedURL, err := s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
 	if err != nil {
-		return entity.Transcription{}, fmt.Errorf("unable to retrieve video: %w", err)
+		return nil, "", fmt.Errorf("failed to generate presigned download URL: %v", err)
 	}
 
-	tx := entity.Transcription{
-		VideoID:  videoID,
-		UserID:   userID,
-		Text:     transcriptionText,
-		Lang:     lang,
-		Folder:   video.Folder,
-		FileName: video.FileName,
+	return transcription, presignedURL, nil
+}
+
+func (s *transcriptionService) GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, string, error) {
+	transcription, err := s.repo.GetTranscriptionByIDAndUserID(transcriptionID, userID)
+	if err != nil {
+		return nil, "", err
 	}
-	return s.repo.CreateTranscription(tx)
+	if transcription == nil {
+		return nil, "", fmt.Errorf("transcription not found")
+	}
+
+	// Generate presigned URL
+	presignedURL, err := s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate presigned download URL: %v", err)
+	}
+
+	return transcription, presignedURL, nil
 }
 
-func (s *transcriptionService) GetTranscription(userID, transcriptionID uint64) (entity.Transcription, error) {
-	return s.repo.GetTranscriptionByID(userID, transcriptionID)
+func (s *transcriptionService) GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, string, error) {
+	transcription, err := s.repo.GetTranscriptionByIDAndVideoID(transcriptionID, videoID)
+	if err != nil {
+		return nil, "", err
+	}
+	if transcription == nil {
+		return nil, "", fmt.Errorf("transcription not found")
+	}
+
+	// Generate presigned URL
+	presignedURL, err := s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to generate presigned download URL: %v", err)
+	}
+
+	return transcription, presignedURL, nil
 }
 
-func (s *transcriptionService) ListTranscriptionsByUser(userID uint64) ([]entity.Transcription, error) {
-	return s.repo.GetTranscriptionsByUserID(userID)
+func (s *transcriptionService) ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
+	return s.repo.ListTranscriptionsByUserID(userID)
 }
 
-func (s *transcriptionService) GetTranscriptionByVideo(videoID, transcriptionID uint64) (entity.Transcription, error) {
-	return s.repo.GetTranscriptionByVideoID(videoID, transcriptionID)
-}
-
-func (s *transcriptionService) ListTranscriptionsByVideo(videoID uint64) ([]entity.Transcription, error) {
-	return s.repo.GetTranscriptionsByVideoID(videoID)
+func (s *transcriptionService) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {
+	return s.repo.ListTranscriptionsByVideoID(videoID)
 }
 
 func (s *transcriptionService) DeleteTranscription(transcriptionID uint64) error {
 	return s.repo.DeleteTranscription(transcriptionID)
+}
+
+func (s *transcriptionService) GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error) {
+	return s.s3Client.GeneratePresignedURL(folder, fileName, fileType)
+}
+
+func (s *transcriptionService) GeneratePresignedDownloadURL(transcriptionID uint64) (string, error) {
+	transcription, err := s.repo.GetTranscriptionByID(transcriptionID)
+	if err != nil {
+		return "", err
+	}
+	if transcription == nil {
+		return "", fmt.Errorf("transcription not found")
+	}
+
+	return s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
 }

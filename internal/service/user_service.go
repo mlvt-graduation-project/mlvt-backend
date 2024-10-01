@@ -3,89 +3,130 @@ package service
 import (
 	"errors"
 	"mlvt/internal/entity"
-	"mlvt/internal/infra/reason"
+	"mlvt/internal/infra/aws"
 	"mlvt/internal/repo"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	// ActiveStatus represents the active user status
-	ActiveStatus = 1
-)
-
-// UserService handles user-related business logic
-type UserService struct {
-	userRepo    repo.UserRepository
-	authService *AuthService
+type UserService interface {
+	RegisterUser(user *entity.User) error
+	Login(email, password string) (string, error)
+	ChangePassword(userID uint64, oldPassword, newPassword string) error
+	UpdateUser(user *entity.User) error
+	UpdateAvatar(userID uint64, avatarPath, avatarFolder string) error
+	GetUserByID(userID uint64) (*entity.User, error)
+	GetAllUsers() ([]entity.User, error)
+	DeleteUser(userID uint64) error
+	GeneratePresignedAvatarUploadURL(folder, fileName, fileType string) (string, error)
+	GeneratePresignedAvatarDownloadURL(userID uint64) (string, error)
 }
 
-// NewUserService creates a new instance of UserService
-func NewUserService(userRepo repo.UserRepository, authService *AuthService) *UserService {
-	return &UserService{
-		userRepo:    userRepo,
-		authService: authService,
+type userService struct {
+	repo     repo.UserRepository
+	s3Client *aws.S3Client
+	auth     *AuthService
+}
+
+func NewUserService(repo repo.UserRepository, s3Client *aws.S3Client, auth *AuthService) UserService {
+	return &userService{
+		repo:     repo,
+		s3Client: s3Client,
+		auth:     auth,
 	}
 }
 
-// RegisterUser handles the registration of a new user
-func (s *UserService) RegisterUser(firstName, lastName, email, password string) error {
-	// Check if the email is already registered
-	existingUser, _ := s.userRepo.GetUserByEmail(email)
-	if existingUser != nil {
-		return errors.New(reason.EmailAlreadyRegistered.Message())
+// RegisterUser creates a new user with hashed password
+func (s *userService) RegisterUser(user *entity.User) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
 	}
+	user.Password = string(hashedPassword)
+	user.Status = entity.UserStatusAvailable
+	user.CreatedAt = time.Now()
+	user.UpdatedAt = time.Now()
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return s.repo.CreateUser(user)
+}
+
+// Login handles user login
+func (s *userService) Login(email, password string) (string, error) {
+	return s.auth.Login(email, password)
+}
+
+// ChangePassword changes a user's password
+func (s *userService) ChangePassword(userID uint64, oldPassword, newPassword string) error {
+	user, err := s.repo.GetUserByID(userID)
 	if err != nil {
 		return err
 	}
 
-	user := &entity.User{
-		FirstName: firstName,
-		LastName:  lastName,
-		Email:     email,
-		Password:  string(hashedPassword),
-		Status:    ActiveStatus, // Using constant for active status
+	// Compare old password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(oldPassword))
+	if err != nil {
+		return errors.New("old password does not match")
 	}
 
-	return s.userRepo.CreateUser(user)
-}
-
-// Login authenticates the user and returns a JWT token
-func (s *UserService) Login(email, password string) (string, error) {
-	return s.authService.Login(email, password)
-}
-
-// GetUser retrieves a user by ID
-func (s *UserService) GetUser(id uint64) (*entity.User, error) {
-	return s.userRepo.GetUserByID(id)
-}
-
-// UpdateUser updates an existing user's details
-func (s *UserService) UpdateUser(id uint64, firstName, lastName, email, password string, status int) error {
-	user, err := s.userRepo.GetUserByID(id)
+	// Hash the new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	user.FirstName = firstName
-	user.LastName = lastName
-	user.Email = email
-	user.Status = status
-
-	if password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		user.Password = string(hashedPassword)
-	}
-
-	return s.userRepo.UpdateUser(user)
+	return s.repo.UpdateUserPassword(userID, string(hashedPassword))
 }
 
-// DeleteUser removes a user
-func (s *UserService) DeleteUser(id uint64) error {
-	return s.userRepo.DeleteUser(id)
+// UpdateUser updates user information (except avatar)
+func (s *userService) UpdateUser(user *entity.User) error {
+	user.UpdatedAt = time.Now()
+	return s.repo.UpdateUser(user)
+}
+
+// UpdateAvatar updates the user's avatar
+func (s *userService) UpdateAvatar(userID uint64, avatarPath, avatarFolder string) error {
+	return s.repo.UpdateUserAvatar(userID, avatarPath, avatarFolder)
+}
+
+// GetUserByID retrieves a user by their ID
+func (s *userService) GetUserByID(userID uint64) (*entity.User, error) {
+	return s.repo.GetUserByID(userID)
+}
+
+// GetAllUsers retrieves all users
+func (s *userService) GetAllUsers() ([]entity.User, error) {
+	return s.repo.GetAllUsers()
+}
+
+// DeleteUser soft deletes a user by setting their status to "deleted"
+func (s *userService) DeleteUser(userID uint64) error {
+	return s.repo.DeleteUser(userID)
+}
+
+// GeneratePresignedAvatarUploadURL generates a presigned URL for uploading an avatar
+func (s *userService) GeneratePresignedAvatarUploadURL(folder, fileName, fileType string) (string, error) {
+	return s.s3Client.GeneratePresignedURL(folder, fileName, fileType)
+}
+
+// GeneratePresignedAvatarDownloadURL generates a presigned URL for downloading the user's avatar
+func (s *userService) GeneratePresignedAvatarDownloadURL(userID uint64) (string, error) {
+	user, err := s.repo.GetUserByID(userID)
+	if err != nil {
+		return "", err
+	}
+	if user == nil {
+		return "", errors.New("user not found")
+	}
+	if user.Avatar == "" || user.AvatarFolder == "" {
+		return "", errors.New("avatar not found for this user")
+	}
+
+	// Generate the presigned URL for the avatar image
+	url, err := s.s3Client.GeneratePresignedURL(user.AvatarFolder, user.Avatar, "image/jpeg")
+	if err != nil {
+		return "", err
+	}
+
+	return url, nil
 }

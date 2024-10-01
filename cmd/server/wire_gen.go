@@ -19,20 +19,23 @@ import (
 // Injectors from wire.go:
 
 func InitializeApp(db *sql.DB, s3Client *aws.S3Client) (*router.AppRouter, error) {
-	userRepo := repo.NewUserRepo(db)
+	userRepository := repo.NewUserRepo(db)
 	string2 := _wireStringValue
-	authService := service.NewAuthService(userRepo, string2)
-	userService := service.NewUserService(userRepo, authService)
+	authService := service.NewAuthService(userRepository, string2)
+	userService := service.NewUserService(userRepository, s3Client, authService)
 	userController := handler.NewUserController(userService)
-	videoRepo := repo.NewVideoRepo(db)
-	videoService := service.NewVideoService(s3Client, videoRepo)
+	videoRepository := repo.NewVideoRepo(db)
+	videoService := service.NewVideoService(videoRepository, s3Client)
 	videoController := handler.NewVideoController(videoService)
-	transcriptionRepo := repo.NewTranscriptionRepository(db)
-	transcriptionService := service.NewTranscriptionService(transcriptionRepo, s3Client, videoRepo)
+	audioRepository := repo.NewAudioRepository(db)
+	audioService := service.NewAudioService(audioRepository, s3Client)
+	audioController := handler.NewAudioController(audioService)
+	transcriptionRepository := repo.NewTranscriptionRepository(db)
+	transcriptionService := service.NewTranscriptionService(transcriptionRepository, s3Client)
 	transcriptionController := handler.NewTranscriptionController(transcriptionService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, transcriptionController, authUserMiddleware, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, authUserMiddleware, swaggerRouter)
 	return appRouter, nil
 }
 

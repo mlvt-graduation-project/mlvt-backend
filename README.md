@@ -10,6 +10,7 @@
   - [Getting Started](#getting-started)
     - [Install Dependencies](#install-dependencies)
     - [Run the Server](#run-the-server)
+  - [Feature Documentation](#feature-documentation)
   - [API Documentation](#api-documentation)
   - [Configuration Details](#configuration-details)
   - [Project Architecture](#project-architecture)
@@ -55,6 +56,12 @@ make run
 cd cmd/server
 go run .
 ```
+
+## Feature Documentation
+- [User features](assets/docs/UserFeature.md)
+- [Video features](assets/docs/VideoFeature.md)
+- [Transcription features](assets/docs/TranscriptionFeature.md)
+- [Audio features](assets/docs/AudioFeature.md)
 
 ## API Documentation
 

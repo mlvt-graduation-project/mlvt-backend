@@ -6,8 +6,10 @@ import "github.com/google/wire"
 var ProviderSetRepository = wire.NewSet(
 	NewUserRepo,
 	NewVideoRepo,
+	NewAudioRepository,
 	NewTranscriptionRepository,
-	wire.Bind(new(UserRepository), new(*UserRepo)),
-	wire.Bind(new(VideoRepository), new(*VideoRepo)),
-	wire.Bind(new(TranscriptionRepository), new(*transcriptionRepo)),
+	// wire.Bind(new(UserRepository), new(*userRepo)),
+	// wire.Bind(new(VideoRepository), new(*videoRepo)),
+	// wire.Bind(new(AudioRepository), new(*audioRepo)),
+	// wire.Bind(new(TranscriptionRepository), new(*transcriptionRepo)),
 )
