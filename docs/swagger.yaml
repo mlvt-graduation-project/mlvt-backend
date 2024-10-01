@@ -1,6 +1,70 @@
 definitions:
+  entity.Audio:
+    properties:
+      created_at:
+        description: Timestamp of when the audio was uploaded
+        type: string
+      duration:
+        description: Duration of the audio in seconds
+        type: integer
+      file_name:
+        description: The audio file name in S3
+        type: string
+      folder:
+        description: S3 folder or path containing the audio file
+        type: string
+      id:
+        type: integer
+      lang:
+        description: Language of the audio (e.g., "en", "es", etc.)
+        type: string
+      updated_at:
+        description: Timestamp of the last update to the audio
+        type: string
+      user_id:
+        description: ID of the user who uploaded the audio
+        type: integer
+      video_id:
+        description: ID of the related video
+        type: integer
+    type: object
+  entity.Transcription:
+    properties:
+      created_at:
+        description: Timestamp of when the transcription was created
+        type: string
+      file_name:
+        description: The transcription file name in S3
+        type: string
+      folder:
+        description: S3 folder or path containing the transcription file
+        type: string
+      id:
+        type: integer
+      lang:
+        description: Language of the transcription (e.g., "en", "es", etc.)
+        type: string
+      text:
+        description: The transcription text
+        type: string
+      updated_at:
+        description: Timestamp of the last update to the transcription
+        type: string
+      user_id:
+        description: ID of the user who created the transcription
+        type: integer
+      video_id:
+        description: ID of the related video
+        type: integer
+    type: object
   entity.User:
     properties:
+      avatar:
+        description: file name
+        type: string
+      avatar_folder:
+        description: Folder that contain the avatar image on s3
+        type: string
       created_at:
         description: Timestamp of when the user was created
         type: string
@@ -14,10 +78,15 @@ definitions:
         description: Unique identifier for the user
         type: integer
       last_name:
-        description: User's last name
+        description: User's last name\
         type: string
       password:
         description: User's hashed password
+        type: string
+      premium:
+        type: boolean
+      role:
+        description: Role of the user (User, Admin, etc.)
         type: string
       status:
         description: Status of the user (available, suspended, deleted)
@@ -25,124 +94,28 @@ definitions:
       updated_at:
         description: Timestamp of the last update to the user's data
         type: string
-    type: object
-  schema.AddVideoRequest:
-    properties:
-      duration:
-        type: integer
-      link:
-        type: string
-      title:
-        description: Add Title field
-        type: string
-      user_id:
-        type: integer
-    required:
-    - duration
-    - link
-    - title
-    - user_id
-    type: object
-  schema.ErrorResponse:
-    properties:
-      error:
+      username:
         type: string
     type: object
-  schema.GeneratePresignedURLRequest:
-    properties:
-      duration:
-        description: Expected duration of the video
-        type: integer
-      file_name:
-        description: Name of the video file to be uploaded
-        type: string
-      file_type:
-        description: Type of the video file (e.g., video/mp4)
-        type: string
-      title:
-        description: Title of the video
-        type: string
-      user_id:
-        description: ID of the user uploading the video
-        type: integer
-    required:
-    - duration
-    - file_name
-    - file_type
-    - title
-    - user_id
-    type: object
-  schema.GeneratePresignedURLResponse:
-    properties:
-      presignedUrl:
-        type: string
-    type: object
-  schema.GetVideosResponse:
-    properties:
-      videos:
-        items:
-          $ref: '#/definitions/schema.Video'
-        type: array
-    type: object
-  schema.LoginResponse:
-    properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
-        type: integer
-      last_name:
-        type: string
-      token:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  schema.LoginUserRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
-  schema.RegisterUserRequest:
-    properties:
-      email:
-        type: string
-      first_name:
-        type: string
-      last_name:
-        type: string
-      password:
-        minLength: 8
-        type: string
-    required:
-    - email
-    - first_name
-    - last_name
-    - password
-    type: object
-  schema.Video:
+  entity.Video:
     properties:
       created_at:
         description: Timestamp of when the video was created
         type: string
+      description:
+        type: string
       duration:
         description: Duration of the video in seconds
         type: integer
+      file_name:
+        type: string
+      folder:
+        type: string
       id:
         type: integer
-      link:
-        description: URL to the video on AWS S3
+      image:
         type: string
       title:
-        description: Title of the video
         type: string
       updated_at:
         description: Timestamp of the last update to the video
@@ -154,34 +127,598 @@ definitions:
 info:
   contact: {}
 paths:
-  /users/{id}:
-    delete:
+  /audios:
+    post:
       consumes:
       - application/json
-      description: Delete a user by their ID
+      description: Adds a new audio file's metadata to the system.
       parameters:
-      - description: User ID
+      - description: Audio object
+        in: body
+        name: audio
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Audio'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add audio
+      tags:
+      - audios
+  /audios/{audio_id}:
+    get:
+      description: Retrieves an audio file's metadata and generates a presigned download
+        URL.
+      parameters:
+      - description: ID of the audio file
         in: path
-        name: id
+        name: audio_id
         required: true
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: User deleted successfully
+          description: audio, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
-        "400":
-          description: Invalid user ID
+      summary: Get audio by ID
+      tags:
+      - audios
+  /audios/{audioID}/download-url:
+    get:
+      description: Generates a presigned URL to download an audio file from the storage
+        service.
+      parameters:
+      - description: ID of the audio file
+        in: path
+        name: audioID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: download_url
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned download URL
+      tags:
+      - audios
+  /audios/{audioID}/user/{userID}:
+    get:
+      description: Retrieves an audio file for a specific user and generates a presigned
+        download URL.
+      parameters:
+      - description: ID of the audio file
+        in: path
+        name: audioID
+        required: true
+        type: integer
+      - description: ID of the user
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: audio, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get audio by user and audio ID
+      tags:
+      - audios
+  /audios/{audioID}/video/{videoID}:
+    get:
+      description: Retrieves an audio file for a specific video and generates a presigned
+        download URL.
+      parameters:
+      - description: ID of the audio file
+        in: path
+        name: audioID
+        required: true
+        type: integer
+      - description: ID of the video
+        in: path
+        name: videoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: audio, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get audio by video and audio ID
+      tags:
+      - audios
+  /audios/{id}:
+    delete:
+      description: Deletes an audio file from the system.
+      parameters:
+      - description: ID of the audio file
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete audio by ID
+      tags:
+      - audios
+  /audios/generate-upload-url:
+    get:
+      description: Generates a presigned URL to upload an audio file to the storage
+        service.
+      parameters:
+      - description: Name of the file to be uploaded
+        in: query
+        name: file_name
+        required: true
+        type: string
+      - description: MIME type of the file (e.g., audio/mpeg)
+        in: query
+        name: file_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: upload_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned upload URL
+      tags:
+      - audios
+  /audios/user/{user_id}:
+    get:
+      description: Retrieves all audio files belonging to a specific user.
+      parameters:
+      - description: ID of the user
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: audios
+          schema:
+            items:
+              $ref: '#/definitions/entity.Audio'
+            type: array
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List audios by user ID
+      tags:
+      - audios
+  /audios/video/{video_id}:
+    get:
+      description: Retrieves all audio files belonging to a specific video.
+      parameters:
+      - description: ID of the video
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: audios
+          schema:
+            items:
+              $ref: '#/definitions/entity.Audio'
+            type: array
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List audios by video ID
+      tags:
+      - audios
+  /transcriptions:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new transcription file's metadata to the system.
+      parameters:
+      - description: Transcription object
+        in: body
+        name: transcription
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Transcription'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Add transcription
+      tags:
+      - transcriptions
+  /transcriptions/{transcription_id}:
+    delete:
+      description: Deletes a transcription record from the system.
+      parameters:
+      - description: ID of the transcription file
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete transcription by ID
+      tags:
+      - transcriptions
+    get:
+      description: Retrieves a transcription and generates a presigned download URL
+        for it.
+      parameters:
+      - description: ID of the transcription file
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transcription, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get transcription by ID
+      tags:
+      - transcriptions
+  /transcriptions/{transcription_id}/download-url:
+    get:
+      description: Generates a presigned URL to download a transcription file from
+        the storage service.
+      parameters:
+      - description: ID of the transcription file
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: download_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned download URL
+      tags:
+      - transcriptions
+  /transcriptions/{transcriptionID}/user/{userID}:
+    get:
+      description: Retrieves a transcription for a specific user and generates a presigned
+        download URL.
+      parameters:
+      - description: ID of the transcription file
+        in: path
+        name: transcriptionID
+        required: true
+        type: integer
+      - description: ID of the user
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transcription, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get transcription by User ID and transcription ID
+      tags:
+      - transcriptions
+  /transcriptions/{transcriptionID}/video/{videoID}:
+    get:
+      description: Retrieves a transcription for a specific video and generates a
+        presigned download URL.
+      parameters:
+      - description: ID of the transcription file
+        in: path
+        name: transcriptionID
+        required: true
+        type: integer
+      - description: ID of the video
+        in: path
+        name: videoID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transcription, download_url
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get transcription by Video ID and transcription ID
+      tags:
+      - transcriptions
+  /transcriptions/generate-upload-url:
+    post:
+      description: Generates a presigned URL to upload a transcription file to the
+        storage service.
+      parameters:
+      - description: Name of the file to be uploaded
+        in: query
+        name: file_name
+        required: true
+        type: string
+      - description: MIME type of the file (e.g., application/json)
+        in: query
+        name: file_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: upload_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned upload URL
+      tags:
+      - transcriptions
+  /transcriptions/user/{user_id}:
+    get:
+      description: Retrieves all transcriptions belonging to a specific user.
+      parameters:
+      - description: ID of the user
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transcriptions
+          schema:
+            items:
+              $ref: '#/definitions/entity.Transcription'
+            type: array
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List transcriptions by User ID
+      tags:
+      - transcriptions
+  /transcriptions/video/{video_id}:
+    get:
+      description: Retrieves all transcriptions belonging to a specific video.
+      parameters:
+      - description: ID of the video
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: transcriptions
+          schema:
+            items:
+              $ref: '#/definitions/entity.Transcription'
+            type: array
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List transcriptions by Video ID
+      tags:
+      - transcriptions
+  /users:
+    get:
+      description: Retrieves a list of all users in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            items:
+              $ref: '#/definitions/entity.User'
+            type: array
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all users
+      tags:
+      - users
+  /users/{user_id}:
+    delete:
+      description: Soft deletes a user by updating their status
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -190,30 +727,22 @@ paths:
       tags:
       - users
     get:
-      consumes:
-      - application/json
-      description: Get details of a user by their ID
+      description: Fetches a user's details by their ID
       parameters:
       - description: User ID
         in: path
-        name: id
+        name: user_id
         required: true
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: User details
+          description: User data
           schema:
             $ref: '#/definitions/entity.User'
-        "400":
-          description: Invalid user ID
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: User not found
+        "500":
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -224,70 +753,203 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update the details of an existing user
+      description: Updates the user's information, excluding the avatar
       parameters:
       - description: User ID
         in: path
-        name: id
+        name: user_id
         required: true
         type: integer
-      - description: Updated user details
+      - description: User data
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/schema.RegisterUserRequest'
+          $ref: '#/definitions/entity.User'
       produces:
       - application/json
       responses:
         "200":
-          description: User updated successfully
+          description: message
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Invalid user ID or request
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Update user details
+      summary: Update user information
+      tags:
+      - users
+  /users/{user_id}/avatar:
+    get:
+      description: Redirects the client to the presigned URL to download the user's
+        avatar
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "307":
+          description: Redirects to avatar URL
+          schema:
+            type: string
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Load user avatar
+      tags:
+      - users
+  /users/{user_id}/avatar-download-url:
+    get:
+      description: Generates a presigned URL to download the user's avatar from S3
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: avatar_download_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get presigned URL for avatar download
+      tags:
+      - users
+  /users/{user_id}/change-password:
+    put:
+      consumes:
+      - application/json
+      description: Allows a user to change their password
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: Old and new password
+        in: body
+        name: password
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Change user password
+      tags:
+      - users
+  /users/{user_id}/update-avatar:
+    put:
+      description: Generates a presigned URL for uploading the user's avatar
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: Folder for avatar storage
+        in: query
+        name: folder
+        required: true
+        type: string
+      - description: File name for avatar
+        in: query
+        name: file_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: avatar_upload_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update user avatar
       tags:
       - users
   /users/login:
     post:
       consumes:
       - application/json
-      description: Logs in a user with email and password
+      description: Logs in a user with their email and password
       parameters:
-      - description: Login credentials
+      - description: Email and password
         in: body
-        name: login
+        name: credentials
         required: true
         schema:
-          $ref: '#/definitions/schema.LoginUserRequest'
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: Token
+          description: token
           schema:
-            $ref: '#/definitions/schema.LoginResponse'
+            additionalProperties:
+              type: string
+            type: object
         "400":
-          description: Invalid request
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: Unauthorized
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -299,31 +961,31 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a new user with the provided details
+      description: Creates a new user in the system
       parameters:
-      - description: User registration details
+      - description: User data
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/schema.RegisterUserRequest'
+          $ref: '#/definitions/entity.User'
       produces:
       - application/json
       responses:
         "201":
-          description: User registered successfully
+          description: message
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Invalid request
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -335,31 +997,31 @@ paths:
     post:
       consumes:
       - application/json
-      description: Add a new video for a specific user
+      description: Creates a new video record in the system
       parameters:
-      - description: Video details
+      - description: Video data
         in: body
         name: video
         required: true
         schema:
-          $ref: '#/definitions/schema.AddVideoRequest'
+          $ref: '#/definitions/entity.Video'
       produces:
       - application/json
       responses:
         "201":
-          description: Video added successfully
+          description: message
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Invalid request
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -367,66 +1029,52 @@ paths:
       summary: Add a new video
       tags:
       - videos
-  /videos/{id}:
+  /videos/{video_id}:
     delete:
-      consumes:
-      - application/json
-      description: Delete a video by its ID
+      description: Deletes a video by its ID from the system
       parameters:
-      - description: Video ID
+      - description: ID of the video
         in: path
-        name: id
+        name: video_id
         required: true
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Video deleted successfully
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Invalid video ID
+          description: message
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Delete video
+      summary: Delete a video
       tags:
       - videos
     get:
-      consumes:
-      - application/json
-      description: Get details of a video by its ID
+      description: Fetches a video by its ID and generates presigned URLs for the
+        video and image
       parameters:
-      - description: Video ID
+      - description: ID of the video
         in: path
-        name: id
+        name: video_id
         required: true
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Video details
+          description: video, video_url, image_url
           schema:
-            $ref: '#/definitions/schema.Video'
-        "400":
-          description: Invalid video ID
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "404":
-          description: Video not found
+          description: error
           schema:
             additionalProperties:
               type: string
@@ -434,108 +1082,151 @@ paths:
       summary: Get video by ID
       tags:
       - videos
-    put:
-      consumes:
-      - application/json
-      description: Update the details of an existing video
+  /videos/{video_id}/download-url/image:
+    get:
+      description: Generates a presigned URL to download an image (e.g., thumbnail)
+        from S3
       parameters:
-      - description: Video ID
+      - description: ID of the video file
         in: path
-        name: id
+        name: video_id
         required: true
         type: integer
-      - description: Updated video details
-        in: body
-        name: video
-        required: true
-        schema:
-          $ref: '#/definitions/schema.AddVideoRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Video updated successfully
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Invalid video ID or request
+          description: image_download_url
           schema:
             additionalProperties:
               type: string
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Update video details
+      summary: Generate presigned download URL for an image
       tags:
       - videos
-  /videos/generate-presigned-url:
-    post:
-      consumes:
-      - application/json
-      description: Generates a pre-signed URL for uploading a video to AWS S3 and
-        registers the video with initial data
+  /videos/{video_id}/download-url/video:
+    get:
+      description: Generates a presigned URL to download a video file from S3
       parameters:
-      - description: Video upload details
-        in: body
-        name: request
+      - description: ID of the video file
+        in: path
+        name: video_id
         required: true
-        schema:
-          $ref: '#/definitions/schema.GeneratePresignedURLRequest'
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: video_download_url
           schema:
-            $ref: '#/definitions/schema.GeneratePresignedURLResponse'
-        "400":
-          description: Invalid request format
-          schema:
-            $ref: '#/definitions/schema.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
         "500":
-          description: Failed to generate presigned URL or Failed to add video
+          description: error
           schema:
-            $ref: '#/definitions/schema.ErrorResponse'
-      summary: Generate a pre-signed URL for video uploads
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned download URL for a video
       tags:
-      - Videos
-  /videos/user/{userID}:
-    get:
-      consumes:
+      - videos
+  /videos/upload-url/image:
+    post:
+      description: Generates a presigned URL to upload an image (e.g., thumbnail)
+        to S3
+      parameters:
+      - description: Name of the image file
+        in: query
+        name: file_name
+        required: true
+        type: string
+      - description: Type of the image file (e.g., image/jpeg)
+        in: query
+        name: file_type
+        required: true
+        type: string
+      produces:
       - application/json
-      description: Get all videos uploaded by a specific user
+      responses:
+        "200":
+          description: upload_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned upload URL for an image
+      tags:
+      - videos
+  /videos/upload-url/video:
+    post:
+      description: Generates a presigned URL to upload a video file to S3
+      parameters:
+      - description: Name of the video file
+        in: query
+        name: file_name
+        required: true
+        type: string
+      - description: Type of the video file (e.g., video/mp4)
+        in: query
+        name: file_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: upload_url
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Generate presigned upload URL for a video
+      tags:
+      - videos
+  /videos/user/{user_id}:
+    get:
+      description: Fetches all videos for a specific user along with presigned image
+        URLs
       parameters:
       - description: User ID
         in: path
-        name: userID
+        name: user_id
         required: true
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: List of videos
+          description: videos, frames
           schema:
-            $ref: '#/definitions/schema.GetVideosResponse'
-        "400":
-          description: Invalid user ID
-          schema:
-            additionalProperties:
-              type: string
+            additionalProperties: true
             type: object
         "500":
-          description: Internal server error
+          description: error
           schema:
             additionalProperties:
               type: string
             type: object
-      summary: Get videos by user ID
+      summary: List videos by user ID
       tags:
       - videos
 swagger: "2.0"

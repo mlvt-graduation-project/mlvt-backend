@@ -12,6 +12,18 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 ├── Makefile
 ├── README.md
 ├── assets
+│   └── docs
+│       ├── ApiTesting.md
+│       ├── AudioFeature.md
+│       ├── EnvironmentConfiguration.md
+│       ├── FlowEc2.md
+│       ├── ProjectStructure.md
+│       ├── Three-Layer-Architecture.md
+│       ├── TranscriptionFeature.md
+│       ├── UserFeature.md
+│       ├── VideoFeature.md
+│       ├── VideoUploadProcess.md
+│       └── swagger.png
 ├── cmd
 │   ├── migration
 │   │   └── migration.go
@@ -40,12 +52,17 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   └── zh.yaml
 ├── internal
 │   ├── entity
+│   │   ├── audio_entity.go
+│   │   ├── frame_entity.go
+│   │   ├── transcription_entity.go
 │   │   ├── user_entity.go
 │   │   └── video_entity.go
 │   ├── handler
 │   │   └── rest
 │   │       └── v1
+│   │           ├── audio_handler.go
 │   │           ├── handler.go
+│   │           ├── transcription_handler.go
 │   │           ├── user_handler.go
 │   │           └── video_handler.go
 │   ├── infra
@@ -83,7 +100,9 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │       ├── auth.go
 │   │       └── provider.go
 │   ├── repo
+│   │   ├── audio_repo.go
 │   │   ├── provider.go
+│   │   ├── transcription_repo.go
 │   │   ├── user_repo.go
 │   │   └── video_repo.go
 │   ├── router
@@ -96,20 +115,22 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │   ├── user_schema.go
 │   │   └── video_schema.go
 │   └── service
+│       ├── audio_service.go
 │       ├── auth_service.go
 │       ├── provider.go
+│       ├── transcriptions_service.go
 │       ├── user_service.go
 │       └── video_service.go
 ├── logs
-│   ├── mlvt_err_2024-09-07.log
-│   └── mlvt_info_2024-09-07.log
+│   ├── mlvt_err_2024-10-01.log
+│   └── mlvt_info_2024-10-01.log
 ├── mlvt.db
-├── script
-│   ├── build.sh
-│   ├── deploy.sh
-│   ├── setup.sh
-│   └── swagger.sh
-└── vendor
+└── script
+    ├── build.sh
+    ├── deploy.sh
+    ├── run_all.sh
+    ├── setup.sh
+    └── swagger.sh
 
-34 directories, 73 files
+34 directories, 91 files
 ```

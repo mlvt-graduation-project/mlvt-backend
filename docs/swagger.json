@@ -4,9 +4,856 @@
         "contact": {}
     },
     "paths": {
+        "/audios": {
+            "post": {
+                "description": "Adds a new audio file's metadata to the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Add audio",
+                "parameters": [
+                    {
+                        "description": "Audio object",
+                        "name": "audio",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entity.Audio"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/generate-upload-url": {
+            "get": {
+                "description": "Generates a presigned URL to upload an audio file to the storage service.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Generate presigned upload URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the file to be uploaded",
+                        "name": "file_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MIME type of the file (e.g., audio/mpeg)",
+                        "name": "file_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "upload_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/user/{user_id}": {
+            "get": {
+                "description": "Retrieves all audio files belonging to a specific user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "List audios by user ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audios",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Audio"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/video/{video_id}": {
+            "get": {
+                "description": "Retrieves all audio files belonging to a specific video.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "List audios by video ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the video",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audios",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Audio"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audioID}/download-url": {
+            "get": {
+                "description": "Generates a presigned URL to download an audio file from the storage service.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Generate presigned download URL",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audioID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audioID}/user/{userID}": {
+            "get": {
+                "description": "Retrieves an audio file for a specific user and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Get audio by user and audio ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audioID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audio, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audioID}/video/{videoID}": {
+            "get": {
+                "description": "Retrieves an audio file for a specific video and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Get audio by video and audio ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audioID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the video",
+                        "name": "videoID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audio, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audio_id}": {
+            "get": {
+                "description": "Retrieves an audio file's metadata and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Get audio by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audio_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audio, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{id}": {
+            "delete": {
+                "description": "Deletes an audio file from the system.",
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Delete audio by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions": {
+            "post": {
+                "description": "Adds a new transcription file's metadata to the system.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Add transcription",
+                "parameters": [
+                    {
+                        "description": "Transcription object",
+                        "name": "transcription",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entity.Transcription"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/generate-upload-url": {
+            "post": {
+                "description": "Generates a presigned URL to upload a transcription file to the storage service.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Generate presigned upload URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the file to be uploaded",
+                        "name": "file_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "MIME type of the file (e.g., application/json)",
+                        "name": "file_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "upload_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/user/{user_id}": {
+            "get": {
+                "description": "Retrieves all transcriptions belonging to a specific user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "List transcriptions by User ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transcriptions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Transcription"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/video/{video_id}": {
+            "get": {
+                "description": "Retrieves all transcriptions belonging to a specific video.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "List transcriptions by Video ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the video",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transcriptions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Transcription"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/{transcriptionID}/user/{userID}": {
+            "get": {
+                "description": "Retrieves a transcription for a specific user and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Get transcription by User ID and transcription ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the transcription file",
+                        "name": "transcriptionID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transcription, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/{transcriptionID}/video/{videoID}": {
+            "get": {
+                "description": "Retrieves a transcription for a specific video and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Get transcription by Video ID and transcription ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the transcription file",
+                        "name": "transcriptionID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the video",
+                        "name": "videoID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transcription, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/{transcription_id}": {
+            "get": {
+                "description": "Retrieves a transcription and generates a presigned download URL for it.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Get transcription by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the transcription file",
+                        "name": "transcription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "transcription, download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a transcription record from the system.",
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Delete transcription by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the transcription file",
+                        "name": "transcription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/transcriptions/{transcription_id}/download-url": {
+            "get": {
+                "description": "Generates a presigned URL to download a transcription file from the storage service.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Generate presigned download URL",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the transcription file",
+                        "name": "transcription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Retrieves a list of all users in the system",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "List of users",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.User"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/login": {
             "post": {
-                "description": "Logs in a user with email and password",
+                "description": "Logs in a user with their email and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -19,24 +866,27 @@
                 "summary": "User login",
                 "parameters": [
                     {
-                        "description": "Login credentials",
-                        "name": "login",
+                        "description": "Email and password",
+                        "name": "credentials",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schema.LoginUserRequest"
+                            "type": "object"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Token",
+                        "description": "token",
                         "schema": {
-                            "$ref": "#/definitions/schema.LoginResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -45,7 +895,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -58,7 +908,7 @@
         },
         "/users/register": {
             "post": {
-                "description": "Register a new user with the provided details",
+                "description": "Creates a new user in the system",
                 "consumes": [
                     "application/json"
                 ],
@@ -71,18 +921,18 @@
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "User registration details",
+                        "description": "User data",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schema.RegisterUserRequest"
+                            "$ref": "#/definitions/entity.User"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "User registered successfully",
+                        "description": "message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -91,7 +941,7 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -100,7 +950,7 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -111,12 +961,9 @@
                 }
             }
         },
-        "/users/{id}": {
+        "/users/{user_id}": {
             "get": {
-                "description": "Get details of a user by their ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Fetches a user's details by their ID",
                 "produces": [
                     "application/json"
                 ],
@@ -128,29 +975,20 @@
                     {
                         "type": "integer",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "user_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User details",
+                        "description": "User data",
                         "schema": {
                             "$ref": "#/definitions/entity.User"
                         }
                     },
-                    "400": {
-                        "description": "Invalid user ID",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
+                    "500": {
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -161,7 +999,7 @@
                 }
             },
             "put": {
-                "description": "Update the details of an existing user",
+                "description": "Updates the user's information, excluding the avatar",
                 "consumes": [
                     "application/json"
                 ],
@@ -171,28 +1009,28 @@
                 "tags": [
                     "users"
                 ],
-                "summary": "Update user details",
+                "summary": "Update user information",
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "user_id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Updated user details",
+                        "description": "User data",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schema.RegisterUserRequest"
+                            "$ref": "#/definitions/entity.User"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User updated successfully",
+                        "description": "message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -201,7 +1039,7 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid user ID or request",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -210,7 +1048,7 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -221,10 +1059,7 @@
                 }
             },
             "delete": {
-                "description": "Delete a user by their ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Soft deletes a user by updating their status",
                 "produces": [
                     "application/json"
                 ],
@@ -236,23 +1071,14 @@
                     {
                         "type": "integer",
                         "description": "User ID",
-                        "name": "id",
+                        "name": "user_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid user ID",
+                        "description": "message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -261,7 +1087,203 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/avatar": {
+            "get": {
+                "description": "Redirects the client to the presigned URL to download the user's avatar",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Load user avatar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "307": {
+                        "description": "Redirects to avatar URL",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/avatar-download-url": {
+            "get": {
+                "description": "Generates a presigned URL to download the user's avatar from S3",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get presigned URL for avatar download",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "avatar_download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/change-password": {
+            "put": {
+                "description": "Allows a user to change their password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Change user password",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Old and new password",
+                        "name": "password",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{user_id}/update-avatar": {
+            "put": {
+                "description": "Generates a presigned URL for uploading the user's avatar",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update user avatar",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Folder for avatar storage",
+                        "name": "folder",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "File name for avatar",
+                        "name": "file_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "avatar_upload_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -274,7 +1296,7 @@
         },
         "/videos": {
             "post": {
-                "description": "Add a new video for a specific user",
+                "description": "Creates a new video record in the system",
                 "consumes": [
                     "application/json"
                 ],
@@ -287,18 +1309,18 @@
                 "summary": "Add a new video",
                 "parameters": [
                     {
-                        "description": "Video details",
+                        "description": "Video data",
                         "name": "video",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/schema.AddVideoRequest"
+                            "$ref": "#/definitions/entity.Video"
                         }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "Video added successfully",
+                        "description": "message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -307,7 +1329,7 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -316,7 +1338,7 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -327,83 +1349,35 @@
                 }
             }
         },
-        "/videos/generate-presigned-url": {
+        "/videos/upload-url/image": {
             "post": {
-                "description": "Generates a pre-signed URL for uploading a video to AWS S3 and registers the video with initial data",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Videos"
-                ],
-                "summary": "Generate a pre-signed URL for video uploads",
-                "parameters": [
-                    {
-                        "description": "Video upload details",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.GeneratePresignedURLRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schema.GeneratePresignedURLResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request format",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to generate presigned URL or Failed to add video",
-                        "schema": {
-                            "$ref": "#/definitions/schema.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/videos/user/{userID}": {
-            "get": {
-                "description": "Get all videos uploaded by a specific user",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Generates a presigned URL to upload an image (e.g., thumbnail) to S3",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "videos"
                 ],
-                "summary": "Get videos by user ID",
+                "summary": "Generate presigned upload URL for an image",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "userID",
-                        "in": "path",
+                        "type": "string",
+                        "description": "Name of the image file",
+                        "name": "file_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Type of the image file (e.g., image/jpeg)",
+                        "name": "file_type",
+                        "in": "query",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of videos",
-                        "schema": {
-                            "$ref": "#/definitions/schema.GetVideosResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid user ID",
+                        "description": "upload_url",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -412,7 +1386,7 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -423,12 +1397,96 @@
                 }
             }
         },
-        "/videos/{id}": {
-            "get": {
-                "description": "Get details of a video by its ID",
-                "consumes": [
+        "/videos/upload-url/video": {
+            "post": {
+                "description": "Generates a presigned URL to upload a video file to S3",
+                "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Generate presigned upload URL for a video",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the video file",
+                        "name": "file_name",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Type of the video file (e.g., video/mp4)",
+                        "name": "file_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "upload_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/user/{user_id}": {
+            "get": {
+                "description": "Fetches all videos for a specific user along with presigned image URLs",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "List videos by user ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "videos, frames",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{video_id}": {
+            "get": {
+                "description": "Fetches a video by its ID and generates presigned URLs for the video and image",
                 "produces": [
                     "application/json"
                 ],
@@ -439,90 +1497,22 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Video ID",
-                        "name": "id",
+                        "description": "ID of the video",
+                        "name": "video_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Video details",
-                        "schema": {
-                            "$ref": "#/definitions/schema.Video"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid video ID",
+                        "description": "video, video_url, image_url",
                         "schema": {
                             "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "additionalProperties": true
                         }
                     },
                     "404": {
-                        "description": "Video not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update the details of an existing video",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "videos"
-                ],
-                "summary": "Update video details",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Video ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Updated video details",
-                        "name": "video",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.AddVideoRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Video updated successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid video ID or request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -533,38 +1523,26 @@
                 }
             },
             "delete": {
-                "description": "Delete a video by its ID",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Deletes a video by its ID from the system",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "videos"
                 ],
-                "summary": "Delete video",
+                "summary": "Delete a video",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Video ID",
-                        "name": "id",
+                        "description": "ID of the video",
+                        "name": "video_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Video deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid video ID",
+                        "description": "message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -573,7 +1551,89 @@
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{video_id}/download-url/image": {
+            "get": {
+                "description": "Generates a presigned URL to download an image (e.g., thumbnail) from S3",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Generate presigned download URL for an image",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the video file",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "image_download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{video_id}/download-url/video": {
+            "get": {
+                "description": "Generates a presigned URL to download a video file from S3",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "videos"
+                ],
+                "summary": "Generate presigned download URL for a video",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the video file",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "video_download_url",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -586,9 +1646,97 @@
         }
     },
     "definitions": {
+        "entity.Audio": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Timestamp of when the audio was uploaded",
+                    "type": "string"
+                },
+                "duration": {
+                    "description": "Duration of the audio in seconds",
+                    "type": "integer"
+                },
+                "file_name": {
+                    "description": "The audio file name in S3",
+                    "type": "string"
+                },
+                "folder": {
+                    "description": "S3 folder or path containing the audio file",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lang": {
+                    "description": "Language of the audio (e.g., \"en\", \"es\", etc.)",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Timestamp of the last update to the audio",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "ID of the user who uploaded the audio",
+                    "type": "integer"
+                },
+                "video_id": {
+                    "description": "ID of the related video",
+                    "type": "integer"
+                }
+            }
+        },
+        "entity.Transcription": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "Timestamp of when the transcription was created",
+                    "type": "string"
+                },
+                "file_name": {
+                    "description": "The transcription file name in S3",
+                    "type": "string"
+                },
+                "folder": {
+                    "description": "S3 folder or path containing the transcription file",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lang": {
+                    "description": "Language of the transcription (e.g., \"en\", \"es\", etc.)",
+                    "type": "string"
+                },
+                "text": {
+                    "description": "The transcription text",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Timestamp of the last update to the transcription",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "ID of the user who created the transcription",
+                    "type": "integer"
+                },
+                "video_id": {
+                    "description": "ID of the related video",
+                    "type": "integer"
+                }
+            }
+        },
         "entity.User": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "description": "file name",
+                    "type": "string"
+                },
+                "avatar_folder": {
+                    "description": "Folder that contain the avatar image on s3",
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "Timestamp of when the user was created",
                     "type": "string"
@@ -606,11 +1754,18 @@
                     "type": "integer"
                 },
                 "last_name": {
-                    "description": "User's last name",
+                    "description": "User's last name\\",
                     "type": "string"
                 },
                 "password": {
                     "description": "User's hashed password",
+                    "type": "string"
+                },
+                "premium": {
+                    "type": "boolean"
+                },
+                "role": {
+                    "description": "Role of the user (User, Admin, etc.)",
                     "type": "string"
                 },
                 "status": {
@@ -620,177 +1775,39 @@
                 "updated_at": {
                     "description": "Timestamp of the last update to the user's data",
                     "type": "string"
-                }
-            }
-        },
-        "schema.AddVideoRequest": {
-            "type": "object",
-            "required": [
-                "duration",
-                "link",
-                "title",
-                "user_id"
-            ],
-            "properties": {
-                "duration": {
-                    "type": "integer"
                 },
-                "link": {
-                    "type": "string"
-                },
-                "title": {
-                    "description": "Add Title field",
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "schema.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
+                "username": {
                     "type": "string"
                 }
             }
         },
-        "schema.GeneratePresignedURLRequest": {
-            "type": "object",
-            "required": [
-                "duration",
-                "file_name",
-                "file_type",
-                "title",
-                "user_id"
-            ],
-            "properties": {
-                "duration": {
-                    "description": "Expected duration of the video",
-                    "type": "integer"
-                },
-                "file_name": {
-                    "description": "Name of the video file to be uploaded",
-                    "type": "string"
-                },
-                "file_type": {
-                    "description": "Type of the video file (e.g., video/mp4)",
-                    "type": "string"
-                },
-                "title": {
-                    "description": "Title of the video",
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "ID of the user uploading the video",
-                    "type": "integer"
-                }
-            }
-        },
-        "schema.GeneratePresignedURLResponse": {
-            "type": "object",
-            "properties": {
-                "presignedUrl": {
-                    "type": "string"
-                }
-            }
-        },
-        "schema.GetVideosResponse": {
-            "type": "object",
-            "properties": {
-                "videos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/schema.Video"
-                    }
-                }
-            }
-        },
-        "schema.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "schema.LoginUserRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "schema.RegisterUserRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "first_name",
-                "last_name",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "schema.Video": {
+        "entity.Video": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "description": "Timestamp of when the video was created",
                     "type": "string"
                 },
+                "description": {
+                    "type": "string"
+                },
                 "duration": {
                     "description": "Duration of the video in seconds",
                     "type": "integer"
                 },
+                "file_name": {
+                    "type": "string"
+                },
+                "folder": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
                 },
-                "link": {
-                    "description": "URL to the video on AWS S3",
+                "image": {
                     "type": "string"
                 },
                 "title": {
-                    "description": "Title of the video",
                     "type": "string"
                 },
                 "updated_at": {
