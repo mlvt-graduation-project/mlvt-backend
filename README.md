@@ -26,9 +26,21 @@
 
 ## Overview
 
-Project MLVT is a robust server application designed to offer a comprehensive suite of APIs for managing users, videos, and additional functionalities. A key feature of this project is its support for generating presigned URLs for storing videos on AWS S3 and managing the video processing pipeline.
+Project MLVT is a powerful server application designed to provide a comprehensive suite of APIs for managing users, videos, transcriptions, and additional functionalities. The project is structured to handle key operations like user authentication, video management, and file handling through AWS S3 integration.
 
-This document delivers detailed guidance on setup, architecture, development practices, configuration, execution instructions, API documentation, and localization support.
+A key feature of MLVT is the support for presigned URLs, enabling secure upload and download of files such as videos, images, and transcriptions directly to and from AWS S3. This allows for seamless media management in video processing pipelines, including avatar updates, video file uploads, and thumbnail management.
+
+The project follows a modular and scalable architecture, designed with separation of concerns between the repository, service, and controller layers. It includes JWT-based authentication, password management, and role-based access control, making it a secure and extensible foundation for media-related applications.
+
+This document provides detailed guidance on:
+
+- Setup: Instructions on how to configure the project environment, including database and S3 integrations.
+- Architecture: A breakdown of the clean, layered architecture with repository, service, and controller layers.
+- Development Practices: Best practices followed during the development of the system, with a focus on scalability, maintainability, and security.
+- Configuration: Detailed configuration instructions for services such as AWS S3, database connections, and environment variables.
+- Execution Instructions: Step-by-step guidance on running the server locally or in a production environment.
+- API Documentation: Detailed API documentation with Swagger/OpenAPI support for all user, video, and transcription-related endpoints.
+- Localization Support: Support for localization and internationalization, making the platform adaptable for various regions and languages.
 
 
 ## Run Script
