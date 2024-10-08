@@ -13,16 +13,18 @@ type AppRouter struct {
 	audioController         *handler.AudioController
 	transcriptionController *handler.TranscriptionController
 	authMiddleware          *middleware.AuthUserMiddleware
+	momoPaymentController   *handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
 
-func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, audioController *handler.AudioController, transcriptionController *handler.TranscriptionController, authMiddleware *middleware.AuthUserMiddleware, swaggerRouter *SwaggerRouter) *AppRouter {
+func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, audioController *handler.AudioController, transcriptionController *handler.TranscriptionController, authMiddleware *middleware.AuthUserMiddleware, momoPaymentController *handler.MoMoPaymentController, swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:          userController,
 		videoController:         videoController,
 		audioController:         audioController,
 		transcriptionController: transcriptionController,
 		authMiddleware:          authMiddleware,
+		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
 	}
 }
@@ -95,6 +97,22 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 		protected.GET("/:audioID/video/:videoID", a.audioController.GetAudioByVideo)   // Get specific audio by audio ID and video ID
 		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL) // Generate presigned URL for audio upload
 		protected.GET("/:audioID/download-url", a.audioController.GenerateDownloadURL) // Generate presigned URL for audio download
+	}
+}
+
+// RegisterPaymentRoutes sets up the routes for all payment-related operations
+func (a *AppRouter) RegisterPaymentRoutes(r *gin.RouterGroup) {
+	payment := r.Group("/payments")
+	{
+		// Group for MoMo-specific routes
+		momo := payment.Group("/momo")
+		{
+			momo.POST("/create", a.momoPaymentController.CreateMoMoPayment)     // Create MoMo payment and return QR code
+			momo.POST("/check-status", a.momoPaymentController.CheckMoMoStatus) // Check status of MoMo payment
+			momo.POST("/refund", a.momoPaymentController.RefundMoMoPayment)     // Refund MoMo payment
+		}
+
+		// More payment methods can be added here...
 	}
 }
 

@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type MoMoPaymentHandler struct {
+type MoMoPaymentController struct {
 	momoPaymentService service.MoMoPaymentService
 }
 
-func NewMoMoPaymentHandler(momoPaymentService service.MoMoPaymentService) *MoMoPaymentHandler {
-	return &MoMoPaymentHandler{momoPaymentService: momoPaymentService}
+func NewMoMoPaymentHandler(momoPaymentService service.MoMoPaymentService) *MoMoPaymentController {
+	return &MoMoPaymentController{momoPaymentService: momoPaymentService}
 }
 
-func (p *MoMoPaymentHandler) ProcessPayment(c *gin.Context) {
+func (p *MoMoPaymentController) CreateMoMoPayment(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 		Amount  string `json:"amount"`
@@ -38,7 +38,7 @@ func (p *MoMoPaymentHandler) ProcessPayment(c *gin.Context) {
 	c.Writer.Write(qrCode)
 }
 
-func (p *MoMoPaymentHandler) CheckPaymentStatus(c *gin.Context) {
+func (p *MoMoPaymentController) CheckMoMoStatus(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 	}
@@ -61,7 +61,7 @@ func (p *MoMoPaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	}
 }
 
-func (p *MoMoPaymentHandler) RefundPayment(c *gin.Context) {
+func (p *MoMoPaymentController) RefundMoMoPayment(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 		Amount  string `json:"amount"`
