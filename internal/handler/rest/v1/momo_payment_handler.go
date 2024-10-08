@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PaymentHandler struct {
-	paymentService service.PaymentService
+type MoMoPaymentHandler struct {
+	momoPaymentService service.MoMoPaymentService
 }
 
-func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
-	return &PaymentHandler{paymentService: paymentService}
+func NewMoMoPaymentHandler(momoPaymentService service.MoMoPaymentService) *MoMoPaymentHandler {
+	return &MoMoPaymentHandler{momoPaymentService: momoPaymentService}
 }
 
-func (p *PaymentHandler) ProcessPayment(c *gin.Context) {
+func (p *MoMoPaymentHandler) ProcessPayment(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 		Amount  string `json:"amount"`
@@ -27,7 +27,7 @@ func (p *PaymentHandler) ProcessPayment(c *gin.Context) {
 	}
 
 	// Generate QR code for the payment
-	qrCode, err := p.paymentService.GeneratePaymentQRCode(request.OrderID, request.Amount)
+	qrCode, err := p.momoPaymentService.GeneratePaymentQRCode(request.OrderID, request.Amount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate QR code"})
 		return
@@ -38,7 +38,7 @@ func (p *PaymentHandler) ProcessPayment(c *gin.Context) {
 	c.Writer.Write(qrCode)
 }
 
-func (p *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
+func (p *MoMoPaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 	}
@@ -48,7 +48,7 @@ func (p *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 		return
 	}
 
-	success, err := p.paymentService.CheckPaymentStatus(request.OrderID)
+	success, err := p.momoPaymentService.CheckPaymentStatus(request.OrderID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check payment status"})
 		return
@@ -61,7 +61,7 @@ func (p *PaymentHandler) CheckPaymentStatus(c *gin.Context) {
 	}
 }
 
-func (p *PaymentHandler) RefundPayment(c *gin.Context) {
+func (p *MoMoPaymentHandler) RefundPayment(c *gin.Context) {
 	var request struct {
 		OrderID string `json:"order_id"`
 		Amount  string `json:"amount"`
@@ -72,7 +72,7 @@ func (p *PaymentHandler) RefundPayment(c *gin.Context) {
 		return
 	}
 
-	refundResponse, err := p.paymentService.RefundPayment(request.OrderID, request.Amount)
+	refundResponse, err := p.momoPaymentService.RefundPayment(request.OrderID, request.Amount)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Refund failed"})
 		return

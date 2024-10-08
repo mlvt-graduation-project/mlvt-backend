@@ -6,21 +6,21 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 )
 
-type PaymentService interface {
+type MoMoPaymentService interface {
 	GeneratePaymentQRCode(orderID, amount string) ([]byte, error)
 	CheckPaymentStatus(orderID string) (bool, error)
 	RefundPayment(orderID, amount string) (string, error)
 }
 
-type paymentService struct {
+type MoMopaymentService struct {
 	momoRepo repo.MoMoRepo
 }
 
-func NewPaymentService(momoRepo repo.MoMoRepo) PaymentService {
-	return &paymentService{momoRepo: momoRepo}
+func NewMoMoPaymentService(momoRepo repo.MoMoRepo) MoMoPaymentService {
+	return &MoMopaymentService{momoRepo: momoRepo}
 }
 
-func (p *paymentService) GeneratePaymentQRCode(orderID, amount string) ([]byte, error) {
+func (p *MoMopaymentService) GeneratePaymentQRCode(orderID, amount string) ([]byte, error) {
 	payURL, err := p.momoRepo.CreatePayment(orderID, amount)
 	if err != nil {
 		return nil, err
@@ -35,10 +35,10 @@ func (p *paymentService) GeneratePaymentQRCode(orderID, amount string) ([]byte, 
 	return png, nil
 }
 
-func (p *paymentService) CheckPaymentStatus(orderID string) (bool, error) {
+func (p *MoMopaymentService) CheckPaymentStatus(orderID string) (bool, error) {
 	return p.momoRepo.CheckPaymentStatus(orderID)
 }
 
-func (p *paymentService) RefundPayment(orderID, amount string) (string, error) {
+func (p *MoMopaymentService) RefundPayment(orderID, amount string) (string, error) {
 	return p.momoRepo.RefundPayment(orderID, amount)
 }
