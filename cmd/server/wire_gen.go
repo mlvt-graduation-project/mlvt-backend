@@ -34,8 +34,11 @@ func InitializeApp(db *sql.DB, s3Client *aws.S3Client) (*router.AppRouter, error
 	transcriptionService := service.NewTranscriptionService(transcriptionRepository, s3Client)
 	transcriptionController := handler.NewTranscriptionController(transcriptionService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authService)
+	moMoRepo := repo.NewMoMoRepo()
+	moMoPaymentService := service.NewMoMoPaymentService(moMoRepo)
+	moMoPaymentController := handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, authUserMiddleware, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, authUserMiddleware, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 
