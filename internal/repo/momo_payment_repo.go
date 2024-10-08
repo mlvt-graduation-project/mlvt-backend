@@ -1,5 +1,15 @@
 package repo
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"mlvt/internal/entity"
+	"net/http"
+	"time"
+)
+
 type MoMoRepo interface {
 	CreatePayment(orderID, amount string) (string, error)
 	CheckPaymentStatus(orderID string) (bool, error)
@@ -11,4 +21,41 @@ type momoRepo struct {
 	partnerCode string
 	accessKey   string
 	secrectKey  string
+}
+
+func (m *momoRepo) CreatePayment(orderID, amount string) (string, error) {
+	momoRequest := entity.NewMoMoRequest(m.partnerCode, m.accessKey, orderID, amount, orderID)
+	momoRequest.GenerateSignature(m.secrectKey)
+
+	requestBody := momoRequest.ToMap()
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: time.Second * 30}
+	req, err := http.NewRequest("POST", m.endpoint, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("payment request failed")
+	}
+
+	var response struct {
+		PayURL string `json:"payUrl"`
+	}
+	json.Unmarshal(body, &response)
+
+	return response.PayURL, nil
 }
