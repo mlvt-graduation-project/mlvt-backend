@@ -16,6 +16,10 @@ type paymentService struct {
 	momoRepo repo.MoMoRepo
 }
 
+func NewPaymentService(momoRepo repo.MoMoRepo) PaymentService {
+	return &paymentService{momoRepo: momoRepo}
+}
+
 func (p *paymentService) GeneratePaymentQRCode(orderID, amount string) ([]byte, error) {
 	payURL, err := p.momoRepo.CreatePayment(orderID, amount)
 	if err != nil {
