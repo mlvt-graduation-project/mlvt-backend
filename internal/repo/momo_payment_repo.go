@@ -95,3 +95,34 @@ func (m *momoRepo) CheckPaymentStatus(orderID string) (bool, error) {
 
 	return response.Status == "success", nil
 }
+
+func (m *momoRepo) RefundPayment(orderID, amount string) (string, error) {
+	momoRequest := entity.NewMoMoRequest(m.partnerCode, m.accessKey, orderID+"_refund", amount, orderID)
+	momoRequest.GenerateSignature(m.secrectKey)
+
+	requestBody := momoRequest.ToMap()
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return "", err
+	}
+
+	client := &http.Client{Timeout: time.Second * 30}
+	req, err := http.NewRequest("POST", m.endpoint+"/refund", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.New("refund request failed")
+	}
+
+	return string(body), nil
+}
