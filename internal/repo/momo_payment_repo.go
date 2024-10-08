@@ -59,3 +59,39 @@ func (m *momoRepo) CreatePayment(orderID, amount string) (string, error) {
 
 	return response.PayURL, nil
 }
+
+func (m *momoRepo) CheckPaymentStatus(orderID string) (bool, error) {
+	momoRequest := entity.NewMoMoRequest(m.partnerCode, m.accessKey, orderID, "0", orderID)
+	momoRequest.GenerateSignature(m.secrectKey)
+
+	requestBody := momoRequest.ToMap()
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return false, err
+	}
+
+	client := &http.Client{Timeout: time.Second * 30}
+	req, err := http.NewRequest("POST", m.endpoint+"/check-status", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return false, errors.New("failed to check payment status")
+	}
+
+	var response struct {
+		Status string `json:"status"`
+	}
+	json.Unmarshal(body, &response)
+
+	return response.Status == "success", nil
+}
