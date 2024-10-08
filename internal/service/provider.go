@@ -15,5 +15,6 @@ var ProviderSetService = wire.NewSet(
 	NewVideoService,
 	NewAudioService,
 	NewTranscriptionService,
+	NewMoMoPaymentService,
 	wire.Value(SecretKey),
 )

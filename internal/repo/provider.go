@@ -8,6 +8,7 @@ var ProviderSetRepository = wire.NewSet(
 	NewVideoRepo,
 	NewAudioRepository,
 	NewTranscriptionRepository,
+	NewMoMoRepo,
 	// wire.Bind(new(UserRepository), new(*userRepo)),
 	// wire.Bind(new(VideoRepository), new(*videoRepo)),
 	// wire.Bind(new(AudioRepository), new(*audioRepo)),
