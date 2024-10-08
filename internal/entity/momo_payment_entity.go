@@ -33,3 +33,15 @@ func (r *MoMoRequest) GenerateSignature(secrectKey string) {
 	h.Write([]byte(rawSignature))
 	r.Signature = hex.EncodeToString(h.Sum(nil))
 }
+
+// ToMap converts the MoMoRequest to a map of strings, which can be used to send to the MoMo API
+func (r *MoMoRequest) ToMap() map[string]string {
+	return map[string]string{
+		"partnerCode": r.PartnerCode,
+		"accessKey":   r.AccessKey,
+		"requestId":   r.RequestID,
+		"amount":      r.Amount,
+		"orderId":     r.OrderID,
+		"signature":   r.Signature,
+	}
+}
