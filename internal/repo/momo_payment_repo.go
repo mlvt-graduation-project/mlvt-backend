@@ -23,6 +23,15 @@ type momoRepo struct {
 	secrectKey  string
 }
 
+func NewMoMoRepo() MoMoRepo {
+	return &momoRepo{
+		endpoint:    "", //env.EnvConfig.MoMoEndpoint,
+		partnerCode: "", //env.EnvConfig.MoMoPartnerCode,
+		accessKey:   "", //env.EnvConfig.MoMoAccessKey,
+		secrectKey:  "", //env.EnvConfig.MoMoSecretKey,
+	}
+}
+
 func (m *momoRepo) CreatePayment(orderID, amount string) (string, error) {
 	momoRequest := entity.NewMoMoRequest(m.partnerCode, m.accessKey, orderID, amount, orderID)
 	momoRequest.GenerateSignature(m.secrectKey)
