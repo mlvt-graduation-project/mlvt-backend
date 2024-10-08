@@ -3,7 +3,7 @@ package service
 import (
 	"mlvt/internal/repo"
 
-	"github.com/yeqown/go-qrcode/v2"
+	qrcode "github.com/skip2/go-qrcode"
 )
 
 type PaymentService interface {
