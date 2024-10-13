@@ -2,6 +2,7 @@ package repo
 
 import (
 	"database/sql"
+	"fmt"
 	"mlvt/internal/entity"
 	"time"
 )
@@ -12,6 +13,7 @@ type VideoRepository interface {
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
+	UpdateVideoStatus(videoId uint64, status entity.VideoStatus) error
 }
 
 type videoRepo struct {
@@ -82,4 +84,18 @@ func (r *videoRepo) UpdateVideo(video *entity.Video) error {
 	now := time.Now()
 	_, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, now, video.ID)
 	return err
+}
+
+func (r *videoRepo) UpdateVideoStatus(videoId uint64, status entity.VideoStatus) error {
+	video, err := r.GetVideoByID(videoId)
+	if err != nil {
+		return fmt.Errorf("Failed to get video: %v", err)
+	}
+	video.Status = status
+	err = r.UpdateVideo(video)
+	if err != nil {
+		fmt.Errorf("Failed to update video status: %v", err)
+	}
+
+	return nil
 }
