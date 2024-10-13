@@ -13,6 +13,7 @@ type VideoRepository interface {
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
+	GetVideoStatus(videoID uint64) (entity.VideoStatus, error)
 	UpdateVideoStatus(videoId uint64, status entity.VideoStatus) error
 }
 
@@ -110,4 +111,21 @@ func (r *videoRepo) UpdateVideoStatus(videoID uint64, status entity.VideoStatus)
 	}
 
 	return nil
+}
+
+func (r *videoRepo) GetVideoStatus(videoID uint64) (entity.VideoStatus, error) {
+	var status entity.VideoStatus
+	query := `
+		SELECT status
+		FROM videos
+		WHERE id = ?
+	`
+	err := r.db.QueryRow(query, videoID).Scan(&status)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", fmt.Errorf("video with ID %d does not exist", videoID)
+		}
+		return "", fmt.Errorf("failed to get status for video %d: %v", videoID, err)
+	}
+	return status, nil
 }

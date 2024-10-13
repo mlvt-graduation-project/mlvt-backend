@@ -208,3 +208,73 @@ func (h *VideoController) ListVideosByUserID(c *gin.Context) {
 		"frames": frames,
 	})
 }
+
+// GetVideoStatus godoc
+// @Summary Get the status of a video
+// @Description Retrieve the status of a specific video by its ID
+// @Tags Videos
+// @Accept  json
+// @Produce  json
+// @Param   video_id path     uint64 true "Video ID"
+// @Success 200 {object} map[string]string{"status": "success"}
+// @Failure 400 {object} map[string]string{"error": "invalid video ID"}
+// @Failure 404 {object} map[string]string{"error": "video not found"}
+// @Failure 500 {object} map[string]string{"error": "internal server error"}
+// @Router /videos/{video_id}/status [get]
+func (h *VideoController) GetVideoStatus(c *gin.Context) {
+	videoIDStr := c.Param("video_id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid video ID"})
+		return
+	}
+
+	status, err := h.videoService.GetVideoStatus(videoID)
+
+	c.JSON(http.StatusOK, gin.H{"status": status})
+}
+
+// UpdateVideoStatusRequest represent the request body for updating video status
+type UpdateVideoStatusRequest struct {
+	Status entity.VideoStatus `json:"status" binding:"required, oneof=raw processing failed success`
+}
+
+// UpdateVideoStatus godoc
+// @Summary Update the status of a video
+// @Description Update the status of a specific video by its ID
+// @Tags Videos
+// @Accept  json
+// @Produce  json
+// @Param   video_id path     uint64 true "Video ID"
+// @Param   status   body     UpdateVideoStatusRequest true "New status"
+// @Success 200 {object} map[string]string{"message": "status updated successfully"}
+// @Failure 400 {object} map[string]string{"error": "invalid input"}
+// @Failure 404 {object} map[string]string{"error": "video not found"}
+// @Failure 500 {object} map[string]string{"error": "internal server error"}
+// @Router /videos/{video_id}/status [put]
+func (vc *VideoController) UpdateVideoStatus(c *gin.Context) {
+	videoIDStr := c.Param("video_id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid video ID"})
+		return
+	}
+
+	var req UpdateVideoStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		return
+	}
+
+	err = vc.videoService.UpdateVideoStatus(videoID, req.Status)
+	if err != nil {
+		if err.Error() == "no video found with id "+strconv.FormatUint(videoID, 10) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "status updated successfully"})
+}

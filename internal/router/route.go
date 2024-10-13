@@ -59,6 +59,8 @@ func (a *AppRouter) RegisterVideoRoutes(r *gin.RouterGroup) {
 		protected.GET("/:video_id", a.videoController.GetVideoByID)                                   // Get video by ID
 		protected.GET("/user/:user_id", a.videoController.ListVideosByUserID)                         // List videos by user ID
 		protected.DELETE("/:video_id", a.videoController.DeleteVideo)                                 // Delete video by ID
+		protected.GET("/:video_id/status", a.videoController.GetVideoStatus)                          // Get video status
+		protected.PUT("/:video_id/status", a.videoController.UpdateVideoStatus)                       // Update video status
 		protected.POST("/generate-upload-url/video", a.videoController.GenerateUploadURLForVideo)     // Generate presigned upload URL for video
 		protected.POST("/generate-upload-url/image", a.videoController.GenerateUploadURLForImage)     // Generate presigned upload URL for image
 		protected.GET("/:video_id/download-url/video", a.videoController.GenerateDownloadURLForVideo) // Generate presigned download URL for video

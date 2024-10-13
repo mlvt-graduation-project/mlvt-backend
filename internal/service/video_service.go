@@ -13,6 +13,8 @@ type VideoService interface {
 	ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
+	UpdateVideoStatus(videoID uint64, status entity.VideoStatus) error
+	GetVideoStatus(videoID uint64) (entity.VideoStatus, error)
 	GeneratePresignedUploadURLForVideo(folder, fileName, fileType string) (string, error)
 	GeneratePresignedUploadURLForImage(folder, fileName, fileType string) (string, error)
 	GeneratePresignedDownloadURLForVideo(videoID uint64) (string, error)
@@ -90,6 +92,13 @@ func (s *videoService) DeleteVideo(videoID uint64) error {
 
 func (s *videoService) UpdateVideo(video *entity.Video) error {
 	return s.repo.UpdateVideo(video)
+}
+
+func (s *videoService) UpdateVideoStatus(videoID uint64, status entity.VideoStatus) error {
+	return s.repo.UpdateVideoStatus(videoID, status)
+}
+func (s *videoService) GetVideoStatus(videoID uint64) (entity.VideoStatus, error) {
+	return s.repo.GetVideoStatus(videoID)
 }
 
 // GeneratePresignedUploadURLForVideo generates a presigned URL for uploading a video file
