@@ -96,7 +96,7 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 		protected.GET("/user/:userID", a.audioController.ListAudiosByUserID)           // Get all audios by user
 		protected.GET("/video/:videoID", a.audioController.ListAudiosByVideoID)        // Get all audios by video
 		protected.GET("/:audioID/user/:userID", a.audioController.GetAudioByUser)      // Get specific audio by audio ID and user ID
-		protected.GET("/:audioID/video/:videoID", a.audioController.GetAudioByVideo)   // Get specific audio by audio ID and video ID
+		protected.GET("/:audioID/video/:videoID", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
 		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL) // Generate presigned URL for audio upload
 		protected.GET("/:audioID/download-url", a.audioController.GenerateDownloadURL) // Generate presigned URL for audio download
 	}
