@@ -115,6 +115,8 @@ definitions:
         type: integer
       image:
         type: string
+      status:
+        $ref: '#/definitions/entity.VideoStatus'
       title:
         type: string
       updated_at:
@@ -123,6 +125,111 @@ definitions:
       user_id:
         description: ID of the user who uploaded the video
         type: integer
+    type: object
+  entity.VideoStatus:
+    enum:
+    - raw
+    - processing
+    - failed
+    - success
+    type: string
+    x-enum-varnames:
+    - StatusRaw
+    - StatusProcessing
+    - StatusFailed
+    - StatusSuccess
+  handler.UpdateVideoStatusRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/entity.VideoStatus'
+        enum:
+        - raw
+        - processing
+        - failed
+        - success
+    required:
+    - status
+    type: object
+  response.AudioResponse:
+    properties:
+      audio:
+        $ref: '#/definitions/entity.Audio'
+      download_url:
+        type: string
+    type: object
+  response.AudiosResponse:
+    properties:
+      audios:
+        items:
+          $ref: '#/definitions/entity.Audio'
+        type: array
+    type: object
+  response.AvatarDownloadURLResponse:
+    properties:
+      avatar_download_url:
+        type: string
+    type: object
+  response.AvatarUploadURLResponse:
+    properties:
+      avatar_upload_url:
+        type: string
+    type: object
+  response.DownloadURLResponse:
+    properties:
+      download_url:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  response.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  response.StatusResponse:
+    properties:
+      status:
+        $ref: '#/definitions/entity.VideoStatus'
+    type: object
+  response.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  response.TranscriptionResponse:
+    properties:
+      download_url:
+        type: string
+      transcription:
+        $ref: '#/definitions/entity.Transcription'
+    type: object
+  response.TranscriptionsResponse:
+    properties:
+      transcriptions:
+        items:
+          $ref: '#/definitions/entity.Transcription'
+        type: array
+    type: object
+  response.UploadURLResponse:
+    properties:
+      upload_url:
+        type: string
+    type: object
+  response.UserResponse:
+    properties:
+      user:
+        $ref: '#/definitions/entity.User'
+    type: object
+  response.UsersResponse:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/entity.User'
+        type: array
     type: object
 info:
   contact: {}
@@ -145,25 +252,43 @@ paths:
         "201":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Add audio
       tags:
       - audios
   /audios/{audio_id}:
+    delete:
+      description: Deletes an audio file from the system.
+      parameters:
+      - description: ID of the audio file
+        in: path
+        name: audio_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: message
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Delete audio by ID
+      tags:
+      - audios
     get:
       description: Retrieves an audio file's metadata and generates a presigned download
         URL.
@@ -179,25 +304,22 @@ paths:
         "200":
           description: audio, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.AudioResponse'
         "404":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get audio by ID
       tags:
       - audios
-  /audios/{audioID}/download-url:
+  /audios/{audio_id}/download-url:
     get:
       description: Generates a presigned URL to download an audio file from the storage
         service.
       parameters:
       - description: ID of the audio file
         in: path
-        name: audioID
+        name: audio_id
         required: true
         type: integer
       produces:
@@ -206,15 +328,15 @@ paths:
         "200":
           description: download_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.DownloadURLResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned download URL
       tags:
       - audios
@@ -239,20 +361,15 @@ paths:
         "200":
           description: audio, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.AudioResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get audio by user and audio ID
       tags:
       - audios
@@ -277,52 +394,16 @@ paths:
         "200":
           description: audio, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.AudioResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get audio by video and audio ID
-      tags:
-      - audios
-  /audios/{id}:
-    delete:
-      description: Deletes an audio file from the system.
-      parameters:
-      - description: ID of the audio file
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "200":
-          description: message
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Delete audio by ID
       tags:
       - audios
   /audios/generate-upload-url:
@@ -346,15 +427,11 @@ paths:
         "200":
           description: upload_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.UploadURLResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned upload URL
       tags:
       - audios
@@ -373,15 +450,11 @@ paths:
         "200":
           description: audios
           schema:
-            items:
-              $ref: '#/definitions/entity.Audio'
-            type: array
+            $ref: '#/definitions/response.AudiosResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: List audios by user ID
       tags:
       - audios
@@ -400,16 +473,16 @@ paths:
         "200":
           description: audios
           schema:
-            items:
-              $ref: '#/definitions/entity.Audio'
-            type: array
+            $ref: '#/definitions/response.AudiosResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: List audios by video ID
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List audios by Video ID
       tags:
       - audios
   /transcriptions:
@@ -430,21 +503,15 @@ paths:
         "201":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Add transcription
       tags:
       - transcriptions
@@ -461,15 +528,11 @@ paths:
         "200":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Delete transcription by ID
       tags:
       - transcriptions
@@ -488,14 +551,11 @@ paths:
         "200":
           description: transcription, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.TranscriptionResponse'
         "404":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get transcription by ID
       tags:
       - transcriptions
@@ -515,15 +575,15 @@ paths:
         "200":
           description: download_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.DownloadURLResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned download URL
       tags:
       - transcriptions
@@ -548,14 +608,11 @@ paths:
         "200":
           description: transcription, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.TranscriptionResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get transcription by User ID and transcription ID
       tags:
       - transcriptions
@@ -580,14 +637,11 @@ paths:
         "200":
           description: transcription, download_url
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.TranscriptionResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get transcription by Video ID and transcription ID
       tags:
       - transcriptions
@@ -612,15 +666,11 @@ paths:
         "200":
           description: upload_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.UploadURLResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned upload URL
       tags:
       - transcriptions
@@ -639,15 +689,15 @@ paths:
         "200":
           description: transcriptions
           schema:
-            items:
-              $ref: '#/definitions/entity.Transcription'
-            type: array
+            $ref: '#/definitions/response.TranscriptionsResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: List transcriptions by User ID
       tags:
       - transcriptions
@@ -666,15 +716,15 @@ paths:
         "200":
           description: transcriptions
           schema:
-            items:
-              $ref: '#/definitions/entity.Transcription'
-            type: array
+            $ref: '#/definitions/response.TranscriptionsResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: List transcriptions by Video ID
       tags:
       - transcriptions
@@ -685,17 +735,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: List of users
+          description: users
           schema:
-            items:
-              $ref: '#/definitions/entity.User'
-            type: array
+            $ref: '#/definitions/response.UsersResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get all users
       tags:
       - users
@@ -714,15 +760,19 @@ paths:
         "200":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Delete user
       tags:
       - users
@@ -738,15 +788,21 @@ paths:
       - application/json
       responses:
         "200":
-          description: User data
+          description: user
           schema:
-            $ref: '#/definitions/entity.User'
+            $ref: '#/definitions/response.UserResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get user by ID
       tags:
       - users
@@ -772,21 +828,15 @@ paths:
         "200":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Update user information
       tags:
       - users
@@ -807,12 +857,14 @@ paths:
           description: Redirects to avatar URL
           schema:
             type: string
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Load user avatar
       tags:
       - users
@@ -831,15 +883,19 @@ paths:
         "200":
           description: avatar_download_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.AvatarDownloadURLResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get presigned URL for avatar download
       tags:
       - users
@@ -866,21 +922,15 @@ paths:
         "200":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Change user password
       tags:
       - users
@@ -893,11 +943,6 @@ paths:
         name: user_id
         required: true
         type: integer
-      - description: Folder for avatar storage
-        in: query
-        name: folder
-        required: true
-        type: string
       - description: File name for avatar
         in: query
         name: file_name
@@ -909,15 +954,15 @@ paths:
         "200":
           description: avatar_upload_url
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.AvatarUploadURLResponse'
+        "400":
+          description: error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Update user avatar
       tags:
       - users
@@ -939,21 +984,15 @@ paths:
         "200":
           description: token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.TokenResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "401":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: User login
       tags:
       - users
@@ -975,21 +1014,15 @@ paths:
         "201":
           description: message
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
           description: error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Register a new user
       tags:
       - users
@@ -1009,26 +1042,20 @@ paths:
       - application/json
       responses:
         "201":
-          description: message
+          description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
         "400":
-          description: error
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
-          description: error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Add a new video
       tags:
-      - videos
+      - Videos
   /videos/{video_id}:
     delete:
       description: Deletes a video by its ID from the system
@@ -1042,20 +1069,24 @@ paths:
       - application/json
       responses:
         "200":
-          description: message
+          description: OK
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
         "500":
-          description: error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Delete a video
       tags:
-      - videos
+      - Videos
     get:
       description: Fetches a video by its ID and generates presigned URLs for the
         video and image
@@ -1073,15 +1104,21 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "404":
-          description: error
+        "400":
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Get video by ID
       tags:
-      - videos
+      - Videos
   /videos/{video_id}/download-url/image:
     get:
       description: Generates a presigned URL to download an image (e.g., thumbnail)
@@ -1101,15 +1138,21 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: error
+        "400":
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned download URL for an image
       tags:
-      - videos
+      - Videos
   /videos/{video_id}/download-url/video:
     get:
       description: Generates a presigned URL to download a video file from S3
@@ -1128,16 +1171,93 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: error
+        "400":
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned download URL for a video
       tags:
-      - videos
-  /videos/upload-url/image:
+      - Videos
+  /videos/{video_id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the status of a specific video by its ID
+      parameters:
+      - description: Video ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.StatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get the status of a video
+      tags:
+      - Videos
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a specific video by its ID
+      parameters:
+      - description: Video ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateVideoStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update the status of a video
+      tags:
+      - Videos
+  /videos/generate-upload-url/image:
     post:
       description: Generates a presigned URL to upload an image (e.g., thumbnail)
         to S3
@@ -1162,15 +1282,13 @@ paths:
               type: string
             type: object
         "500":
-          description: error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned upload URL for an image
       tags:
-      - videos
-  /videos/upload-url/video:
+      - Videos
+  /videos/generate-upload-url/video:
     post:
       description: Generates a presigned URL to upload a video file to S3
       parameters:
@@ -1194,14 +1312,12 @@ paths:
               type: string
             type: object
         "500":
-          description: error
+          description: Internal Server Error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned upload URL for a video
       tags:
-      - videos
+      - Videos
   /videos/user/{user_id}:
     get:
       description: Fetches all videos for a specific user along with presigned image
@@ -1220,13 +1336,15 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: error
+        "400":
+          description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
       summary: List videos by user ID
       tags:
-      - videos
+      - Videos
 swagger: "2.0"
