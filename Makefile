@@ -17,6 +17,7 @@ build:
 
 # Generate wire dependencies
 wire:
+	go install github.com/google/wire/cmd/wire@latest
 	cd $(CMD_DIR) && wire
 
 # Clean the generated binaries
@@ -24,10 +25,12 @@ clean:
 	rm -f $(CMD_DIR)/$(APP_NAME)
 
 # Generate wire and then build
-wire-build: wire build
+wire-build:
+	wire build
 
 # Swagger
 swag:
+	go install github.com/swaggo/swag/cmd/swag@latest
 	swag init -g $(CMD_DIR)/main.go -o ./docs
 
 # Run all steps from the script
