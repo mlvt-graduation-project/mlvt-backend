@@ -14,6 +14,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
+type S3ClientInterface interface {
+	GeneratePresignedURL(folder string, fileName string, fileType string) (string, error)
+}
+
 type S3Client struct {
 	Client *s3.Client
 	Bucket string
