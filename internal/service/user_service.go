@@ -25,11 +25,11 @@ type UserService interface {
 
 type userService struct {
 	repo     repo.UserRepository
-	s3Client *aws.S3Client
-	auth     *AuthService
+	s3Client aws.S3ClientInterface
+	auth     AuthServiceInterface
 }
 
-func NewUserService(repo repo.UserRepository, s3Client *aws.S3Client, auth *AuthService) UserService {
+func NewUserService(repo repo.UserRepository, s3Client aws.S3ClientInterface, auth AuthServiceInterface) UserService {
 	return &userService{
 		repo:     repo,
 		s3Client: s3Client,
