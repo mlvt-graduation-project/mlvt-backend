@@ -128,7 +128,7 @@ func getProjectRootDir() (string, error) {
 	// Set your own root go manage the .env
 	//Ex: rootDir := "/Users/giabao/Code/golang/mlvt/mlvt-backend"
 	// Changes to "../../../../" when running the unit testing
-	rootDir := "../../../../"
+	rootDir := "../../"
 	return filepath.Abs(rootDir)
 }
 
