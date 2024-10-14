@@ -9,6 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthService defines methods for user authentication
+type AuthService interface {
+	GetUserByToken(token string) (*entity.User, error)
+	// Add other authentication-related methods if needed
+}
+
 // AuthUserMiddleware handles user authentication
 type AuthUserMiddleware struct {
 	authService *service.AuthService
