@@ -23,10 +23,10 @@ type VideoService interface {
 
 type videoService struct {
 	repo     repo.VideoRepository
-	s3Client *aws.S3Client
+	s3Client aws.S3ClientInterface
 }
 
-func NewVideoService(repo repo.VideoRepository, s3Client *aws.S3Client) VideoService {
+func NewVideoService(repo repo.VideoRepository, s3Client aws.S3ClientInterface) VideoService {
 	return &videoService{
 		repo:     repo,
 		s3Client: s3Client,
