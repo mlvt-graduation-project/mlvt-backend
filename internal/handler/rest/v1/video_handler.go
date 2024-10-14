@@ -6,6 +6,7 @@ import (
 
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service"
 
@@ -251,7 +252,12 @@ func (h *VideoController) GetVideoByID(c *gin.Context) {
 
 	video, videoURL, imageURL, err := h.videoService.GetVideoByID(videoID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
+		log.Errorf("Error fetching video by ID %d: %v", videoID, err)
+		if err.Error() == "video not found" {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		}
 		return
 	}
 
