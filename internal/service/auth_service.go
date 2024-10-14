@@ -11,6 +11,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// AuthServiceInterface defines the methods used by UserService for authentication
+type AuthServiceInterface interface {
+	Login(email, password string) (string, error)
+	GenerateToken(user *entity.User) (string, error)
+	GetUserByToken(tokenStr string) (*entity.User, error)
+}
+
 // AuthService handles user authentication
 type AuthService struct {
 	userRepo  repo.UserRepository
