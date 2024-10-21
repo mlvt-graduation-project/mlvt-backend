@@ -21,10 +21,10 @@ type AudioService interface {
 
 type audioService struct {
 	repo     repo.AudioRepository
-	s3Client *aws.S3Client
+	s3Client aws.S3ClientInterface
 }
 
-func NewAudioService(repo repo.AudioRepository, s3Client *aws.S3Client) AudioService {
+func NewAudioService(repo repo.AudioRepository, s3Client aws.S3ClientInterface) AudioService {
 	return &audioService{
 		repo:     repo,
 		s3Client: s3Client,
