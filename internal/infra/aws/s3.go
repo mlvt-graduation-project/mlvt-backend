@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"mlvt/internal/infra/env"
@@ -12,10 +13,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3ClientInterface interface {
 	GeneratePresignedURL(folder string, fileName string, fileType string) (string, error)
+	UploadFile(folder string, fileName string, fileType string, fileData []byte) error
 }
 
 type S3Client struct {
@@ -23,7 +26,7 @@ type S3Client struct {
 	Bucket string
 }
 
-func NewS3Client() (*S3Client, error) {
+func NewS3Client() (S3ClientInterface, error) {
 	// Load the default AWS configuration
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(env.EnvConfig.AWSRegion),
@@ -77,4 +80,37 @@ func (s *S3Client) GeneratePresignedURL(folder string, fileName string, fileType
 
 	log.Info(reason.GeneratedPresignedURL.Message()+": ", presignReq.URL)
 	return presignReq.URL, nil
+}
+
+// UploadFile uploads a file directly to S3
+func (s *S3Client) UploadFile(folder string, fileName string, fileType string, fileData []byte) error {
+	log.Info("Uploading file to folder: ", folder, ", file name: ", fileName)
+	if fileName == "" {
+		return fmt.Errorf("file name must not be empty")
+	}
+
+	// Combine folder and fileName to form the S3 key (path to the file)
+	fullPath := fileName
+	if folder != "" {
+		fullPath = fmt.Sprintf("%s/%s", folder, fileName)
+	}
+
+	// Prepare the PutObject input
+	input := &s3.PutObjectInput{
+		Bucket:      aws.String(s.Bucket),
+		Key:         aws.String(fullPath),
+		Body:        bytes.NewReader(fileData),
+		ContentType: aws.String(fileType),
+		ACL:         types.ObjectCannedACLPrivate, // Set appropriate ACL
+	}
+
+	// Perform the upload
+	_, err := s.Client.PutObject(context.TODO(), input)
+	if err != nil {
+		log.Errorf("failed to upload file: %v", err)
+		return fmt.Errorf("failed to upload file: %v", err)
+	}
+
+	log.Infof("file uploaded successfully: %s", fullPath)
+	return nil
 }
