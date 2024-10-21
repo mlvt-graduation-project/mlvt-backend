@@ -17,11 +17,11 @@ type AuthService interface {
 
 // AuthUserMiddleware handles user authentication
 type AuthUserMiddleware struct {
-	authService *service.AuthService
+	authService service.AuthServiceInterface
 }
 
 // NewAuthUserMiddleware creates a new AuthUserMiddleware
-func NewAuthUserMiddleware(authService *service.AuthService) *AuthUserMiddleware {
+func NewAuthUserMiddleware(authService service.AuthServiceInterface) *AuthUserMiddleware {
 	return &AuthUserMiddleware{
 		authService: authService,
 	}
