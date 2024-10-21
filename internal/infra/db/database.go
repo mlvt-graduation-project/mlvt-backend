@@ -13,6 +13,8 @@ func InitializeDB() (*sql.DB, error) {
 	dbPath := env.EnvConfig.DBConnection
 	dbDriver := env.EnvConfig.DBDriver
 
+	log.Infof("DBConnection: %s, DBDriver: %s", dbPath, dbDriver)
+
 	// Open a connection to the database file (creates the file if it doesn't exist)
 	db, err := sql.Open(dbDriver, dbPath)
 	if err != nil {

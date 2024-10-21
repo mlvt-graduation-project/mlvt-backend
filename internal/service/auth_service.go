@@ -4,7 +4,6 @@ import (
 	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/reason"
-	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 
 // AuthServiceInterface defines the methods used by UserService for authentication
 type AuthServiceInterface interface {
-	Login(email, password string) (string, uint64, error)
+	Login(email, password string) (string, error)
 	GenerateToken(user *entity.User) (string, error)
 	GetUserByToken(tokenStr string) (*entity.User, error)
 }
@@ -26,7 +25,7 @@ type AuthService struct {
 }
 
 // NewAuthService creates a new AuthService
-func NewAuthService(userRepo repo.UserRepository, secretKey string) *AuthService {
+func NewAuthService(userRepo repo.UserRepository, secretKey string) AuthServiceInterface {
 	return &AuthService{
 		userRepo:  userRepo,
 		secretKey: secretKey,
@@ -34,31 +33,25 @@ func NewAuthService(userRepo repo.UserRepository, secretKey string) *AuthService
 }
 
 // Login authenticates the user and returns a JWT token
-func (s *AuthService) Login(email, password string) (string, uint64, error) {
+func (s *AuthService) Login(email, password string) (string, error) {
 	user, err := s.userRepo.GetUserByEmail(email)
 	if err != nil {
-		log.Errorf("Error retrieving user by email %s: %v", email, err)
-		return "", 0, errors.New(reason.UserNotFound.Message())
-	}
-
-	if user == nil {
-		log.Warnf("User not found with email %s", email)
-		return "", 0, errors.New(reason.UserNotFound.Message())
+		return "", errors.New(reason.UserNotFound.Message())
 	}
 
 	// Compare the hashed password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", 0, errors.New(reason.InvalidCredentials.Message())
+		return "", errors.New(reason.InvalidCredentials.Message())
 	}
 
 	// Generate JWT token
 	token, err := s.GenerateToken(user)
 	if err != nil {
-		return "", 0, errors.New(reason.FailedToGenerateToken.Message())
+		return "", errors.New(reason.FailedToGenerateToken.Message())
 	}
 
-	return token, user.ID, nil
+	return token, nil
 }
 
 // GenerateToken creates a JWT token for a user
