@@ -114,3 +114,41 @@ func (s *S3Client) UploadFile(folder string, fileName string, fileType string, f
 	log.Infof("file uploaded successfully: %s", fullPath)
 	return nil
 }
+
+// DeleteFile deletes a file from the specified S3 folder.
+func (s *S3Client) DeleteFile(folder string, fileName string) error {
+	if fileName == "" {
+		return fmt.Errorf("file name must not be empty")
+	}
+
+	// Construct the S3 object key
+	fullPath := fileName
+	if folder != "" {
+		fullPath = fmt.Sprintf("%s/%s", folder, fileName)
+	}
+
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(fullPath),
+	}
+
+	_, err := s.Client.DeleteObject(context.TODO(), input)
+	if err != nil {
+		log.Errorf("Failed to delete s3 object: %v", err)
+		return fmt.Errorf("Failed to delete s3 object: %v", err)
+	}
+
+	// Optionally, wait until the object is deleted
+	waiter := s3.NewObjectNotExistsWaiter(s.Client)
+	err = waiter.Wait(context.TODO(), &s3.HeadObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(fullPath),
+	}, 5*time.Minute)
+	if err != nil {
+		log.Error("Error waiting for object deletion: ", err)
+		return fmt.Errorf("error waiting for object deletion: %v", err)
+	}
+
+	log.Info("Successfully deleted file from S3: ", fullPath)
+	return nil
+}
