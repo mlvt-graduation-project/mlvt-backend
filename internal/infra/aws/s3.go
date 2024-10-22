@@ -19,6 +19,7 @@ import (
 type S3ClientInterface interface {
 	GeneratePresignedURL(folder string, fileName string, fileType string) (string, error)
 	UploadFile(folder string, fileName string, fileType string, fileData []byte) error
+	DeleteFile(folder string, fileName string) error
 }
 
 type S3Client struct {
