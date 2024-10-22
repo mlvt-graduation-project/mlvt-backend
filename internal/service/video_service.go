@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/repo"
 )
 
@@ -87,7 +88,34 @@ func (s *videoService) ListVideosByUserID(userID uint64) ([]entity.Video, []enti
 }
 
 func (s *videoService) DeleteVideo(videoID uint64) error {
-	return s.repo.DeleteVideo(videoID)
+	// Fetch the video record to get the file names
+	video, err := s.repo.GetVideoByID(videoID)
+	if err != nil {
+		return fmt.Errorf("failed to fetch video: %v", err)
+	}
+	if video == nil {
+		return fmt.Errorf("video not found")
+	}
+
+	// Begin deletion process
+	// 1. Delete the video and frame files from S3
+	err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+	if err != nil {
+		return fmt.Errorf("failed to delete video file from S3: %v", err)
+	}
+
+	err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
+	if err != nil {
+		return fmt.Errorf("failed to delete frame image from S3: %v", err)
+	}
+
+	// 2. Delete the video record from the database
+	err = s.repo.DeleteVideo(videoID)
+	if err != nil {
+		return fmt.Errorf("failed to delete video from database: %v", err)
+	}
+
+	return nil
 }
 
 func (s *videoService) UpdateVideo(video *entity.Video) error {
