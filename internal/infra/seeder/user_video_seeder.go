@@ -81,7 +81,7 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 		lastName := "Seeder"
 		username := fmt.Sprintf("%s_%s", strings.ToLower(firstName), "seeder")
 		email := fmt.Sprintf("%s@seeder.com", username)
-		password := generateRandomPassword(12) // Generate a random password
+		password := "capigiba"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("Failed to hash password for user %s: %v", username, err)
@@ -300,6 +300,79 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		}
 
 		log.Printf("Successfully created video %s assigned to user ID %d with file %s and frame %s", title, userID, uniqueFileName, uniqueFrameName)
+	}
+
+	return nil
+}
+
+// CleanupSeededData deletes all seeded users and their associated videos and media from the database and S3.
+func (s *UserVideoSeeder) CleanupSeededData() error {
+	// Step 1: Fetch all users with emails ending with @seeder.com
+	seededUsers, err := s.userRepo.GetUsersByEmailSuffix("@seeder.com")
+	if err != nil {
+		return fmt.Errorf("failed to fetch seeded users: %v", err)
+	}
+
+	for _, user := range seededUsers {
+		// Step 2: Delete user's avatar from S3
+		if user.Avatar != "" && user.AvatarFolder != "" {
+			err = s.s3Client.DeleteFile(user.AvatarFolder, user.Avatar)
+			if err != nil {
+				log.Printf("Failed to delete avatar %s from S3 for user ID %d: %v", user.Avatar, user.ID, err)
+				// Continue with other deletions
+			} else {
+				log.Printf("Deleted avatar %s from S3 for user ID %d", user.Avatar, user.ID)
+			}
+		}
+
+		// Step 3: Fetch all videos associated with the user
+		videos, err := s.videoRepo.ListVideosByUserID(user.ID)
+		if err != nil {
+			log.Printf("Failed to fetch videos for user ID %d: %v", user.ID, err)
+			continue
+		}
+
+		for _, video := range videos {
+			// Step 4: Delete video file from S3
+			if video.FileName != "" && video.Folder != "" {
+				err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+				if err != nil {
+					log.Printf("Failed to delete video file %s from S3 for video ID %d: %v", video.FileName, video.ID, err)
+					// Continue with other deletions
+				} else {
+					log.Printf("Deleted video file %s from S3 for video ID %d", video.FileName, video.ID)
+				}
+			}
+
+			// Step 5: Delete frame image from S3
+			if video.Image != "" && env.EnvConfig.VideoFramesFolder != "" {
+				err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
+				if err != nil {
+					log.Printf("Failed to delete frame image %s from S3 for video ID %d: %v", video.Image, video.ID, err)
+					// Continue with other deletions
+				} else {
+					log.Printf("Deleted frame image %s from S3 for video ID %d", video.Image, video.ID)
+				}
+			}
+
+			// Step 6: Soft delete video record from the database
+			//err = s.videoRepo.SoftDeleteVideo(video.ID)
+			err = s.videoRepo.DeleteVideo(video.ID)
+			if err != nil {
+				log.Printf("Failed to soft delete video ID %d from database: %v", video.ID, err)
+			} else {
+				log.Printf("Soft deleted video ID %d from database", video.ID)
+			}
+		}
+
+		// Step 7: Soft delete user record from the database
+		//err = s.userRepo.SoftDeleteUser(user.ID)
+		err = s.userRepo.DeleteUser(user.ID)
+		if err != nil {
+			log.Printf("Failed to soft delete user ID %d from database: %v", user.ID, err)
+		} else {
+			log.Printf("Soft deleted user ID %d from database", user.ID)
+		}
 	}
 
 	return nil

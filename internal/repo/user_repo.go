@@ -15,6 +15,7 @@ type UserRepository interface {
 	GetAllUsers() ([]entity.User, error)
 	UpdateUserPassword(userID uint64, hashedPassword string) error
 	UpdateUserAvatar(userID uint64, avatarPath, avatarFolder string) error
+	GetUsersByEmailSuffix(suffix string) ([]entity.User, error)
 }
 
 type userRepo struct {
@@ -116,5 +117,26 @@ func (r *userRepo) GetAllUsers() ([]entity.User, error) {
 		}
 		users = append(users, user)
 	}
+	return users, nil
+}
+
+func (r *userRepo) GetUsersByEmailSuffix(suffix string) ([]entity.User, error) {
+	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at FROM users WHERE email LIKE ? AND deleted_at IS NULL`
+	likePattern := "%" + suffix
+	rows, err := r.db.Query(query, likePattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []entity.User
+	for rows.Next() {
+		var user entity.User
+		if err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Email, &user.Password, &user.Status, &user.Premium, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
 	return users, nil
 }
