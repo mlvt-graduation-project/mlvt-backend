@@ -1,8 +1,11 @@
 # Variables
 CMD_DIR := cmd/server
 OUTPUT_DIR := internal/wire_gen
+SEED_DIR := cmd/seeder
+CLEAN_DIR := cmd/cleanup
 APP_NAME := mlvt
 SCRIPT_DIR :=script/
+INITIALIZE_DIR := internal/initialize
 
 # Default target
 all: build
@@ -11,6 +14,14 @@ all: build
 run:
 	cd $(CMD_DIR) && go run .
 
+# Run the seeder
+seed:
+	cd $(SEED_DIR) && go run .
+
+# Run the cleaner
+cleaner:
+	cd $(CLEAN_DIR) && go run .
+
 # Build the application
 build:
 	cd $(CMD_DIR) && go build -o $(APP_NAME)
@@ -18,7 +29,7 @@ build:
 # Generate wire dependencies
 wire:
 	go install github.com/google/wire/cmd/wire@latest
-	cd $(CMD_DIR) && wire
+	cd $(INITIALIZE_DIR) && wire
 
 # Clean the generated binaries
 clean:
@@ -27,6 +38,16 @@ clean:
 # Generate wire and then build
 wire-build:
 	wire build
+
+#migration
+migrate:
+	migrate create -ext sql -dir migrations create_users_table
+	migrate create -ext sql -dir migrations create_videos_table
+	migrate create -ext sql -dir migrations create_transcriptions_table
+	migrate create -ext sql -dir migrations create_transaction_logs_table
+	migrate create -ext sql -dir migrations create_frames_table
+	migrate create -ext sql -dir migrations create_audios_table
+
 
 # Swagger
 swag:

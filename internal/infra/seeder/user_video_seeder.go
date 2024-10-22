@@ -131,7 +131,7 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 		}
 
 		// Generate a unique filename to prevent collisions
-		uniqueFileName := fmt.Sprintf("%s_%s", uniqueID, file.Name())
+		uniqueFileName := fmt.Sprintf("user-%s_%s", uniqueID, file.Name())
 
 		// Read the file data
 		fileData, err := ioutil.ReadFile(filePath)
@@ -248,7 +248,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		}
 
 		// Generate a unique filename to prevent collisions
-		uniqueFileName := fmt.Sprintf("%s_%s", uniqueID, fileName)
+		uniqueFileName := fmt.Sprintf("video-%s_%s", uniqueID, fileName)
 
 		// Read the video file data
 		videoData, err := ioutil.ReadFile(filePath)
@@ -279,7 +279,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		}
 
 		// Generate a unique filename for the frame to prevent collisions
-		uniqueFrameName := fmt.Sprintf("%s_%s", uniqueID, image)
+		uniqueFrameName := fmt.Sprintf("frame-%s_%s", uniqueID, image)
 
 		// Upload the frame image directly to S3
 		err = s.s3Client.UploadFile(env.EnvConfig.VideoFramesFolder, uniqueFrameName, frameType, frameData)
@@ -334,26 +334,26 @@ func (s *UserVideoSeeder) CleanupSeededData() error {
 
 		for _, video := range videos {
 			// Step 4: Delete video file from S3
-			if video.FileName != "" && video.Folder != "" {
-				err = s.s3Client.DeleteFile(video.Folder, video.FileName)
-				if err != nil {
-					log.Printf("Failed to delete video file %s from S3 for video ID %d: %v", video.FileName, video.ID, err)
-					// Continue with other deletions
-				} else {
-					log.Printf("Deleted video file %s from S3 for video ID %d", video.FileName, video.ID)
-				}
-			}
+			// if video.FileName != "" && video.Folder != "" {
+			// 	err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+			// 	if err != nil {
+			// 		log.Printf("Failed to delete video file %s from S3 for video ID %d: %v", video.FileName, video.ID, err)
+			// 		// Continue with other deletions
+			// 	} else {
+			// 		log.Printf("Deleted video file %s from S3 for video ID %d", video.FileName, video.ID)
+			// 	}
+			// }
 
-			// Step 5: Delete frame image from S3
-			if video.Image != "" && env.EnvConfig.VideoFramesFolder != "" {
-				err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
-				if err != nil {
-					log.Printf("Failed to delete frame image %s from S3 for video ID %d: %v", video.Image, video.ID, err)
-					// Continue with other deletions
-				} else {
-					log.Printf("Deleted frame image %s from S3 for video ID %d", video.Image, video.ID)
-				}
-			}
+			// // Step 5: Delete frame image from S3
+			// if video.Image != "" && env.EnvConfig.VideoFramesFolder != "" {
+			// 	err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
+			// 	if err != nil {
+			// 		log.Printf("Failed to delete frame image %s from S3 for video ID %d: %v", video.Image, video.ID, err)
+			// 		// Continue with other deletions
+			// 	} else {
+			// 		log.Printf("Deleted frame image %s from S3 for video ID %d", video.Image, video.ID)
+			// 	}
+			// }
 
 			// Step 6: Soft delete video record from the database
 			//err = s.videoRepo.SoftDeleteVideo(video.ID)

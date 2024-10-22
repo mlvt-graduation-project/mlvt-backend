@@ -1,31 +1,43 @@
-package cleanup
+package main
 
 import (
-	"log"
-	"mlvt/internal/infra/aws"
-	"mlvt/internal/infra/db"
+	"fmt"
 	"mlvt/internal/infra/seeder"
+	"mlvt/internal/infra/zap-logging/log"
+	"mlvt/internal/initialize"
 	"mlvt/internal/repo"
+	"os"
 )
 
 func main() {
 
-	// Initialize the database
-	dbConn, err := db.InitializeDB()
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+	// Initialize Logger
+	if err := initialize.InitLogger(); err != nil {
+		fmt.Fprintf(os.Stderr, "Logger initialization failed: %v\n", err)
+		os.Exit(1)
 	}
-	defer dbConn.Close()
 
-	// Initialize repositories
+	// Initialize Database
+	dbConn, err := initialize.InitDatabase()
+	if err != nil {
+		log.Errorf("Database initialization failed: %v", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if err := dbConn.Close(); err != nil {
+			log.Warnf("Error closing database connection: %v", err)
+		}
+	}()
+
+	// Initialize AWS Clients
+	s3Client, err := initialize.InitAWS()
+	if err != nil {
+		log.Errorf("AWS initialization failed: %v", err)
+		os.Exit(1)
+	}
+
 	userRepo := repo.NewUserRepo(dbConn)
 	videoRepo := repo.NewVideoRepo(dbConn)
-
-	// Initialize AWS S3 client
-	s3Client, err := aws.NewS3Client()
-	if err != nil {
-		log.Fatalf("Failed to initialize AWS S3 client: %v", err)
-	}
 
 	// Initialize the seeder (can be reused for cleanup)
 	userVideoSeeder := seeder.NewUserVideoSeeder(userRepo, videoRepo, s3Client)
@@ -33,8 +45,8 @@ func main() {
 	// Perform cleanup
 	err = userVideoSeeder.CleanupSeededData()
 	if err != nil {
-		log.Fatalf("Failed to cleanup seeded data: %v", err)
+		log.Errorf("Failed to cleanup seeded data: %v", err)
 	}
 
-	log.Println("Cleanup of seeded data completed successfully.")
+	log.Infof("Cleanup of seeded data completed successfully.")
 }

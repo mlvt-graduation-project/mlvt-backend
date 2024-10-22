@@ -121,7 +121,7 @@ func (r *userRepo) GetAllUsers() ([]entity.User, error) {
 }
 
 func (r *userRepo) GetUsersByEmailSuffix(suffix string) ([]entity.User, error) {
-	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at FROM users WHERE email LIKE ? AND deleted_at IS NULL`
+	query := `SELECT id, first_name, last_name, username, email, password, status, premium, role, avatar, avatar_folder, created_at, updated_at FROM users WHERE email LIKE ?` // AND deleted_at IS NULL`
 	likePattern := "%" + suffix
 	rows, err := r.db.Query(query, likePattern)
 	if err != nil {
