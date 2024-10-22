@@ -31,7 +31,7 @@ func main() {
 	userVideoSeeder := seeder.NewUserVideoSeeder(userRepo, videoRepo, s3Client)
 
 	// Perform cleanup
-	err = seeder.CleanupSeededData()
+	err = userVideoSeeder.CleanupSeededData()
 	if err != nil {
 		log.Fatalf("Failed to cleanup seeded data: %v", err)
 	}
