@@ -13,7 +13,7 @@ import (
 
 // AuthServiceInterface defines the methods used by UserService for authentication
 type AuthServiceInterface interface {
-	Login(email, password string) (string, error)
+	Login(email, password string) (string, uint64, error)
 	GenerateToken(user *entity.User) (string, error)
 	GetUserByToken(tokenStr string) (*entity.User, error)
 }
@@ -33,25 +33,25 @@ func NewAuthService(userRepo repo.UserRepository, secretKey string) AuthServiceI
 }
 
 // Login authenticates the user and returns a JWT token
-func (s *AuthService) Login(email, password string) (string, error) {
+func (s *AuthService) Login(email, password string) (string, uint64, error) {
 	user, err := s.userRepo.GetUserByEmail(email)
 	if err != nil {
-		return "", errors.New(reason.UserNotFound.Message())
+		return "", 0, errors.New(reason.UserNotFound.Message())
 	}
 
 	// Compare the hashed password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", errors.New(reason.InvalidCredentials.Message())
+		return "", 0, errors.New(reason.InvalidCredentials.Message())
 	}
 
 	// Generate JWT token
 	token, err := s.GenerateToken(user)
 	if err != nil {
-		return "", errors.New(reason.FailedToGenerateToken.Message())
+		return "", 0, errors.New(reason.FailedToGenerateToken.Message())
 	}
 
-	return token, nil
+	return token, user.ID, nil
 }
 
 // GenerateToken creates a JWT token for a user
