@@ -2,6 +2,7 @@ package repo
 
 import (
 	"database/sql"
+	"fmt"
 	"mlvt/internal/entity"
 	"time"
 )
@@ -11,6 +12,7 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*entity.User, error)
 	GetUserByID(userID uint64) (*entity.User, error)
 	UpdateUser(user *entity.User) error
+	SoftDeleteUser(userID uint64) error
 	DeleteUser(userID uint64) error
 	GetAllUsers() ([]entity.User, error)
 	UpdateUserPassword(userID uint64, hashedPassword string) error
@@ -76,11 +78,20 @@ func (r *userRepo) UpdateUser(user *entity.User) error {
 	return err
 }
 
-// DeleteUser performs a soft delete by updating the status of a user to "deleted"
-func (r *userRepo) DeleteUser(userID uint64) error {
+// SoftDeleteUser performs a soft delete by updating the status of a user to "deleted"
+func (r *userRepo) SoftDeleteUser(userID uint64) error {
 	query := `UPDATE users SET status = ? WHERE id = ?`
 	_, err := r.db.Exec(query, entity.UserStatusDeleted, userID)
 	return err
+}
+
+func (r *userRepo) DeleteUser(userID uint64) error {
+	query := "DELETE FROM users WHERE id = ?"
+	_, err := r.db.Exec(query, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user with ID %d: %v", userID, err)
+	}
+	return nil
 }
 
 // UpdateUserPassword updates the hashed password for a user

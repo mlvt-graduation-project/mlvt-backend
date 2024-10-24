@@ -82,12 +82,22 @@ func (r *videoRepo) DeleteVideo(videoID uint64) error {
 // UpdateVideo updates an existing video record
 func (r *videoRepo) UpdateVideo(video *entity.Video) error {
 	query := `
-		UPDATE videos
-		SET title = ?, duration = ?, description = ?, file_name = ?, folder = ?, image = ?, status = ?, updated_at = ?
-		WHERE id = ?`
+        UPDATE videos
+        SET title = ?, duration = ?, description = ?, file_name = ?, folder = ?, image = ?, status = ?, updated_at = ?
+        WHERE id = ?`
 	now := time.Now()
-	_, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, now, video.ID)
-	return err
+	result, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, now, video.ID)
+	if err != nil {
+		return fmt.Errorf("failed to execute update: %v", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no video found with id %d", video.ID)
+	}
+	return nil
 }
 
 // UpdateVideoStatus updates only the status of a video record

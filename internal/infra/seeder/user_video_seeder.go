@@ -4,11 +4,10 @@ package seeder
 
 import (
 	"crypto/md5"
-	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
+	"math/rand"
 	"mime"
 	"os"
 	"path/filepath"
@@ -18,6 +17,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo"
 
 	"github.com/google/uuid"
@@ -84,18 +84,18 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 		password := "capigiba"
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			log.Printf("Failed to hash password for user %s: %v", username, err)
+			log.Errorf("Failed to hash password for user %s: %v", username, err)
 			continue
 		}
 
 		// Check if user already exists
 		existingUser, err := s.userRepo.GetUserByEmail(email)
 		if err != nil {
-			log.Printf("Failed to check existing user for email %s: %v", email, err)
+			log.Errorf("Failed to check existing user for email %s: %v", email, err)
 			continue
 		}
 		if existingUser != nil {
-			log.Printf("User with email %s already exists, skipping", email)
+			log.Errorf("User with email %s already exists, skipping", email)
 			continue
 		}
 
@@ -115,13 +115,6 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 			UpdatedAt:    time.Now(),
 		}
 
-		// Insert user into the database
-		err = s.userRepo.CreateUser(user)
-		if err != nil {
-			log.Printf("Failed to create user %s: %v", username, err)
-			continue
-		}
-
 		// Upload avatar to S3
 		avatarFolder := env.EnvConfig.AvatarFolder // Use configured avatar folder
 		filePath := filepath.Join(avatarsFolder, file.Name())
@@ -136,14 +129,14 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 		// Read the file data
 		fileData, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			log.Printf("Failed to read file %s: %v", filePath, err)
+			log.Errorf("Failed to read file %s: %v", filePath, err)
 			continue
 		}
 
 		// Upload the avatar directly to S3
 		err = s.s3Client.UploadFile(avatarFolder, uniqueFileName, fileType, fileData)
 		if err != nil {
-			log.Printf("Failed to upload avatar for user %s: %v", username, err)
+			log.Errorf("Failed to upload avatar for user %s: %v", username, err)
 			continue
 		}
 
@@ -152,13 +145,20 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 		user.AvatarFolder = avatarFolder
 		user.UpdatedAt = time.Now()
 
-		err = s.userRepo.UpdateUserAvatar(user.ID, uniqueFileName, avatarFolder)
+		// Insert user into the database
+		err = s.userRepo.CreateUser(user)
 		if err != nil {
-			log.Printf("Failed to update avatar info for user %s: %v", username, err)
+			log.Errorf("Failed to create user %s: %v", username, err)
 			continue
 		}
 
-		log.Printf("Successfully created user %s with avatar %s", username, uniqueFileName)
+		// err = s.userRepo.UpdateUserAvatar(user.ID, uniqueFileName, avatarFolder)
+		// if err != nil {
+		// 	log.Errorf("Failed to update avatar info for user %s: %v", username, err)
+		// 	continue
+		// }
+
+		log.Infof("Successfully created user %s with avatar %s", username, uniqueFileName)
 	}
 
 	return nil
@@ -202,7 +202,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 
 		// Check if the frame file exists
 		if _, err := os.Stat(framePath); os.IsNotExist(err) {
-			log.Printf("Frame image %s does not exist for video %s, skipping video", image, fileName)
+			log.Errorf("Frame image %s does not exist for video %s, skipping video", image, fileName)
 			continue
 		}
 
@@ -212,11 +212,11 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		// Check if video already exists by unique ID
 		existingVideo, err := s.videoRepo.GetVideoByID(s.uniqueIDToUint64(uniqueID))
 		if err != nil {
-			log.Printf("Failed to check existing video for ID %s: %v", uniqueID, err)
+			log.Errorf("Failed to check existing video for ID %s: %v", uniqueID, err)
 			continue
 		}
 		if existingVideo != nil {
-			log.Printf("Video with ID %s already exists, skipping", uniqueID)
+			log.Errorf("Video with ID %s already exists, skipping", uniqueID)
 			continue
 		}
 
@@ -234,13 +234,6 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 			UpdatedAt:   time.Now(),
 		}
 
-		// Insert video into the database
-		err = s.videoRepo.CreateVideo(video)
-		if err != nil {
-			log.Printf("Failed to create video %s: %v", title, err)
-			continue
-		}
-
 		// Upload video to S3
 		fileType := mime.TypeByExtension(ext)
 		if fileType == "" {
@@ -253,14 +246,14 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		// Read the video file data
 		videoData, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			log.Printf("Failed to read video file %s: %v", filePath, err)
+			log.Errorf("Failed to read video file %s: %v", filePath, err)
 			continue
 		}
 
 		// Upload the video directly to S3
 		err = s.s3Client.UploadFile(folder, uniqueFileName, fileType, videoData)
 		if err != nil {
-			log.Printf("Failed to upload video %s to S3: %v", uniqueFileName, err)
+			log.Errorf("Failed to upload video %s to S3: %v", uniqueFileName, err)
 			continue
 		}
 
@@ -274,7 +267,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		// Read the frame image data
 		frameData, err := ioutil.ReadFile(framePath)
 		if err != nil {
-			log.Printf("Failed to read frame file %s: %v", framePath, err)
+			log.Errorf("Failed to read frame file %s: %v", framePath, err)
 			continue
 		}
 
@@ -284,7 +277,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		// Upload the frame image directly to S3
 		err = s.s3Client.UploadFile(env.EnvConfig.VideoFramesFolder, uniqueFrameName, frameType, frameData)
 		if err != nil {
-			log.Printf("Failed to upload frame %s to S3: %v", uniqueFrameName, err)
+			log.Errorf("Failed to upload frame %s to S3: %v", uniqueFrameName, err)
 			continue
 		}
 
@@ -293,13 +286,20 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		video.Image = uniqueFrameName
 		video.UpdatedAt = time.Now()
 
-		err = s.videoRepo.UpdateVideo(video)
+		// Insert video into the database
+		err = s.videoRepo.CreateVideo(video)
 		if err != nil {
-			log.Printf("Failed to update video record for %s: %v", title, err)
+			log.Errorf("Failed to create video %s: %v", title, err)
 			continue
 		}
 
-		log.Printf("Successfully created video %s assigned to user ID %d with file %s and frame %s", title, userID, uniqueFileName, uniqueFrameName)
+		// err = s.videoRepo.UpdateVideo(video)
+		// if err != nil {
+		// 	log.Errorf("Failed to update video record for %s: %v", title, err)
+		// 	continue
+		// }
+
+		log.Infof("Successfully created video %s assigned to user ID %d with file %s and frame %s", title, userID, uniqueFileName, uniqueFrameName)
 	}
 
 	return nil
@@ -314,54 +314,58 @@ func (s *UserVideoSeeder) CleanupSeededData() error {
 	}
 
 	for _, user := range seededUsers {
+		log.Warnf("User %d: %s", user.ID, user.Email)
+	}
+
+	for _, user := range seededUsers {
 		// Step 2: Delete user's avatar from S3
 		if user.Avatar != "" && user.AvatarFolder != "" {
 			err = s.s3Client.DeleteFile(user.AvatarFolder, user.Avatar)
 			if err != nil {
-				log.Printf("Failed to delete avatar %s from S3 for user ID %d: %v", user.Avatar, user.ID, err)
+				log.Errorf("Failed to delete avatar %s from S3 for user ID %d: %v", user.Avatar, user.ID, err)
 				// Continue with other deletions
 			} else {
-				log.Printf("Deleted avatar %s from S3 for user ID %d", user.Avatar, user.ID)
+				log.Infof("Deleted avatar %s from S3 for user ID %d", user.Avatar, user.ID)
 			}
 		}
 
 		// Step 3: Fetch all videos associated with the user
 		videos, err := s.videoRepo.ListVideosByUserID(user.ID)
 		if err != nil {
-			log.Printf("Failed to fetch videos for user ID %d: %v", user.ID, err)
+			log.Errorf("Failed to fetch videos for user ID %d: %v", user.ID, err)
 			continue
 		}
 
 		for _, video := range videos {
 			// Step 4: Delete video file from S3
-			// if video.FileName != "" && video.Folder != "" {
-			// 	err = s.s3Client.DeleteFile(video.Folder, video.FileName)
-			// 	if err != nil {
-			// 		log.Printf("Failed to delete video file %s from S3 for video ID %d: %v", video.FileName, video.ID, err)
-			// 		// Continue with other deletions
-			// 	} else {
-			// 		log.Printf("Deleted video file %s from S3 for video ID %d", video.FileName, video.ID)
-			// 	}
-			// }
+			if video.FileName != "" && video.Folder != "" {
+				err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+				if err != nil {
+					log.Errorf("Failed to delete video file %s from S3 for video ID %d: %v", video.FileName, video.ID, err)
+					// Continue with other deletions
+				} else {
+					log.Infof("Deleted video file %s from S3 for video ID %d", video.FileName, video.ID)
+				}
+			}
 
-			// // Step 5: Delete frame image from S3
-			// if video.Image != "" && env.EnvConfig.VideoFramesFolder != "" {
-			// 	err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
-			// 	if err != nil {
-			// 		log.Printf("Failed to delete frame image %s from S3 for video ID %d: %v", video.Image, video.ID, err)
-			// 		// Continue with other deletions
-			// 	} else {
-			// 		log.Printf("Deleted frame image %s from S3 for video ID %d", video.Image, video.ID)
-			// 	}
-			// }
+			// Step 5: Delete frame image from S3
+			if video.Image != "" && env.EnvConfig.VideoFramesFolder != "" {
+				err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
+				if err != nil {
+					log.Errorf("Failed to delete frame image %s from S3 for video ID %d: %v", video.Image, video.ID, err)
+					// Continue with other deletions
+				} else {
+					log.Infof("Deleted frame image %s from S3 for video ID %d", video.Image, video.ID)
+				}
+			}
 
 			// Step 6: Soft delete video record from the database
 			//err = s.videoRepo.SoftDeleteVideo(video.ID)
 			err = s.videoRepo.DeleteVideo(video.ID)
 			if err != nil {
-				log.Printf("Failed to soft delete video ID %d from database: %v", video.ID, err)
+				log.Errorf("Failed to soft delete video ID %d from database: %v", video.ID, err)
 			} else {
-				log.Printf("Soft deleted video ID %d from database", video.ID)
+				log.Infof("Soft deleted video ID %d from database", video.ID)
 			}
 		}
 
@@ -369,24 +373,20 @@ func (s *UserVideoSeeder) CleanupSeededData() error {
 		//err = s.userRepo.SoftDeleteUser(user.ID)
 		err = s.userRepo.DeleteUser(user.ID)
 		if err != nil {
-			log.Printf("Failed to soft delete user ID %d from database: %v", user.ID, err)
+			log.Errorf("Failed to soft delete user ID %d from database: %v", user.ID, err)
 		} else {
-			log.Printf("Soft deleted user ID %d from database", user.ID)
+			log.Infof("Soft deleted user ID %d from database", user.ID)
 		}
 	}
 
 	return nil
 }
 
-// assignToUser randomly assigns a video to user ID 1 or 2.
 func (s *UserVideoSeeder) assignToUser() uint64 {
-	// Generate a random number between 0 and 1
-	b := make([]byte, 1)
-	rand.Read(b)
-	if b[0]%2 == 0 {
-		return 1
-	}
-	return 2
+	seededUsers, _ := s.userRepo.GetUsersByEmailSuffix("@seeder.com")
+	randomIndex := rand.Intn(len(seededUsers)-2) + 3
+
+	return uint64(randomIndex)
 }
 
 // selectRandomUser selects a random user from the database to associate with a video.
