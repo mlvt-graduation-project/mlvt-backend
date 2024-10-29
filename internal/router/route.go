@@ -82,6 +82,10 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 		protected.DELETE("/:transcriptionID", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
 		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                    // Generate presigned upload URL
 		protected.GET("/:transcriptionID/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
+		// Speech to text
+		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTranscriptionToTranslation)
+		// Text to text
+		protected.POST("/process/:video_id", a.transcriptionController.ProcessVideoToTranscription) // Process video to transcription
 	}
 }
 
