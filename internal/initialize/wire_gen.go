@@ -36,7 +36,7 @@ func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
 	audioController := handler.NewAudioController(audioService)
 	transcriptionRepository := repo.NewTranscriptionRepository(db)
 	transcriptionService := service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
-	transcriptionController := handler.NewTranscriptionController(transcriptionService)
+	transcriptionController := handler.NewTranscriptionController(transcriptionService, videoService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
 	moMoRepo := repo.NewMoMoRepo()
 	moMoPaymentService := service.NewMoMoPaymentService(moMoRepo)
