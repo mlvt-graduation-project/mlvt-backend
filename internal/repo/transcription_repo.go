@@ -2,6 +2,7 @@ package repo
 
 import (
 	"database/sql"
+	"fmt"
 	"mlvt/internal/entity"
 	"time"
 )
@@ -14,6 +15,7 @@ type TranscriptionRepository interface {
 	ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error)
 	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
 	DeleteTranscription(transcriptionID uint64) error
+	UpdateTranscription(transcription *entity.Transcription) error
 }
 
 type transcriptionRepo struct {
@@ -126,4 +128,24 @@ func (r *transcriptionRepo) DeleteTranscription(transcriptionID uint64) error {
 	query := "DELETE FROM transcriptions WHERE id = ?"
 	_, err := r.db.Exec(query, transcriptionID)
 	return err
+}
+
+func (r *transcriptionRepo) UpdateTranscription(transcription *entity.Transcription) error {
+	query := `
+		UPDATE transcriptions
+		SET text = ?, lang = ?, folder = ?, file_name = ?, updated_at = ?
+		WHERE id = ?`
+	now := time.Now()
+	result, err := r.db.Exec(query, transcription.Text, transcription.Lang, transcription.Folder, transcription.FileName, now, transcription.ID)
+	if err != nil {
+		return fmt.Errorf("failed to execute update: %v", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no transcription found with id %d", transcription.ID)
+	}
+	return nil
 }
