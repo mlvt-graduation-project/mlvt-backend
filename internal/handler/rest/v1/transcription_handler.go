@@ -1,6 +1,10 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
 	"mlvt/internal/pkg/response"
@@ -13,10 +17,17 @@ import (
 
 type TranscriptionController struct {
 	transcriptionService service.TranscriptionService
+	videoService         service.VideoService
 }
 
-func NewTranscriptionController(transcriptionService service.TranscriptionService) *TranscriptionController {
-	return &TranscriptionController{transcriptionService: transcriptionService}
+func NewTranscriptionController(
+	transcriptionService service.TranscriptionService,
+	videoService service.VideoService,
+) *TranscriptionController {
+	return &TranscriptionController{
+		transcriptionService: transcriptionService,
+		videoService:         videoService,
+	}
 }
 
 // GenerateUploadURL godoc
@@ -280,4 +291,112 @@ func (h *TranscriptionController) DeleteTranscription(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.MessageResponse{Message: "Transcription deleted successfully"})
+}
+
+// ProcessVideoToTranscription godoc
+// @Summary Process video to transcription
+// @Description Converts a video to transcription by processing it through an external service
+// @Tags transcriptions
+// @Accept json
+// @Produce json
+// @Param video_id path uint64 true "ID of the video to process"
+// @Success 200 {object} response.TranscriptionResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /transcriptions/process/{video_id} [post]
+func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
+	videoIDStr := c.Param("video_id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid video ID"})
+		return
+	}
+
+	// Check if video exists
+	video, _, _, err := h.videoService.GetVideoByID(videoID)
+	if err != nil {
+		if err.Error() == "video not found" {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		}
+		return
+	}
+
+	// Generate presigned download URL for video
+	videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate video download URL"})
+		return
+	}
+
+	// Generate unique file name for transcription
+	transcriptionFileName := fmt.Sprintf("transcription_%d.json", videoID)
+
+	// Get folder from env config or use a predefined folder
+	folder := env.EnvConfig.TranscriptionsFolder
+	if folder == "" {
+		folder = "transcriptions"
+	}
+
+	// Generate presigned upload URL for transcription
+	fileType := "application/json"
+	transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate transcription upload URL"})
+		return
+	}
+
+	// Send request to EC2 server
+	ec2ServerURL := "http://ip-172-31-39-63:8000/process" // Replace with your actual EC2 server IP and endpoint
+	requestBody := map[string]string{
+		"video_download_url":       videoDownloadURL,
+		"transcription_upload_url": transcriptionUploadURL,
+	}
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to marshal request body"})
+		return
+	}
+
+	req, err := http.NewRequest("POST", ec2ServerURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to create request to processing server"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to send request to processing server"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := ioutil.ReadAll(resp.Body)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: fmt.Sprintf("processing server returned error: %s", string(respBody))})
+		return
+	}
+
+	// Create Transcription entity and store in DB
+	transcription := &entity.Transcription{
+		VideoID:  videoID,
+		UserID:   video.UserID,
+		Folder:   folder,
+		FileName: transcriptionFileName,
+	}
+
+	err = h.transcriptionService.CreateTranscription(transcription)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to store transcription data"})
+		return
+	}
+
+	// Return the transcription info to frontend
+	c.JSON(http.StatusOK, response.TranscriptionResponse{
+		Transcription: *transcription,
+		DownloadURL:   transcriptionUploadURL, // Or generate a download URL if needed
+	})
 }
