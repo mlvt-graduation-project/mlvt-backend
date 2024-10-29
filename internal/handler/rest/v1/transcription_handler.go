@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service"
 	"net/http"
@@ -348,18 +349,22 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 		return
 	}
 
-	// Send request to EC2 server
-	ec2ServerURL := "http://ip-172-31-39-63:8000/process" // Replace with your actual EC2 server IP and endpoint
-	requestBody := map[string]string{
-		"video_download_url":       videoDownloadURL,
-		"transcription_upload_url": transcriptionUploadURL,
+	// Prepare request payload matching STTRequest struct
+	requestPayload := request.STTRequest{
+		InputFileName:  video.FileName,
+		InputLink:      videoDownloadURL,
+		OutputFileName: transcriptionFileName,
+		OutputLink:     transcriptionUploadURL,
 	}
-	jsonData, err := json.Marshal(requestBody)
+
+	jsonData, err := json.Marshal(requestPayload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to marshal request body"})
 		return
 	}
 
+	// Send request to EC2 server
+	ec2ServerURL := "http://<EC2_SERVER_IP>:8000/stt" // Replace with your actual EC2 server IP and endpoint
 	req, err := http.NewRequest("POST", ec2ServerURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to create request to processing server"})
@@ -397,6 +402,136 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 	// Return the transcription info to frontend
 	c.JSON(http.StatusOK, response.TranscriptionResponse{
 		Transcription: *transcription,
-		DownloadURL:   transcriptionUploadURL, // Or generate a download URL if needed
+	})
+}
+
+// ProcessTranscriptionToTranslation handles the translation of a transcription
+// @Summary Process transcription to translation
+// @Description Translates a transcription by processing it through an external service
+// @Tags transcriptions
+// @Accept json
+// @Produce json
+// @Param transcription_id path uint64 true "ID of the transcription to translate"
+// @Param source_language query string true "Source language code"
+// @Param target_language query string true "Target language code"
+// @Success 200 {object} response.TranscriptionResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /transcriptions/translate/{transcription_id} [post]
+func (h *TranscriptionController) ProcessTranscriptionToTranslation(c *gin.Context) {
+	transcriptionIDStr := c.Param("transcription_id")
+	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid transcription ID"})
+		return
+	}
+
+	sourceLang := c.Query("source_language")
+	targetLang := c.Query("target_language")
+
+	if sourceLang == "" || targetLang == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "source_language and target_language are required"})
+		return
+	}
+
+	// Retrieve the existing transcription
+	transcription, transcriptionDownloadURL, err := h.transcriptionService.GetTranscriptionByID(transcriptionID)
+	if err != nil {
+		if err.Error() == "transcription not found" {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "transcription not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		}
+		return
+	}
+
+	// Check if transcription.Lang is empty or equals sourceLang
+	if transcription.Lang == "" {
+		// Update transcription.Lang to sourceLang
+		transcription.Lang = sourceLang
+		err = h.transcriptionService.UpdateTranscription(transcription)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to update transcription language"})
+			return
+		}
+	} else if transcription.Lang != sourceLang {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "source_language does not match transcription language"})
+		return
+	}
+
+	// Generate unique file name for the translated transcription
+	translatedFileName := fmt.Sprintf("transcription_%d_%s.json", transcriptionID, targetLang)
+
+	// Get folder from env config or use a predefined folder
+	folder := env.EnvConfig.TranscriptionsFolder
+	if folder == "" {
+		folder = "transcriptions"
+	}
+
+	// Generate presigned upload URL for the translated transcription
+	fileType := "application/json"
+	translationUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, translatedFileName, fileType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate translation upload URL"})
+		return
+	}
+
+	// Prepare request payload matching TTTRequest struct
+	requestPayload := request.TTTRequest{
+		InputFileName:  transcription.FileName,
+		InputLink:      transcriptionDownloadURL,
+		OutputFileName: translatedFileName,
+		OutputLink:     translationUploadURL,
+		SourceLang:     sourceLang,
+		TargetLang:     targetLang,
+	}
+
+	jsonData, err := json.Marshal(requestPayload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to marshal request body"})
+		return
+	}
+
+	// Send request to EC2 server
+	ec2ServerURL := "http://<EC2_SERVER_IP>:8000/ttt" // Replace with your actual EC2 server IP and endpoint
+	req, err := http.NewRequest("POST", ec2ServerURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to create request to processing server"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to send request to processing server"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := ioutil.ReadAll(resp.Body)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: fmt.Sprintf("processing server returned error: %s", string(respBody))})
+		return
+	}
+
+	// Create new Transcription entity with targetLang
+	newTranscription := &entity.Transcription{
+		VideoID:  transcription.VideoID,
+		UserID:   transcription.UserID,
+		Lang:     targetLang,
+		Folder:   folder,
+		FileName: translatedFileName,
+	}
+
+	err = h.transcriptionService.CreateTranscription(newTranscription)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to store translated transcription data"})
+		return
+	}
+
+	// Return the new transcription info to frontend
+	c.JSON(http.StatusOK, response.TranscriptionResponse{
+		Transcription: *newTranscription,
 	})
 }

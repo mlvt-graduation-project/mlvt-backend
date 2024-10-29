@@ -17,6 +17,7 @@ type TranscriptionService interface {
 	DeleteTranscription(transcriptionID uint64) error
 	GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error)
 	GeneratePresignedDownloadURL(transcriptionID uint64) (string, error)
+	UpdateTranscription(transcription *entity.Transcription) error
 }
 
 type transcriptionService struct {
@@ -115,4 +116,8 @@ func (s *transcriptionService) GeneratePresignedDownloadURL(transcriptionID uint
 	}
 
 	return s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+}
+
+func (s *transcriptionService) UpdateTranscription(transcription *entity.Transcription) error {
+	return s.repo.UpdateTranscription(transcription)
 }
