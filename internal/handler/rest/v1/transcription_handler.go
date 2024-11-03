@@ -364,17 +364,10 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 	}
 
 	// Send request to EC2 server
-	ec2ServerURL := "http://<EC2_SERVER_IP>:8000/stt" // Replace with your actual EC2 server IP and endpoint
-	req, err := http.NewRequest("POST", ec2ServerURL, bytes.NewBuffer(jsonData))
+	ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+	resp, err := http.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to create request to processing server"})
-		return
-	}
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to send request to processing server"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send request to EC2 server"})
 		return
 	}
 	defer resp.Body.Close()
@@ -494,7 +487,7 @@ func (h *TranscriptionController) ProcessTranscriptionToTranslation(c *gin.Conte
 	}
 
 	// Send request to EC2 server
-	ec2ServerURL := "http://<EC2_SERVER_IP>:8000/ttt" // Replace with your actual EC2 server IP and endpoint
+	ec2ServerURL := fmt.Sprintf("http://%s:%s/ttt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 	req, err := http.NewRequest("POST", ec2ServerURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to create request to processing server"})

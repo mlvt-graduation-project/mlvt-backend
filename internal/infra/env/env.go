@@ -39,6 +39,8 @@ type Config struct {
 	VideosFolder         string
 	TranscriptionsFolder string
 	VideoFramesFolder    string
+	Ec2IPAddress         string
+	Ec2Port              string
 	Language             string
 	I18NPath             string
 	RootDir              string
@@ -113,6 +115,8 @@ func initializeConfig() error {
 		VideosFolder:         viper.GetString("VIDEOS_FOLDER"),
 		TranscriptionsFolder: viper.GetString("TRANSCRIPTIONS_FOLDER"),
 		VideoFramesFolder:    viper.GetString("VIDEO_FRAMES_FOLDER"),
+		Ec2IPAddress:         viper.GetString("EC2_IP_ADDRESS"),
+		Ec2Port:              viper.GetString("EC2_PORT"),
 		I18NPath:             i18nPath,
 		RootDir:              rootDir,
 	}
