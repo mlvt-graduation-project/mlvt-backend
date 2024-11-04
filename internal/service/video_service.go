@@ -48,11 +48,11 @@ func (s *videoService) GetVideoByID(videoID uint64) (*entity.Video, string, stri
 	}
 
 	// Generate presigned URLs for video and image
-	videoURL, err := s.s3Client.GeneratePresignedURL(video.Folder, video.FileName, "video/mp4")
+	videoURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to generate presigned video URL: %v", err)
 	}
-	imageURL, err := s.s3Client.GeneratePresignedURL(env.EnvConfig.VideoFramesFolder, video.Image, "image/jpeg")
+	imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image)
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to generate presigned image URL: %v", err)
 	}
@@ -71,7 +71,7 @@ func (s *videoService) ListVideosByUserID(userID uint64) ([]entity.Video, []enti
 	var frames []entity.Frame
 	for _, video := range videos {
 		// Generate the presigned URL for the video's image
-		imageURL, err := s.s3Client.GeneratePresignedURL(env.EnvConfig.VideoFramesFolder, video.Image, "image/jpeg")
+		imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to generate presigned URL for image: %v", err)
 		}
@@ -162,5 +162,5 @@ func (s *videoService) GeneratePresignedDownloadURLForImage(videoID uint64) (str
 		return "", fmt.Errorf("video not found")
 	}
 
-	return s.s3Client.GeneratePresignedURL(video.Folder, video.Image, "image/jpeg")
+	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.Image)
 }

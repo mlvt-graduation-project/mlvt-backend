@@ -123,7 +123,7 @@ func (s *userService) GeneratePresignedAvatarDownloadURL(userID uint64) (string,
 	}
 
 	// Generate the presigned URL for the avatar image
-	url, err := s.s3Client.GeneratePresignedURL(user.AvatarFolder, user.Avatar, "image/jpeg")
+	url, err := s.s3Client.GeneratePresignedDownloadURL(user.AvatarFolder, user.Avatar)
 	if err != nil {
 		return "", err
 	}

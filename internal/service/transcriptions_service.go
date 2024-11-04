@@ -46,7 +46,7 @@ func (s *transcriptionService) GetTranscriptionByID(transcriptionID uint64) (*en
 	}
 
 	// Generate presigned URL
-	presignedURL, err := s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+	presignedURL, err := s.s3Client.GeneratePresignedDownloadURL(transcription.Folder, transcription.FileName)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate presigned download URL: %v", err)
 	}
@@ -82,7 +82,7 @@ func (s *transcriptionService) GetTranscriptionByIDAndVideoID(transcriptionID, v
 	}
 
 	// Generate presigned URL
-	presignedURL, err := s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+	presignedURL, err := s.s3Client.GeneratePresignedDownloadURL(transcription.Folder, transcription.FileName)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate presigned download URL: %v", err)
 	}
@@ -115,7 +115,7 @@ func (s *transcriptionService) GeneratePresignedDownloadURL(transcriptionID uint
 		return "", fmt.Errorf("transcription not found")
 	}
 
-	return s.s3Client.GeneratePresignedURL(transcription.Folder, transcription.FileName, "application/json")
+	return s.s3Client.GeneratePresignedDownloadURL(transcription.Folder, transcription.FileName)
 }
 
 func (s *transcriptionService) UpdateTranscription(transcription *entity.Transcription) error {
