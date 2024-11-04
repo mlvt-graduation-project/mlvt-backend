@@ -18,6 +18,7 @@ import (
 
 type S3ClientInterface interface {
 	GeneratePresignedURL(folder string, fileName string, fileType string) (string, error)
+	GeneratePresignedDownloadURL(folder string, fileName string) (string, error)
 	UploadFile(folder string, fileName string, fileType string, fileData []byte) error
 	DeleteFile(folder string, fileName string) error
 }
@@ -80,6 +81,39 @@ func (s *S3Client) GeneratePresignedURL(folder string, fileName string, fileType
 	}
 
 	log.Info(reason.GeneratedPresignedURL.Message()+": ", presignReq.URL)
+	return presignReq.URL, nil
+}
+
+// GeneratePresignedDownloadURL generates a presigned URL for downloading a file from S3
+func (s *S3Client) GeneratePresignedDownloadURL(folder string, fileName string) (string, error) {
+	log.Info("Folder: ", folder, ", File name: ", fileName)
+	if fileName == "" {
+		return "", fmt.Errorf("file name must not be empty")
+	}
+
+	// Combine folder and fileName to form the S3 key (path to the file)
+	fullPath := fileName
+	if folder != "" {
+		fullPath = fmt.Sprintf("%s/%s", folder, fileName) // Add the folder to the file path
+	}
+
+	presignClient := s3.NewPresignClient(s.Client)
+
+	reqParams := &s3.GetObjectInput{
+		Bucket: aws.String(s.Bucket),
+		Key:    aws.String(fullPath),
+	}
+
+	// Use functional options to set the expiration time
+	presignReq, err := presignClient.PresignGetObject(context.TODO(), reqParams, func(o *s3.PresignOptions) {
+		o.Expires = 15 * time.Minute
+	})
+	if err != nil {
+		log.Error("Failed to presign get object request: ", err)
+		return "", fmt.Errorf("failed to presign get object request: %v", err)
+	}
+
+	log.Info("Generated presigned GET URL: ", presignReq.URL)
 	return presignReq.URL, nil
 }
 

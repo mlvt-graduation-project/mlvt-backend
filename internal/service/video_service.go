@@ -149,7 +149,7 @@ func (s *videoService) GeneratePresignedDownloadURLForVideo(videoID uint64) (str
 		return "", fmt.Errorf("video not found")
 	}
 
-	return s.s3Client.GeneratePresignedURL(video.Folder, video.FileName, "video/mp4")
+	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName)
 }
 
 // GeneratePresignedDownloadURLForImage generates a presigned URL for downloading an image file

@@ -12,6 +12,7 @@ import (
 	"mlvt/internal/service"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -333,7 +334,7 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 	}
 
 	// Generate unique file name for transcription
-	transcriptionFileName := fmt.Sprintf("transcription_%d.json", videoID)
+	transcriptionFileName := fmt.Sprintf("transcription_%d.txt", videoID)
 
 	// Get folder from env config or use a predefined folder
 	folder := env.EnvConfig.TranscriptionsFolder
@@ -342,7 +343,7 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 	}
 
 	// Generate presigned upload URL for transcription
-	fileType := "application/json"
+	fileType := "text/plain"
 	transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate transcription upload URL"})
@@ -363,9 +364,14 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 		return
 	}
 
+	// Create a custom HTTP client with a timeout
+	client := &http.Client{
+		Timeout: 5 * time.Minute, // Adjust as needed based on expected processing time
+	}
+
 	// Send request to EC2 server
 	ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-	resp, err := http.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
+	resp, err := client.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to send request to EC2 server"})
 		return
