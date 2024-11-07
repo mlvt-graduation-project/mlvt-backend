@@ -117,12 +117,16 @@ func (h *VideoController) AddVideo(c *gin.Context) {
 		return
 	}
 
-	if err := h.videoService.CreateVideo(&video); err != nil {
+	id, err := h.videoService.CreateVideo(&video)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, response.MessageResponse{Message: "Video added successfully"})
+	c.JSON(http.StatusCreated, response.MessageCreateVideoResponse{
+		Message: "Video added successfully",
+		Id:      id,
+	})
 }
 
 // GenerateUploadURLForVideo generates a presigned URL for uploading a video file

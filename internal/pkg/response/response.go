@@ -17,6 +17,12 @@ type MessageResponse struct {
 	Message string `json:"message"`
 }
 
+// MessageCreateVideoResponse represents a message response
+type MessageCreateVideoResponse struct {
+	Message string `json:"message"`
+	Id      uint64 `json:"id"`
+}
+
 // TokenResponse represents the response containing a token
 type TokenResponse struct {
 	Token  string `json:"token"`

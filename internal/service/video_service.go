@@ -9,7 +9,7 @@ import (
 )
 
 type VideoService interface {
-	CreateVideo(video *entity.Video) error
+	CreateVideo(video *entity.Video) (uint64, error)
 	GetVideoByID(videoID uint64) (*entity.Video, string, string, error) // Returns the video record and presigned URLs for video and image
 	ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error)
 	DeleteVideo(videoID uint64) error
@@ -34,8 +34,9 @@ func NewVideoService(repo repo.VideoRepository, s3Client aws.S3ClientInterface) 
 	}
 }
 
-func (s *videoService) CreateVideo(video *entity.Video) error {
-	return s.repo.CreateVideo(video)
+func (s *videoService) CreateVideo(video *entity.Video) (uint64, error) {
+	id, err := s.repo.CreateVideo(video)
+	return id, err
 }
 
 func (s *videoService) GetVideoByID(videoID uint64) (*entity.Video, string, string, error) {

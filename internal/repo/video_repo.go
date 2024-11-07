@@ -8,7 +8,7 @@ import (
 )
 
 type VideoRepository interface {
-	CreateVideo(video *entity.Video) error
+	CreateVideo(video *entity.Video) (uint64, error)
 	GetVideoByID(videoID uint64) (*entity.Video, error)
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
 	DeleteVideo(videoID uint64) error
@@ -26,7 +26,7 @@ func NewVideoRepo(db *sql.DB) VideoRepository {
 }
 
 // CreateVideo inserts a new video record into the database
-func (r *videoRepo) CreateVideo(video *entity.Video) error {
+func (r *videoRepo) CreateVideo(video *entity.Video) (uint64, error) {
 	if video.Status == "" {
 		video.Status = entity.StatusRaw
 	}
@@ -34,8 +34,18 @@ func (r *videoRepo) CreateVideo(video *entity.Video) error {
 		INSERT INTO videos (title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	now := time.Now()
-	_, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, video.UserID, now, now)
-	return err
+	result, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, video.UserID, now, now)
+	if err != nil {
+		return 0, err
+	}
+
+	// Retrieve the last inserted ID
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(id), nil
 }
 
 // GetVideoByID retrieves a video record by its ID

@@ -199,6 +199,8 @@ definitions:
     properties:
       token:
         type: string
+      user_id:
+        type: integer
     type: object
   response.TranscriptionResponse:
     properties:
@@ -672,6 +674,84 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned upload URL
+      tags:
+      - transcriptions
+  /transcriptions/process/{video_id}:
+    post:
+      consumes:
+      - application/json
+      description: Converts a video to transcription by processing it through an external
+        service
+      parameters:
+      - description: ID of the video to process
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TranscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Process video to transcription
+      tags:
+      - transcriptions
+  /transcriptions/translate/{transcription_id}:
+    post:
+      consumes:
+      - application/json
+      description: Translates a transcription by processing it through an external
+        service
+      parameters:
+      - description: ID of the transcription to translate
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      - description: Source language code
+        in: query
+        name: source_language
+        required: true
+        type: string
+      - description: Target language code
+        in: query
+        name: target_language
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.TranscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Process transcription to translation
       tags:
       - transcriptions
   /transcriptions/user/{user_id}:
