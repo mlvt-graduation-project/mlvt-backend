@@ -287,7 +287,7 @@ func (s *UserVideoSeeder) SeedVideosFromFolder(videosFolder string) error {
 		video.UpdatedAt = time.Now()
 
 		// Insert video into the database
-		err = s.videoRepo.CreateVideo(video)
+		_, err = s.videoRepo.CreateVideo(video)
 		if err != nil {
 			log.Errorf("Failed to create video %s: %v", title, err)
 			continue

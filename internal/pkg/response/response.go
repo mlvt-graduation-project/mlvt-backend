@@ -80,3 +80,9 @@ type AudioResponse struct {
 type AudiosResponse struct {
 	Audios []entity.Audio `json:"audios"`
 }
+
+type ListVideosByUserIDResponse struct {
+	Video    entity.Video `json:"video"`
+	VideoURL string       `json:"video_url"`
+	ImageURL string       `json:"image_url"`
+}

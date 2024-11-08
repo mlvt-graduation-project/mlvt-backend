@@ -5,13 +5,14 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/pkg/response"
 	"mlvt/internal/repo"
 )
 
 type VideoService interface {
 	CreateVideo(video *entity.Video) (uint64, error)
 	GetVideoByID(videoID uint64) (*entity.Video, string, string, error) // Returns the video record and presigned URLs for video and image
-	ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error)
+	ListVideosByUserID(userID uint64) ([]response.ListVideosByUserIDResponse, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
 	UpdateVideoStatus(videoID uint64, status entity.VideoStatus) error
@@ -49,11 +50,11 @@ func (s *videoService) GetVideoByID(videoID uint64) (*entity.Video, string, stri
 	}
 
 	// Generate presigned URLs for video and image
-	videoURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName)
+	videoURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName, "video/mp4")
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to generate presigned video URL: %v", err)
 	}
-	imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image)
+	imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image, "image/jpeg")
 	if err != nil {
 		return nil, "", "", fmt.Errorf("failed to generate presigned image URL: %v", err)
 	}
@@ -61,31 +62,36 @@ func (s *videoService) GetVideoByID(videoID uint64) (*entity.Video, string, stri
 	return video, videoURL, imageURL, nil
 }
 
-func (s *videoService) ListVideosByUserID(userID uint64) ([]entity.Video, []entity.Frame, error) {
+func (s *videoService) ListVideosByUserID(userID uint64) ([]response.ListVideosByUserIDResponse, error) {
 	// Fetch the videos for the user
 	videos, err := s.repo.ListVideosByUserID(userID)
 	if err != nil {
-		return nil, nil, err
+		return nil, fmt.Errorf("failed to list videos for user %d: %v", userID, err)
 	}
 
-	// Prepare a list of Frame objects containing presigned URLs for images
-	var frames []entity.Frame
+	var videoWithURLsList []response.ListVideosByUserIDResponse
 	for _, video := range videos {
-		// Generate the presigned URL for the video's image
-		imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image)
+		// Generate the presigned URL for the video
+		videoURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName, "video/mp4")
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to generate presigned URL for image: %v", err)
+			return nil, fmt.Errorf("failed to generate presigned video URL for video ID %d: %v", video.ID, err)
 		}
 
-		// Create a new Frame object with the video ID and the image presigned URL
-		frame := entity.Frame{
-			VideoID: video.ID,
-			Link:    imageURL,
+		// Generate the presigned URL for the image/frame
+		imageURL, err := s.s3Client.GeneratePresignedDownloadURL(env.EnvConfig.VideoFramesFolder, video.Image, "image/jpeg")
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate presigned image URL for video ID %d: %v", video.ID, err)
 		}
-		frames = append(frames, frame)
+
+		// Append to the list
+		videoWithURLsList = append(videoWithURLsList, response.ListVideosByUserIDResponse{
+			Video:    video,
+			VideoURL: videoURL,
+			ImageURL: imageURL,
+		})
 	}
 
-	return videos, frames, nil
+	return videoWithURLsList, nil
 }
 
 func (s *videoService) DeleteVideo(videoID uint64) error {
@@ -150,7 +156,7 @@ func (s *videoService) GeneratePresignedDownloadURLForVideo(videoID uint64) (str
 		return "", fmt.Errorf("video not found")
 	}
 
-	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName)
+	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName, "video/mp4")
 }
 
 // GeneratePresignedDownloadURLForImage generates a presigned URL for downloading an image file
@@ -163,5 +169,5 @@ func (s *videoService) GeneratePresignedDownloadURLForImage(videoID uint64) (str
 		return "", fmt.Errorf("video not found")
 	}
 
-	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.Image)
+	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.Image, "image/jpeg")
 }

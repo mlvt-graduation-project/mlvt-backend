@@ -43,7 +43,7 @@ func (s *audioService) GeneratePresignedDownloadURL(audioID uint64) (string, err
 	}
 
 	// Generate the presigned URL using S3 client
-	presignedURL, err := s.s3Client.GeneratePresignedDownloadURL(audio.Folder, audio.FileName)
+	presignedURL, err := s.s3Client.GeneratePresignedDownloadURL(audio.Folder, audio.FileName, "audio/mpeg")
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned download URL: %v", err)
 	}
