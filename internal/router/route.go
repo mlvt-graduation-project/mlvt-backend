@@ -73,15 +73,15 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/transcriptions")
 	protected.Use(a.authMiddleware.MustAuth()) // Require authentication
 	{
-		protected.POST("/", a.transcriptionController.AddTranscription)                                        // Add a new transcription
-		protected.GET("/:transcriptionID", a.transcriptionController.GetTranscriptionByID)                     // Get transcription by ID
-		protected.GET("/:transcriptionID/user/:userID", a.transcriptionController.GetTranscriptionByUserID)    // Get transcription by transcription ID and user ID
-		protected.GET("/:transcriptionID/video/:videoID", a.transcriptionController.GetTranscriptionByVideoID) // Get transcription by transcription ID and video ID
-		protected.GET("/user/:user_id", a.transcriptionController.ListTranscriptionsByUserID)                  // List transcriptions by user ID
-		protected.GET("/video/:video_id", a.transcriptionController.ListTranscriptionsByVideoID)               // List transcriptions by video ID
-		protected.DELETE("/:transcriptionID", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
-		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                    // Generate presigned upload URL
-		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)        // Generate presigned download URL
+		protected.POST("/", a.transcriptionController.AddTranscription)                                         // Add a new transcription
+		protected.GET("/:transcription_id", a.transcriptionController.GetTranscriptionByID)                     // Get transcription by ID
+		protected.GET("/:transcription_id/user/:userID", a.transcriptionController.GetTranscriptionByUserID)    // Get transcription by transcription ID and user ID
+		protected.GET("/:transcription_id/video/:videoID", a.transcriptionController.GetTranscriptionByVideoID) // Get transcription by transcription ID and video ID
+		protected.GET("/user/:user_id", a.transcriptionController.ListTranscriptionsByUserID)                   // List transcriptions by user ID
+		protected.GET("/video/:video_id", a.transcriptionController.ListTranscriptionsByVideoID)                // List transcriptions by video ID
+		protected.DELETE("/:transcription_id", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
+		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                     // Generate presigned upload URL
+		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
 		// Speech to text
 		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTranscriptionToTranslation)
 		// Text to text
