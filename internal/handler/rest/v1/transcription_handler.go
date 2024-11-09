@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service"
@@ -69,6 +70,7 @@ func (h *TranscriptionController) GenerateUploadURL(c *gin.Context) {
 func (h *TranscriptionController) GenerateDownloadURL(c *gin.Context) {
 	// Parse transcription ID from the URL path
 	transcriptionIDStr := c.Param("transcription_id")
+	log.Warnf("extract from param: %s", transcriptionIDStr)
 	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid transcription ID"})
