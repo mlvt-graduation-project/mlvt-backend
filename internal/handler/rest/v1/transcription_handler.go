@@ -462,7 +462,7 @@ func (h *TranscriptionController) ProcessTranscriptionToTranslation(c *gin.Conte
 	}
 
 	// Generate unique file name for the translated transcription
-	translatedFileName := fmt.Sprintf("transcription_%d_%s.json", transcriptionID, targetLang)
+	translatedFileName := fmt.Sprintf("transcription_%d_%s.txt", transcriptionID, targetLang)
 
 	// Get folder from env config or use a predefined folder
 	folder := env.EnvConfig.TranscriptionsFolder
@@ -471,7 +471,7 @@ func (h *TranscriptionController) ProcessTranscriptionToTranslation(c *gin.Conte
 	}
 
 	// Generate presigned upload URL for the translated transcription
-	fileType := "application/json"
+	fileType := "text/plain"
 	translationUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, translatedFileName, fileType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate translation upload URL"})
