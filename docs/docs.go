@@ -179,102 +179,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/audios/{audioID}/user/{userID}": {
-            "get": {
-                "description": "Retrieves an audio file for a specific user and generates a presigned download URL.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "audios"
-                ],
-                "summary": "Get audio by user and audio ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID of the audio file",
-                        "name": "audioID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "ID of the user",
-                        "name": "userID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "audio, download_url",
-                        "schema": {
-                            "$ref": "#/definitions/response.AudioResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/audios/{audioID}/video/{videoID}": {
-            "get": {
-                "description": "Retrieves an audio file for a specific video and generates a presigned download URL.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "audios"
-                ],
-                "summary": "Get audio by video and audio ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID of the audio file",
-                        "name": "audioID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "ID of the video",
-                        "name": "videoID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "audio, download_url",
-                        "schema": {
-                            "$ref": "#/definitions/response.AudioResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "error",
-                        "schema": {
-                            "$ref": "#/definitions/response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/audios/{audio_id}": {
             "get": {
                 "description": "Retrieves an audio file's metadata and generates a presigned download URL.",
@@ -370,6 +274,102 @@ const docTemplate = `{
                         "description": "download_url",
                         "schema": {
                             "$ref": "#/definitions/response.DownloadURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audio_id}/user/{user_id}": {
+            "get": {
+                "description": "Retrieves an audio file for a specific user and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Get audio by user and audio ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audio_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the user",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audio, download_url",
+                        "schema": {
+                            "$ref": "#/definitions/response.AudioResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/audios/{audio_id}/video/{video_id}": {
+            "get": {
+                "description": "Retrieves an audio file for a specific video and generates a presigned download URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Get audio by video and audio ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID of the audio file",
+                        "name": "audio_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID of the video",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "audio, download_url",
+                        "schema": {
+                            "$ref": "#/definitions/response.AudioResponse"
                         }
                     },
                     "400": {

@@ -141,15 +141,15 @@ func (h *AudioController) GetAudio(c *gin.Context) {
 // @Description Retrieves an audio file for a specific user and generates a presigned download URL.
 // @Tags audios
 // @Produce json
-// @Param audioID path uint64 true "ID of the audio file"
-// @Param userID path uint64 true "ID of the user"
+// @Param audio_id path uint64 true "ID of the audio file"
+// @Param user_id path uint64 true "ID of the user"
 // @Success 200 {object} response.AudioResponse "audio, download_url"
 // @Failure 400 {object} response.ErrorResponse "error"
 // @Failure 500 {object} response.ErrorResponse "error"
-// @Router /audios/{audioID}/user/{userID} [get]
+// @Router /audios/{audio_id}/user/{user_id} [get]
 func (h *AudioController) GetAudioByUser(c *gin.Context) {
 	// Parse audio ID from the URL path
-	audioIDStr := c.Param("audioID")
+	audioIDStr := c.Param("audio_id")
 	audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid audio ID"})
@@ -157,7 +157,7 @@ func (h *AudioController) GetAudioByUser(c *gin.Context) {
 	}
 
 	// Parse user ID from the URL path
-	userIDStr := c.Param("userID")
+	userIDStr := c.Param("user_id")
 	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid user ID"})
@@ -209,15 +209,15 @@ func (h *AudioController) ListAudiosByUserID(c *gin.Context) {
 // @Description Retrieves an audio file for a specific video and generates a presigned download URL.
 // @Tags audios
 // @Produce json
-// @Param audioID path uint64 true "ID of the audio file"
-// @Param videoID path uint64 true "ID of the video"
+// @Param audio_id path uint64 true "ID of the audio file"
+// @Param video_id path uint64 true "ID of the video"
 // @Success 200 {object} response.AudioResponse "audio, download_url"
 // @Failure 400 {object} response.ErrorResponse "error"
 // @Failure 500 {object} response.ErrorResponse "error"
-// @Router /audios/{audioID}/video/{videoID} [get]
+// @Router /audios/{audio_id}/video/{video_id} [get]
 func (h *AudioController) GetAudioByVideoID(c *gin.Context) {
 	// Parse audio ID from the URL path
-	audioIDStr := c.Param("audioID")
+	audioIDStr := c.Param("audio_id")
 	audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid audio ID"})
@@ -225,7 +225,7 @@ func (h *AudioController) GetAudioByVideoID(c *gin.Context) {
 	}
 
 	// Parse video ID from the URL path
-	videoIDStr := c.Param("videoID")
+	videoIDStr := c.Param("video_id")
 	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid video ID"})

@@ -342,19 +342,19 @@ paths:
       summary: Generate presigned download URL
       tags:
       - audios
-  /audios/{audioID}/user/{userID}:
+  /audios/{audio_id}/user/{user_id}:
     get:
       description: Retrieves an audio file for a specific user and generates a presigned
         download URL.
       parameters:
       - description: ID of the audio file
         in: path
-        name: audioID
+        name: audio_id
         required: true
         type: integer
       - description: ID of the user
         in: path
-        name: userID
+        name: user_id
         required: true
         type: integer
       produces:
@@ -375,19 +375,19 @@ paths:
       summary: Get audio by user and audio ID
       tags:
       - audios
-  /audios/{audioID}/video/{videoID}:
+  /audios/{audio_id}/video/{video_id}:
     get:
       description: Retrieves an audio file for a specific video and generates a presigned
         download URL.
       parameters:
       - description: ID of the audio file
         in: path
-        name: audioID
+        name: audio_id
         required: true
         type: integer
       - description: ID of the video
         in: path
-        name: videoID
+        name: video_id
         required: true
         type: integer
       produces:

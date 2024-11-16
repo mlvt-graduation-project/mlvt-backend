@@ -94,15 +94,15 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/audios")
 	protected.Use(a.authMiddleware.MustAuth())
 	{
-		protected.POST("/", a.audioController.AddAudio)                                // Add a new audio
-		protected.GET("/:audioID", a.audioController.GetAudio)                         // Get a specific audio by ID
-		protected.DELETE("/:audioID", a.audioController.DeleteAudio)                   // Delete an audio
-		protected.GET("/user/:userID", a.audioController.ListAudiosByUserID)           // Get all audios by user
-		protected.GET("/video/:videoID", a.audioController.ListAudiosByVideoID)        // Get all audios by video
-		protected.GET("/:audioID/user/:userID", a.audioController.GetAudioByUser)      // Get specific audio by audio ID and user ID
-		protected.GET("/:audioID/video/:videoID", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
-		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL) // Generate presigned URL for audio upload
-		protected.GET("/:audioID/download-url", a.audioController.GenerateDownloadURL) // Generate presigned URL for audio download
+		protected.POST("/", a.audioController.AddAudio)                                  // Add a new audio
+		protected.GET("/:audio_id", a.audioController.GetAudio)                          // Get a specific audio by ID
+		protected.DELETE("/:audio_id", a.audioController.DeleteAudio)                    // Delete an audio
+		protected.GET("/user/:user_id", a.audioController.ListAudiosByUserID)            // Get all audios by user
+		protected.GET("/video/:video_id", a.audioController.ListAudiosByVideoID)         // Get all audios by video
+		protected.GET("/:audio_id/user/:user_id", a.audioController.GetAudioByUser)      // Get specific audio by audio ID and user ID
+		protected.GET("/:audio_id/video/:video_id", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
+		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL)   // Generate presigned URL for audio upload
+		protected.GET("/:audio_id/download-url", a.audioController.GenerateDownloadURL)  // Generate presigned URL for audio download
 	}
 }
 
