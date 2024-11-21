@@ -12,17 +12,19 @@ type AppRouter struct {
 	videoController         *handler.VideoController
 	audioController         *handler.AudioController
 	transcriptionController *handler.TranscriptionController
+	pingController          *handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
 	momoPaymentController   *handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
 
-func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, audioController *handler.AudioController, transcriptionController *handler.TranscriptionController, authMiddleware *middleware.AuthUserMiddleware, momoPaymentController *handler.MoMoPaymentController, swaggerRouter *SwaggerRouter) *AppRouter {
+func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, audioController *handler.AudioController, transcriptionController *handler.TranscriptionController, pingController *handler.PingController, authMiddleware *middleware.AuthUserMiddleware, momoPaymentController *handler.MoMoPaymentController, swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:          userController,
 		videoController:         videoController,
 		audioController:         audioController,
 		transcriptionController: transcriptionController,
+		pingController:          pingController,
 		authMiddleware:          authMiddleware,
 		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
@@ -103,6 +105,18 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 		protected.GET("/:audio_id/video/:video_id", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
 		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL)   // Generate presigned URL for audio upload
 		protected.GET("/:audio_id/download-url", a.audioController.GenerateDownloadURL)  // Generate presigned URL for audio download
+	}
+}
+
+func (a *AppRouter) RegisterPingStatusRoutes(r *gin.RouterGroup) {
+	public := r.Group("/ping")
+	{
+		public.GET("/speech-to-text/:id", a.pingController.PingSpeechToText)
+		public.GET("/text-to-text/:id", a.pingController.PingTextToText)
+		public.GET("/text-to-speech/:id", a.pingController.PingTextToSpeech)
+		public.GET("/voice-cloning/:id", a.pingController.PingVoiceCloning)
+		public.GET("/lipsync/:id", a.pingController.PingLipSync)
+		public.GET("/full-pipeline/:id", a.pingController.PingFullPipeline)
 	}
 }
 
