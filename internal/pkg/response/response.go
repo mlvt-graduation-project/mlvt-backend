@@ -86,3 +86,11 @@ type ListVideosByUserIDResponse struct {
 	VideoURL string       `json:"video_url"`
 	ImageURL string       `json:"image_url"`
 }
+
+type PingStatusResponse struct {
+	Status entity.StatusEntity `json:"status"`
+}
+
+func (p *PingStatusResponse) ValidateStatus() {
+	// ToDo: validate string StatusEntity
+}
