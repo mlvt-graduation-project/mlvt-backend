@@ -74,6 +74,7 @@ go run .
 - [Video features](assets/docs/VideoFeature.md)
 - [Transcription features](assets/docs/TranscriptionFeature.md)
 - [Audio features](assets/docs/AudioFeature.md)
+- [Ping features](assets/docs/PingFeature.md)
 
 ## API Documentation
 
