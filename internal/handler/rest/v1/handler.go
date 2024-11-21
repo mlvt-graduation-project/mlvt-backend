@@ -8,5 +8,6 @@ var ProviderSetHandler = wire.NewSet(
 	NewVideoController,
 	NewAudioController,
 	NewTranscriptionController,
+	NewPingController,
 	NewMoMoPaymentHandler,
 )
