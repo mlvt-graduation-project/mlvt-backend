@@ -37,12 +37,15 @@ func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
 	transcriptionRepository := repo.NewTranscriptionRepository(db)
 	transcriptionService := service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
 	transcriptionController := handler.NewTranscriptionController(transcriptionService, videoService)
+	pingRepository := repo.NewPingRepo(db)
+	pingService := service.NewPingService(pingRepository)
+	pingController := handler.NewPingController(pingService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
 	moMoRepo := repo.NewMoMoRepo()
 	moMoPaymentService := service.NewMoMoPaymentService(moMoRepo)
 	moMoPaymentController := handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, authUserMiddleware, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 
