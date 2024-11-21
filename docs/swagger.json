@@ -1806,6 +1806,9 @@
                     "description": "Language of the audio (e.g., \"en\", \"es\", etc.)",
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
+                },
                 "updated_at": {
                     "description": "Timestamp of the last update to the audio",
                     "type": "string"
@@ -1819,6 +1822,21 @@
                     "type": "integer"
                 }
             }
+        },
+        "entity.StatusEntity": {
+            "type": "string",
+            "enum": [
+                "raw",
+                "processing",
+                "succeeded",
+                "failed"
+            ],
+            "x-enum-varnames": [
+                "StatusRaw",
+                "StatusProcessing",
+                "StatusSucceeded",
+                "StatusFailed"
+            ]
         },
         "entity.Transcription": {
             "type": "object",
@@ -1841,6 +1859,9 @@
                 "lang": {
                     "description": "Language of the transcription (e.g., \"en\", \"es\", etc.)",
                     "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
                 },
                 "text": {
                     "description": "The transcription text",
@@ -1942,7 +1963,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/entity.VideoStatus"
+                    "$ref": "#/definitions/entity.StatusEntity"
                 },
                 "title": {
                     "type": "string"
@@ -1957,21 +1978,6 @@
                 }
             }
         },
-        "entity.VideoStatus": {
-            "type": "string",
-            "enum": [
-                "raw",
-                "processing",
-                "failed",
-                "success"
-            ],
-            "x-enum-varnames": [
-                "StatusRaw",
-                "StatusProcessing",
-                "StatusFailed",
-                "StatusSuccess"
-            ]
-        },
         "handler.UpdateVideoStatusRequest": {
             "type": "object",
             "required": [
@@ -1979,16 +1985,12 @@
             ],
             "properties": {
                 "status": {
+                    "type": "string",
                     "enum": [
                         "raw",
                         "processing",
                         "failed",
                         "success"
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/entity.VideoStatus"
-                        }
                     ]
                 }
             }
@@ -2059,7 +2061,7 @@
             "type": "object",
             "properties": {
                 "status": {
-                    "$ref": "#/definitions/entity.VideoStatus"
+                    "type": "string"
                 }
             }
         },

@@ -18,6 +18,8 @@ definitions:
       lang:
         description: Language of the audio (e.g., "en", "es", etc.)
         type: string
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
       updated_at:
         description: Timestamp of the last update to the audio
         type: string
@@ -28,6 +30,18 @@ definitions:
         description: ID of the related video
         type: integer
     type: object
+  entity.StatusEntity:
+    enum:
+    - raw
+    - processing
+    - succeeded
+    - failed
+    type: string
+    x-enum-varnames:
+    - StatusRaw
+    - StatusProcessing
+    - StatusSucceeded
+    - StatusFailed
   entity.Transcription:
     properties:
       created_at:
@@ -44,6 +58,8 @@ definitions:
       lang:
         description: Language of the transcription (e.g., "en", "es", etc.)
         type: string
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
       text:
         description: The transcription text
         type: string
@@ -116,7 +132,7 @@ definitions:
       image:
         type: string
       status:
-        $ref: '#/definitions/entity.VideoStatus'
+        $ref: '#/definitions/entity.StatusEntity'
       title:
         type: string
       updated_at:
@@ -126,28 +142,15 @@ definitions:
         description: ID of the user who uploaded the video
         type: integer
     type: object
-  entity.VideoStatus:
-    enum:
-    - raw
-    - processing
-    - failed
-    - success
-    type: string
-    x-enum-varnames:
-    - StatusRaw
-    - StatusProcessing
-    - StatusFailed
-    - StatusSuccess
   handler.UpdateVideoStatusRequest:
     properties:
       status:
-        allOf:
-        - $ref: '#/definitions/entity.VideoStatus'
         enum:
         - raw
         - processing
         - failed
         - success
+        type: string
     required:
     - status
     type: object
@@ -193,7 +196,7 @@ definitions:
   response.StatusResponse:
     properties:
       status:
-        $ref: '#/definitions/entity.VideoStatus'
+        type: string
     type: object
   response.TokenResponse:
     properties:
