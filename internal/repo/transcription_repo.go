@@ -16,6 +16,7 @@ type TranscriptionRepository interface {
 	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
 	DeleteTranscription(transcriptionID uint64) error
 	UpdateTranscription(transcription *entity.Transcription) error
+	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
 }
 
 type transcriptionRepo struct {
@@ -147,5 +148,27 @@ func (r *transcriptionRepo) UpdateTranscription(transcription *entity.Transcript
 	if rowsAffected == 0 {
 		return fmt.Errorf("no transcription found with id %d", transcription.ID)
 	}
+	return nil
+}
+
+func (r *transcriptionRepo) UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error {
+	query := `
+		UPDATE transcriptions
+		SET status = ?, updated_at = ?
+		WHERE id = ?`
+	now := time.Now()
+	result, err := r.db.Exec(query, status, now, transcriptionID)
+	if err != nil {
+		return fmt.Errorf("failed to update video status: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no video found with id %d", transcriptionID)
+	}
+
 	return nil
 }

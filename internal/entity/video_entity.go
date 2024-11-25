@@ -2,9 +2,6 @@ package entity
 
 import "time"
 
-// Define the status type with limited string options
-type VideoStatus string
-
 type Video struct {
 	ID          uint64       `json:"id"`
 	Title       string       `json:"title"`

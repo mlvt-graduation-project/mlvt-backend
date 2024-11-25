@@ -536,3 +536,47 @@ func (h *TranscriptionController) ProcessTranscriptionToTranslation(c *gin.Conte
 		Transcription: *newTranscription,
 	})
 }
+
+type UpdateTranscriptionStatusRequest struct {
+	Status entity.StatusEntity `json:"status"`
+}
+
+// UpdateTranscriptionStatus godoc
+// @Summary Update the status of a transcription
+// @Description Update the status of a specific Transcription by its ID
+// @Tags transcriptions
+// @Accept  json
+// @Produce  json
+// @Param   transcription_id path     uint64 true "Transcription ID"
+// @Param   status   body     UpdateTranscriptionStatusRequest true "New status"
+// @Success 200 {object} response.MessageResponse
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /transcriptions/{transcription_id}/status [put]
+func (h *TranscriptionController) UpdateTranscriptionStatus(c *gin.Context) {
+	transcriptionIDStr := c.Param("transcription_id")
+	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid Transcription ID"})
+		return
+	}
+
+	var req UpdateTranscriptionStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid input"})
+		return
+	}
+
+	err = h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, req.Status)
+	if err != nil {
+		if err.Error() == "no transcription found with id "+strconv.FormatUint(transcriptionID, 10) {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "status updated successfully"})
+}

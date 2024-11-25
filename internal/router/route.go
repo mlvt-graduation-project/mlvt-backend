@@ -88,6 +88,7 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTranscriptionToTranslation)
 		// Text to text
 		protected.POST("/process/:video_id", a.transcriptionController.ProcessVideoToTranscription) // Process video to transcription
+		protected.PUT("/:vitranscription_iddeo_id/status", a.transcriptionController.UpdateTranscriptionStatus)
 	}
 }
 

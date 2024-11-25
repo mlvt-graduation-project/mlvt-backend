@@ -13,8 +13,8 @@ type VideoRepository interface {
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
-	GetVideoStatus(videoID uint64) (entity.VideoStatus, error)
-	UpdateVideoStatus(videoId uint64, status entity.VideoStatus) error
+	GetVideoStatus(videoID uint64) (entity.StatusEntity, error)
+	UpdateVideoStatus(videoId uint64, status entity.StatusEntity) error
 }
 
 type videoRepo struct {
@@ -111,7 +111,7 @@ func (r *videoRepo) UpdateVideo(video *entity.Video) error {
 }
 
 // UpdateVideoStatus updates only the status of a video record
-func (r *videoRepo) UpdateVideoStatus(videoID uint64, status entity.VideoStatus) error {
+func (r *videoRepo) UpdateVideoStatus(videoID uint64, status entity.StatusEntity) error {
 	query := `
 		UPDATE videos
 		SET status = ?, updated_at = ?
@@ -133,8 +133,8 @@ func (r *videoRepo) UpdateVideoStatus(videoID uint64, status entity.VideoStatus)
 	return nil
 }
 
-func (r *videoRepo) GetVideoStatus(videoID uint64) (entity.VideoStatus, error) {
-	var status entity.VideoStatus
+func (r *videoRepo) GetVideoStatus(videoID uint64) (entity.StatusEntity, error) {
+	var status entity.StatusEntity
 	query := `
 		SELECT status
 		FROM videos

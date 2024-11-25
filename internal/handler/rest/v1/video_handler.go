@@ -56,7 +56,7 @@ func (h *VideoController) GetVideoStatus(c *gin.Context) {
 
 // UpdateVideoStatusRequest represents the request body for updating video status
 type UpdateVideoStatusRequest struct {
-	Status entity.VideoStatus `json:"status" binding:"required,oneof=raw processing failed success"`
+	Status entity.StatusEntity `json:"status"`
 }
 
 // UpdateVideoStatus godoc

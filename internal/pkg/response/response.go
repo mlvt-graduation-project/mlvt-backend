@@ -9,7 +9,7 @@ type ErrorResponse struct {
 
 // StatusResponse represents the response for GetVideoStatus
 type StatusResponse struct {
-	Status entity.VideoStatus `json:"status"`
+	Status entity.StatusEntity `json:"status"`
 }
 
 // MessageResponse represents a message response

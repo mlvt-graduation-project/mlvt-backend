@@ -18,6 +18,7 @@ type TranscriptionService interface {
 	GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error)
 	GeneratePresignedDownloadURL(transcriptionID uint64) (string, error)
 	UpdateTranscription(transcription *entity.Transcription) error
+	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
 }
 
 type transcriptionService struct {
@@ -120,4 +121,8 @@ func (s *transcriptionService) GeneratePresignedDownloadURL(transcriptionID uint
 
 func (s *transcriptionService) UpdateTranscription(transcription *entity.Transcription) error {
 	return s.repo.UpdateTranscription(transcription)
+}
+
+func (s *transcriptionService) UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error {
+	return s.repo.UpdateTranscriptionStatus(transcriptionID, status)
 }
