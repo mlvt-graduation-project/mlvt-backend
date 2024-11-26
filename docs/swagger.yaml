@@ -142,17 +142,15 @@ definitions:
         description: ID of the user who uploaded the video
         type: integer
     type: object
+  handler.UpdateTranscriptionStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
+    type: object
   handler.UpdateVideoStatusRequest:
     properties:
       status:
-        enum:
-        - raw
-        - processing
-        - failed
-        - success
-        type: string
-    required:
-    - status
+        $ref: '#/definitions/entity.StatusEntity'
     type: object
   response.AudioResponse:
     properties:
@@ -196,7 +194,7 @@ definitions:
   response.StatusResponse:
     properties:
       status:
-        type: string
+        $ref: '#/definitions/entity.StatusEntity'
     type: object
   response.TokenResponse:
     properties:
@@ -590,6 +588,45 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Generate presigned download URL
+      tags:
+      - transcriptions
+  /transcriptions/{transcription_id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the status of a specific Transcription by its ID
+      parameters:
+      - description: Transcription ID
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateTranscriptionStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Update the status of a transcription
       tags:
       - transcriptions
   /transcriptions/{transcriptionID}/user/{userID}:

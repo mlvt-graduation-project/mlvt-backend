@@ -17,8 +17,8 @@ type MessageResponse struct {
 	Message string `json:"message"`
 }
 
-// MessageCreateVideoResponse represents a message response
-type MessageCreateVideoResponse struct {
+// MessageCreateResponseWithID represents a message response
+type MessageCreateResponseWithID struct {
 	Message string `json:"message"`
 	Id      uint64 `json:"id"`
 }

@@ -850,6 +850,65 @@
                 }
             }
         },
+        "/transcriptions/{transcription_id}/status": {
+            "put": {
+                "description": "Update the status of a specific Transcription by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transcriptions"
+                ],
+                "summary": "Update the status of a transcription",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Transcription ID",
+                        "name": "transcription_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New status",
+                        "name": "status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.UpdateTranscriptionStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Retrieves a list of all users in the system",
@@ -1978,20 +2037,19 @@
                 }
             }
         },
-        "handler.UpdateVideoStatusRequest": {
+        "handler.UpdateTranscriptionStatusRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
             "properties": {
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "raw",
-                        "processing",
-                        "failed",
-                        "success"
-                    ]
+                    "$ref": "#/definitions/entity.StatusEntity"
+                }
+            }
+        },
+        "handler.UpdateVideoStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
                 }
             }
         },
@@ -2061,7 +2119,7 @@
             "type": "object",
             "properties": {
                 "status": {
-                    "type": "string"
+                    "$ref": "#/definitions/entity.StatusEntity"
                 }
             }
         },

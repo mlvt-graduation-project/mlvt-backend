@@ -8,7 +8,7 @@ import (
 )
 
 type TranscriptionService interface {
-	CreateTranscription(transcription *entity.Transcription) error
+	CreateTranscription(transcription *entity.Transcription) (uint64, error)
 	GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, string, error)
 	GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, string, error)
 	GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, string, error)
@@ -33,7 +33,7 @@ func NewTranscriptionService(repo repo.TranscriptionRepository, s3Client aws.S3C
 	}
 }
 
-func (s *transcriptionService) CreateTranscription(transcription *entity.Transcription) error {
+func (s *transcriptionService) CreateTranscription(transcription *entity.Transcription) (uint64, error) {
 	return s.repo.CreateTranscription(transcription)
 }
 

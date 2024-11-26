@@ -123,7 +123,7 @@ func (h *VideoController) AddVideo(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, response.MessageCreateVideoResponse{
+	c.JSON(http.StatusCreated, response.MessageCreateResponseWithID{
 		Message: "Video added successfully",
 		Id:      id,
 	})

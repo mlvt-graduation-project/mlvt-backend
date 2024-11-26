@@ -8,7 +8,7 @@ import (
 )
 
 type TranscriptionRepository interface {
-	CreateTranscription(transcription *entity.Transcription) error
+	CreateTranscription(transcription *entity.Transcription) (uint64, error)
 	GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, error)
 	GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, error)
 	GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, error)
@@ -28,24 +28,34 @@ func NewTranscriptionRepository(db *sql.DB) TranscriptionRepository {
 }
 
 // CreateTranscription inserts a new transcription into the database
-func (r *transcriptionRepo) CreateTranscription(transcription *entity.Transcription) error {
+func (r *transcriptionRepo) CreateTranscription(transcription *entity.Transcription) (uint64, error) {
 	query := `
-		INSERT INTO transcriptions (video_id, user_id, text, lang, folder, file_name, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+		INSERT INTO transcriptions (video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	now := time.Now()
-	_, err := r.db.Exec(query, transcription.VideoID, transcription.UserID, transcription.Text,
-		transcription.Lang, transcription.Folder, transcription.FileName, now, now)
-	return err
+	result, err := r.db.Exec(query, transcription.VideoID, transcription.UserID, transcription.Text,
+		transcription.Lang, transcription.Folder, transcription.FileName, transcription.Status, now, now)
+	if err != nil {
+		return 0, fmt.Errorf("failed to execute insert: %v", err)
+	}
+
+	// Retrieve the last inserted ID
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to retrieve last insert ID: %v", err)
+	}
+
+	return uint64(id), nil
 }
 
 // GetTranscriptionByID retrieves a transcription by its ID
 func (r *transcriptionRepo) GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, error) {
-	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
+	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at
 	          FROM transcriptions WHERE id = ?`
 	row := r.db.QueryRow(query, transcriptionID)
 	transcription := &entity.Transcription{}
 	err := row.Scan(&transcription.ID, &transcription.VideoID, &transcription.UserID, &transcription.Text,
-		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.CreatedAt, &transcription.UpdatedAt)
+		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.Status, &transcription.CreatedAt, &transcription.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -54,12 +64,12 @@ func (r *transcriptionRepo) GetTranscriptionByID(transcriptionID uint64) (*entit
 
 // GetTranscriptionByIDAndUserID retrieves a transcription by its ID and User ID
 func (r *transcriptionRepo) GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, error) {
-	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
+	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at
 	          FROM transcriptions WHERE id = ? AND user_id = ?`
 	row := r.db.QueryRow(query, transcriptionID, userID)
 	transcription := &entity.Transcription{}
 	err := row.Scan(&transcription.ID, &transcription.VideoID, &transcription.UserID, &transcription.Text,
-		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.CreatedAt, &transcription.UpdatedAt)
+		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.Status, &transcription.CreatedAt, &transcription.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -68,12 +78,12 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndUserID(transcriptionID, userI
 
 // GetTranscriptionByIDAndVideoID retrieves a transcription by its ID and Video ID
 func (r *transcriptionRepo) GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, error) {
-	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
+	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at
 	          FROM transcriptions WHERE id = ? AND video_id = ?`
 	row := r.db.QueryRow(query, transcriptionID, videoID)
 	transcription := &entity.Transcription{}
 	err := row.Scan(&transcription.ID, &transcription.VideoID, &transcription.UserID, &transcription.Text,
-		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.CreatedAt, &transcription.UpdatedAt)
+		&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.Status, &transcription.CreatedAt, &transcription.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -82,7 +92,7 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndVideoID(transcriptionID, vide
 
 // ListTranscriptionsByUserID lists all transcriptions for a specific user
 func (r *transcriptionRepo) ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
-	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
+	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at
 	          FROM transcriptions WHERE user_id = ?`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
@@ -94,7 +104,7 @@ func (r *transcriptionRepo) ListTranscriptionsByUserID(userID uint64) ([]entity.
 	for rows.Next() {
 		var transcription entity.Transcription
 		if err := rows.Scan(&transcription.ID, &transcription.VideoID, &transcription.UserID, &transcription.Text,
-			&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.CreatedAt, &transcription.UpdatedAt); err != nil {
+			&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.Status, &transcription.CreatedAt, &transcription.UpdatedAt); err != nil {
 			return nil, err
 		}
 		transcriptions = append(transcriptions, transcription)
@@ -104,7 +114,7 @@ func (r *transcriptionRepo) ListTranscriptionsByUserID(userID uint64) ([]entity.
 
 // ListTranscriptionsByVideoID lists all transcriptions for a specific video
 func (r *transcriptionRepo) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {
-	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, created_at, updated_at
+	query := `SELECT id, video_id, user_id, text, lang, folder, file_name, status, created_at, updated_at
 	          FROM transcriptions WHERE video_id = ?`
 	rows, err := r.db.Query(query, videoID)
 	if err != nil {
@@ -116,7 +126,7 @@ func (r *transcriptionRepo) ListTranscriptionsByVideoID(videoID uint64) ([]entit
 	for rows.Next() {
 		var transcription entity.Transcription
 		if err := rows.Scan(&transcription.ID, &transcription.VideoID, &transcription.UserID, &transcription.Text,
-			&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.CreatedAt, &transcription.UpdatedAt); err != nil {
+			&transcription.Lang, &transcription.Folder, &transcription.FileName, &transcription.Status, &transcription.CreatedAt, &transcription.UpdatedAt); err != nil {
 			return nil, err
 		}
 		transcriptions = append(transcriptions, transcription)
