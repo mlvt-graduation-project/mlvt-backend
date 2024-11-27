@@ -302,13 +302,13 @@ func (h *TranscriptionController) DeleteTranscription(c *gin.Context) {
 }
 
 // ProcessVideoToTranscription godoc
-// @Summary Process video to transcription
-// @Description Converts a video to transcription by processing it through an external service
+// @Summary Process video to transcription asynchronously
+// @Description Converts a video to transcription by processing it through an external service asynchronously
 // @Tags transcriptions
 // @Accept json
 // @Produce json
 // @Param video_id path uint64 true "ID of the video to process"
-// @Success 200 {object} response.TranscriptionResponse
+// @Success 202 {object} response.TranscriptionResponse "Accepted for processing"
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
@@ -332,7 +332,7 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 		return
 	}
 
-	// Get folder from env config or use a predefined folder
+	// Get folder from environment config or use a predefined folder
 	folder := env.EnvConfig.TranscriptionsFolder
 	if folder == "" {
 		folder = "transcriptions"
@@ -358,120 +358,117 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 		return
 	}
 
-	// Generate presigned download URL for video
-	videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
-	if err != nil {
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate video download URL"})
-		return
-	}
-
-	// Generate presigned upload URL for transcription
-	fileType := "text/plain"
-	transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
-	if err != nil {
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to generate transcription upload URL"})
-		return
-	}
-
-	// Prepare request payload matching STTRequest struct
-	requestPayload := request.STTRequest{
-		InputFileName:  video.FileName,
-		InputLink:      videoDownloadURL,
-		OutputFileName: transcriptionFileName,
-		OutputLink:     transcriptionUploadURL,
-	}
-
-	jsonData, err := json.Marshal(requestPayload)
-	if err != nil {
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to marshal request body"})
-		return
-	}
-
-	// Create a custom HTTP client with a timeout
-	client := &http.Client{
-		Timeout: 5 * time.Minute, // Adjust as needed based on expected processing time
-	}
-
-	// Send request to EC2 server
-	ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-	resp, err := client.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to send request to EC2 server"})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := ioutil.ReadAll(resp.Body)
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: fmt.Sprintf("processing server returned error: %s", string(respBody))})
-		return
-	}
-
-	// Optionally, you can parse the response to get the transcription text
-	// For simplicity, let's assume the transcription text is returned in the response body
-	transcriptionText, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		// Update transcription status to 'failed'
-		updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
-		if updateErr != nil {
-			// Log the error
-			fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-		}
-
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to read transcription response"})
-		return
-	}
-
-	// Update the transcription with the received text and status 'succeeded'
-	transcription.Text = string(transcriptionText)
-	transcription.UpdatedAt = time.Now()
-	transcription.Status = entity.StatusSucceeded
-
-	err = h.transcriptionService.UpdateTranscription(transcription)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to update transcription data"})
-		return
-	}
-
-	// Return the transcription info to frontend
-	c.JSON(http.StatusOK, response.TranscriptionResponse{
-		Transcription: *transcription,
+	// Respond to the frontend immediately with the new transcription and status 'processing'
+	c.JSON(http.StatusCreated, response.MessageCreateResponseWithID{
+		Message: "Accepted for processing",
+		Id:      transcriptionID,
 	})
+
+	// Start the asynchronous processing in a separate goroutine
+	go func(transcriptionID uint64, videoID uint64, videoFileName string, folder string) {
+		// Ensure any panic in the goroutine does not crash the application
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Recovered in goroutine: %v\n", r)
+				h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			}
+		}()
+
+		// Generate presigned download URL for video
+		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		if err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to generate video download URL for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+
+		// Generate presigned upload URL for transcription
+		fileType := "text/plain"
+		transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
+		if err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to generate transcription upload URL for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+
+		// Prepare request payload matching STTRequest struct
+		requestPayload := request.STTRequest{
+			InputFileName:  videoFileName,
+			InputLink:      videoDownloadURL,
+			OutputFileName: transcriptionFileName,
+			OutputLink:     transcriptionUploadURL,
+		}
+
+		jsonData, err := json.Marshal(requestPayload)
+		if err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to marshal request payload for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+
+		// Create a custom HTTP client with a timeout
+		client := &http.Client{
+			Timeout: 5 * time.Minute, // Adjust as needed based on expected processing time
+		}
+
+		// Send request to EC2 server
+		ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+		resp, err := client.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to send request to EC2 server for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respBody, _ := ioutil.ReadAll(resp.Body)
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Processing server returned error for transcription ID %d: %s\n", transcriptionID, string(respBody))
+			return
+		}
+
+		// Optionally, parse the response to get the transcription text
+		transcriptionText, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to read transcription response for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+
+		// Update the transcription with the received text and set the status to 'succeeded'
+		updateTranscription := &entity.Transcription{
+			ID:        transcriptionID,
+			Text:      string(transcriptionText),
+			Status:    entity.StatusSucceeded,
+			UpdatedAt: time.Now(),
+		}
+
+		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
+			fmt.Printf("Failed to update transcription data for transcription ID %d: %v\n", transcriptionID, err)
+			return
+		}
+
+		fmt.Printf("Successfully processed transcription ID %d\n", transcriptionID)
+	}(transcriptionID, videoID, video.FileName, folder)
 }
 
 // ProcessTranscriptionToTranslation handles the translation of a transcription
