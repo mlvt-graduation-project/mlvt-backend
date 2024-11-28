@@ -359,7 +359,7 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 	}
 
 	// Respond to the frontend immediately with the new transcription and status 'processing'
-	c.JSON(http.StatusCreated, response.MessageCreateResponseWithID{
+	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
 		Id:      transcriptionID,
 	})
@@ -417,7 +417,7 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 
 		// Create a custom HTTP client with a timeout
 		client := &http.Client{
-			Timeout: 5 * time.Minute, // Adjust as needed based on expected processing time
+			Timeout: 5 * time.Minute, // Must match EC2's handler timeout
 		}
 
 		// Send request to EC2 server
@@ -433,41 +433,66 @@ func (h *TranscriptionController) ProcessVideoToTranscription(c *gin.Context) {
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			respBody, _ := ioutil.ReadAll(resp.Body)
-			// Update transcription status to 'failed'
-			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
-				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
-			}
-			fmt.Printf("Processing server returned error for transcription ID %d: %s\n", transcriptionID, string(respBody))
-			return
-		}
-
-		// Optionally, parse the response to get the transcription text
-		transcriptionText, err := ioutil.ReadAll(resp.Body)
+		// Read and parse the EC2 response
+		var ec2Response response.EC2STTResponse
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			// Update transcription status to 'failed'
 			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
 				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
 			}
-			fmt.Printf("Failed to read transcription response for transcription ID %d: %v\n", transcriptionID, err)
+			fmt.Printf("Failed to read EC2 response for transcription ID %d: %v\n", transcriptionID, err)
 			return
 		}
 
-		// Update the transcription with the received text and set the status to 'succeeded'
-		updateTranscription := &entity.Transcription{
-			ID:        transcriptionID,
-			Text:      string(transcriptionText),
-			Status:    entity.StatusSucceeded,
-			UpdatedAt: time.Now(),
-		}
-
-		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
-			fmt.Printf("Failed to update transcription data for transcription ID %d: %v\n", transcriptionID, err)
+		if err := json.Unmarshal(bodyBytes, &ec2Response); err != nil {
+			// Update transcription status to 'failed'
+			if updateErr := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); updateErr != nil {
+				fmt.Printf("Failed to update transcription status: %v\n", updateErr)
+			}
+			fmt.Printf("Failed to parse EC2 response for transcription ID %d: %v\n", transcriptionID, err)
 			return
 		}
 
-		fmt.Printf("Successfully processed transcription ID %d\n", transcriptionID)
+		// Handle EC2 response based on status
+		switch ec2Response.Status {
+		case "succeeded":
+			// Update the transcription with the received text and set the status to 'succeeded'
+			updateTranscription := &entity.Transcription{
+				ID:        transcriptionID,
+				Text:      ec2Response.Result,
+				Status:    entity.StatusSucceeded,
+				UpdatedAt: time.Now(),
+			}
+
+			if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
+				fmt.Printf("Failed to update transcription data for transcription ID %d: %v\n", transcriptionID, err)
+				return
+			}
+
+			fmt.Printf("Successfully processed transcription ID %d\n", transcriptionID)
+
+		case "failed":
+			// Update transcription status to 'failed' with error message
+			if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); err != nil {
+				fmt.Printf("Failed to update transcription status for transcription ID %d: %v\n", transcriptionID, err)
+			}
+			fmt.Printf("EC2 STT processing failed for transcription ID %d: %s\n", transcriptionID, ec2Response.Error)
+
+		case "timeout":
+			// Update transcription status to 'timeout' or handle accordingly
+			if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); err != nil {
+				fmt.Printf("Failed to update transcription status for transcription ID %d: %v\n", transcriptionID, err)
+			}
+			fmt.Printf("EC2 STT processing timed out for transcription ID %d\n", transcriptionID)
+
+		default:
+			// Handle unexpected status
+			if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed); err != nil {
+				fmt.Printf("Failed to update transcription status for transcription ID %d: %v\n", transcriptionID, err)
+			}
+			fmt.Printf("EC2 STT processing returned unknown status '%s' for transcription ID %d\n", ec2Response.Status, transcriptionID)
+		}
 	}(transcriptionID, videoID, video.FileName, folder)
 }
 
