@@ -8,42 +8,59 @@ package initialize
 
 import (
 	"database/sql"
-	"mlvt/internal/handler/rest/v1"
+	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
+	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/transcription_handler"
+	"mlvt/internal/handler/rest/v1/user_handler"
+	"mlvt/internal/handler/rest/v1/video_handler"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/pkg/middleware"
-	"mlvt/internal/repo"
+	"mlvt/internal/repo/audio_repo"
+	"mlvt/internal/repo/payment_repo/momo_repo"
+	"mlvt/internal/repo/ping_repo"
+	"mlvt/internal/repo/transcription_repo"
+	"mlvt/internal/repo/user_repo"
+	"mlvt/internal/repo/video_repo"
 	"mlvt/internal/router"
 	"mlvt/internal/service"
+	"mlvt/internal/service/audio_service"
+	"mlvt/internal/service/auth_service"
+	"mlvt/internal/service/payment_service/momo_service"
+	"mlvt/internal/service/ping_service"
+	"mlvt/internal/service/transcription_service"
+	"mlvt/internal/service/user_service"
+	"mlvt/internal/service/video_service"
 )
 
 // Injectors from wire.go:
 
 func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
-	userRepository := repo.NewUserRepo(db)
+	userRepository := user_repo.NewUserRepo(db)
 	s3ClientInterface, err := aws.NewS3Client()
 	if err != nil {
 		return nil, err
 	}
 	string2 := _wireStringValue
-	authServiceInterface := service.NewAuthService(userRepository, string2)
-	userService := service.NewUserService(userRepository, s3ClientInterface, authServiceInterface)
-	userController := handler.NewUserController(userService)
-	videoRepository := repo.NewVideoRepo(db)
-	videoService := service.NewVideoService(videoRepository, s3ClientInterface)
-	videoController := handler.NewVideoController(videoService)
-	audioRepository := repo.NewAudioRepository(db)
-	audioService := service.NewAudioService(audioRepository, s3ClientInterface)
-	audioController := handler.NewAudioController(audioService)
-	transcriptionRepository := repo.NewTranscriptionRepository(db)
-	transcriptionService := service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
-	transcriptionController := handler.NewTranscriptionController(transcriptionService, videoService)
-	pingRepository := repo.NewPingRepo(db)
-	pingService := service.NewPingService(pingRepository)
-	pingController := handler.NewPingController(pingService)
+	authServiceInterface := auth_service.NewAuthService(userRepository, string2)
+	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface)
+	userController := user_handler.NewUserController(userService)
+	videoRepository := video_repo.NewVideoRepo(db)
+	videoService := video_service.NewVideoService(videoRepository, s3ClientInterface)
+	videoController := video_handler.NewVideoController(videoService)
+	audioRepository := audio_repo.NewAudioRepository(db)
+	audioService := audio_service.NewAudioService(audioRepository, s3ClientInterface)
+	audioController := audio_handler.NewAudioController(audioService)
+	transcriptionRepository := transcription_repo.NewTranscriptionRepository(db)
+	transcriptionService := transcription_service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
+	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
+	pingRepository := ping_repo.NewPingRepo(db)
+	pingService := ping_service.NewPingService(pingRepository)
+	pingController := ping_handler.NewPingController(pingService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
-	moMoRepo := repo.NewMoMoRepo()
-	moMoPaymentService := service.NewMoMoPaymentService(moMoRepo)
-	moMoPaymentController := handler.NewMoMoPaymentHandler(moMoPaymentService)
+	moMoRepo := momo_repo.NewMoMoRepo()
+	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
+	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
 	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
 	return appRouter, nil

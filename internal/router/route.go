@@ -1,24 +1,37 @@
 package router
 
 import (
-	handler "mlvt/internal/handler/rest/v1"
+	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
+	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/transcription_handler"
+	"mlvt/internal/handler/rest/v1/user_handler"
+	"mlvt/internal/handler/rest/v1/video_handler"
 	"mlvt/internal/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AppRouter struct {
-	userController          *handler.UserController
-	videoController         *handler.VideoController
-	audioController         *handler.AudioController
-	transcriptionController *handler.TranscriptionController
-	pingController          *handler.PingController
+	userController          *user_handler.UserController
+	videoController         *video_handler.VideoController
+	audioController         *audio_handler.AudioController
+	transcriptionController *transcription_handler.TranscriptionController
+	pingController          *ping_handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
-	momoPaymentController   *handler.MoMoPaymentController
+	momoPaymentController   *momo_handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
 
-func NewAppRouter(userController *handler.UserController, videoController *handler.VideoController, audioController *handler.AudioController, transcriptionController *handler.TranscriptionController, pingController *handler.PingController, authMiddleware *middleware.AuthUserMiddleware, momoPaymentController *handler.MoMoPaymentController, swaggerRouter *SwaggerRouter) *AppRouter {
+func NewAppRouter(
+	userController *user_handler.UserController,
+	videoController *video_handler.VideoController,
+	audioController *audio_handler.AudioController,
+	transcriptionController *transcription_handler.TranscriptionController,
+	pingController *ping_handler.PingController,
+	authMiddleware *middleware.AuthUserMiddleware,
+	momoPaymentController *momo_handler.MoMoPaymentController,
+	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:          userController,
 		videoController:         videoController,

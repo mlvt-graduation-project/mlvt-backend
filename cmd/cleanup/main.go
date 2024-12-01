@@ -5,7 +5,8 @@ import (
 	"mlvt/internal/infra/seeder"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/initialize"
-	"mlvt/internal/repo"
+	"mlvt/internal/repo/user_repo"
+	"mlvt/internal/repo/video_repo"
 	"os"
 )
 
@@ -36,8 +37,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	userRepo := repo.NewUserRepo(dbConn)
-	videoRepo := repo.NewVideoRepo(dbConn)
+	userRepo := user_repo.NewUserRepo(dbConn)
+	videoRepo := video_repo.NewVideoRepo(dbConn)
 
 	// Initialize the seeder (can be reused for cleanup)
 	userVideoSeeder := seeder.NewUserVideoSeeder(userRepo, videoRepo, s3Client)
