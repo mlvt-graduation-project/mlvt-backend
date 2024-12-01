@@ -14,7 +14,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/env"
-	"mlvt/internal/repo"
+	"mlvt/internal/repo/user_repo"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -22,12 +22,12 @@ import (
 
 // UserSeeder handles the seeding of users from a folder of images.
 type UserSeeder struct {
-	userRepo repo.UserRepository
+	userRepo user_repo.UserRepository
 	s3Client aws.S3ClientInterface
 }
 
 // NewUserSeeder initializes a new UserSeeder.
-func NewUserSeeder(userRepo repo.UserRepository, s3Client aws.S3ClientInterface) *UserSeeder {
+func NewUserSeeder(userRepo user_repo.UserRepository, s3Client aws.S3ClientInterface) *UserSeeder {
 	return &UserSeeder{
 		userRepo: userRepo,
 		s3Client: s3Client,

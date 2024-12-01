@@ -6,6 +6,10 @@ import (
 	"mlvt/internal/entity"
 )
 
+// +------------------------+
+// |  Currently Not in Use  |
+// +------------------------+
+
 // TransactionLogRepo is responsible for logging transaction events to the database
 type TransactionLogRepo interface {
 	LogTransaction(log *entity.TransactionLog) error
@@ -27,8 +31,7 @@ func (r *transactionLogRepo) LogTransaction(log *entity.TransactionLog) error {
 
 	_, err := r.db.Exec(query, log.OrderID, log.PaymentMethod, log.Action, log.Status, log.Details)
 	if err != nil {
-		fmt.Errorf("Error logging transaction: %v", err)
-		return err
+		return fmt.Errorf("error logging transaction: %v", err)
 	}
 	return nil
 }

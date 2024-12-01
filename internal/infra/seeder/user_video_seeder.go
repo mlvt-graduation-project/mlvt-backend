@@ -4,7 +4,6 @@ package seeder
 
 import (
 	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -18,7 +17,8 @@ import (
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
-	"mlvt/internal/repo"
+	"mlvt/internal/repo/user_repo"
+	"mlvt/internal/repo/video_repo"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -26,13 +26,13 @@ import (
 
 // UserVideoSeeder handles the seeding of users and videos from folders of images and videos.
 type UserVideoSeeder struct {
-	userRepo  repo.UserRepository
-	videoRepo repo.VideoRepository
+	userRepo  user_repo.UserRepository
+	videoRepo video_repo.VideoRepository
 	s3Client  aws.S3ClientInterface
 }
 
 // NewUserVideoSeeder initializes a new UserVideoSeeder.
-func NewUserVideoSeeder(userRepo repo.UserRepository, videoRepo repo.VideoRepository, s3Client aws.S3ClientInterface) *UserVideoSeeder {
+func NewUserVideoSeeder(userRepo user_repo.UserRepository, videoRepo video_repo.VideoRepository, s3Client aws.S3ClientInterface) *UserVideoSeeder {
 	return &UserVideoSeeder{
 		userRepo:  userRepo,
 		videoRepo: videoRepo,
@@ -413,9 +413,9 @@ func (s *UserVideoSeeder) uniqueIDToUint64(id string) uint64 {
 	return uint64(hash[0]) // Simplistic; replace with proper mapping if necessary
 }
 
-// generateRandomPassword creates a random password of the given length.
-func (s *UserVideoSeeder) generateRandomPassword(length int) string {
-	bytes := make([]byte, length)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)[:length]
-}
+// // generateRandomPassword creates a random password of the given length.
+// func (s *UserVideoSeeder) generateRandomPassword(length int) string {
+// 	bytes := make([]byte, length)
+// 	rand.Read(bytes)
+// 	return hex.EncodeToString(bytes)[:length]
+// }

@@ -1,13 +1,22 @@
 package handler
 
-import "github.com/google/wire"
+import (
+	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
+	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/transcription_handler"
+	"mlvt/internal/handler/rest/v1/user_handler"
+	"mlvt/internal/handler/rest/v1/video_handler"
+
+	"github.com/google/wire"
+)
 
 // ProviderSetHandler is Handler providers.
 var ProviderSetHandler = wire.NewSet(
-	NewUserController,
-	NewVideoController,
-	NewAudioController,
-	NewTranscriptionController,
-	NewPingController,
-	NewMoMoPaymentHandler,
+	user_handler.NewUserController,
+	video_handler.NewVideoController,
+	audio_handler.NewAudioController,
+	transcription_handler.NewTranscriptionController,
+	ping_handler.NewPingController,
+	momo_handler.NewMoMoPaymentHandler,
 )

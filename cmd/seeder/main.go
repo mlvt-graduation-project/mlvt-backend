@@ -9,7 +9,8 @@ import (
 	"mlvt/internal/infra/seeder"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/initialize"
-	"mlvt/internal/repo"
+	"mlvt/internal/repo/user_repo"
+	"mlvt/internal/repo/video_repo"
 
 	_ "github.com/mattn/go-sqlite3" // SQLite driver
 )
@@ -42,8 +43,8 @@ func main() {
 	}
 
 	// Initialize repositories
-	userRepo := repo.NewUserRepo(dbConn)
-	videoRepo := repo.NewVideoRepo(dbConn)
+	userRepo := user_repo.NewUserRepo(dbConn)
+	videoRepo := video_repo.NewVideoRepo(dbConn)
 
 	// Initialize the seeder
 	userVideoSeeder := seeder.NewUserVideoSeeder(userRepo, videoRepo, s3Client)
