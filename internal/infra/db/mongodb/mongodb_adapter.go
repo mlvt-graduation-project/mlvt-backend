@@ -6,6 +6,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoDBAdapter[T any] struct {
@@ -24,6 +25,19 @@ func NewMongoDBAdapter[T any](client *mongo.Client, databaseName, collectionName
 }
 
 // ╔═════════════════════════════════════════╗
+// ║        Functions for Notification       ║
+// ╚═════════════════════════════════════════╝
+
+func (m *MongoDBAdapter[T]) FindWithQuery(filters []FilterCondition, findOptions ...*options.FindOptions) ([]T, error) {
+	bsonFilter, err := BuildBsonFilter(filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build BSON filter: %v", err)
+	}
+
+	return m.Find(bsonFilter, findOptions...)
+}
+
+// ╔═════════════════════════════════════════╗
 // ║         Common MongoDB Functions        ║
 // ╚═════════════════════════════════════════╝
 
@@ -39,8 +53,8 @@ func (m *MongoDBAdapter[T]) FindOne(filter interface{}) (*T, error) {
 	return &result, nil
 }
 
-func (m *MongoDBAdapter[T]) Find(filter interface{}) ([]T, error) {
-	cursor, err := m.collection.Find(m.ctx, filter)
+func (m *MongoDBAdapter[T]) Find(filter interface{}, opts ...*options.FindOptions) ([]T, error) {
+	cursor, err := m.collection.Find(m.ctx, filter, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find documents: %v", err)
 	}
