@@ -1,23 +1,33 @@
 package audio_handler
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/audio_service"
+	"mlvt/internal/service/transcription_service"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AudioController struct {
-	audioService audio_service.AudioService
+	audioService         audio_service.AudioService
+	transcriptionService transcription_service.TranscriptionService
 }
 
-func NewAudioController(audioService audio_service.AudioService) *AudioController {
+func NewAudioController(audioService audio_service.AudioService, transcriptionService transcription_service.TranscriptionService) *AudioController {
 	return &AudioController{
-		audioService: audioService,
+		audioService:         audioService,
+		transcriptionService: transcriptionService,
 	}
 }
 
@@ -99,12 +109,17 @@ func (h *AudioController) AddAudio(c *gin.Context) {
 		return
 	}
 
-	if err := h.audioService.CreateAudio(&audio); err != nil {
+	// Create the audio and retrieve its ID
+	audioID, err := h.audioService.CreateAudio(&audio)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, response.MessageResponse{Message: "Audio added successfully"})
+	c.JSON(http.StatusCreated, response.MessageCreateResponseWithID{
+		Message: "Audio added successfully",
+		Id:      audioID,
+	})
 }
 
 // GetAudio godoc
@@ -299,4 +314,222 @@ func (h *AudioController) DeleteAudio(c *gin.Context) {
 
 	// Respond with success
 	c.JSON(http.StatusOK, response.MessageResponse{Message: "Audio deleted successfully"})
+}
+
+// ProcessTextToSpeech godoc
+// @Summary Convert transcription to speech asynchronously
+// @Description Converts a transcription to speech by processing it through an external service asynchronously
+// @Tags audios
+// @Accept json
+// @Produce json
+// @Param transcription_id path uint64 true "ID of the transcription to convert"
+// @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /audios/process/{transcription_id} [post]
+func (h *AudioController) ProcessTextToSpeech(c *gin.Context) {
+	transcriptionIDStr := c.Param("transcription_id")
+	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid transcription ID"})
+		return
+	}
+
+	// // Optional: Authentication and Authorization
+	// userID, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: "unauthorized"})
+	// 	return
+	// }
+
+	// Retrieve the existing transcription
+	transcription, _, err := h.transcriptionService.GetTranscriptionByID(transcriptionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		return
+	}
+	if transcription == nil {
+		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "transcription not found"})
+		return
+	}
+
+	// // Verify ownership
+	// if transcription.UserID != userID.(uint64) {
+	// 	c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "forbidden"})
+	// 	return
+	// }
+
+	// Get folder from environment config or use a predefined folder
+	folder := env.EnvConfig.AudioFolder
+	if folder == "" {
+		folder = "audios"
+	}
+
+	// Generate unique file name for audio
+	audioFileName := fmt.Sprintf("audio_%d.mp3", transcriptionID)
+
+	// Create Audio entity with status 'processing' and store in DB
+	audio := &entity.Audio{
+		VideoID:   transcription.VideoID,
+		UserID:    transcription.UserID,
+		Duration:  0, // Initialize with 0; update later if needed
+		Lang:      transcription.Lang,
+		Folder:    folder,
+		FileName:  audioFileName,
+		Status:    entity.StatusProcessing,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	audioID, err := h.audioService.CreateAudio(audio)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to store audio data"})
+		return
+	}
+
+	// Respond to the frontend immediately with the new audio ID and status 'processing'
+	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
+		Message: "Accepted for processing",
+		Id:      audioID,
+	})
+
+	// Start the asynchronous processing in a separate goroutine
+	go func(audioID uint64, transcriptionID uint64, transcriptionLang string, folder string, transcriptionFileName string) {
+		// Ensure any panic in the goroutine does not crash the application
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered in goroutine: %v", r)
+				if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); err != nil {
+					log.Printf("Failed to update audio status after panic: %v", err)
+				}
+			}
+		}()
+
+		// Generate presigned download URL for transcription text
+		transcriptionDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
+		if err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to generate transcription download URL for audio ID %d: %v", audioID, err)
+			return
+		}
+
+		// Generate presigned upload URL for audio
+		fileType := "audio/mpeg"
+		audioUploadURL, err := h.audioService.GeneratePresignedUploadURL(folder, audioFileName, fileType)
+		if err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to generate audio upload URL for audio ID %d: %v", audioID, err)
+			return
+		}
+
+		// Prepare request payload matching TTSRequest struct
+		requestPayload := request.TTSRequest{
+			BaseRequest: request.BaseRequest{
+				InputFileName:  transcriptionFileName, // Use the transcription file name
+				InputLink:      transcriptionDownloadURL,
+				OutputFileName: audioFileName,
+				OutputLink:     audioUploadURL,
+				Model:          "",
+			},
+			Lang: transcriptionLang,
+		}
+
+		jsonData, err := json.Marshal(requestPayload)
+		if err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to marshal request payload for audio ID %d: %v", audioID, err)
+			return
+		}
+
+		// Create a custom HTTP client with a timeout
+		client := &http.Client{
+			Timeout: 5 * time.Minute, // Must match EC2's handler timeout
+		}
+
+		// Send request to EC2 server
+		ec2ServerURL := fmt.Sprintf("http://%s:%s/tts", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+		resp, err := client.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to send request to EC2 server for audio ID %d: %v", audioID, err)
+			return
+		}
+		defer resp.Body.Close()
+
+		// Read and parse the EC2 response
+		var ec2Response response.EC2Response
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to read EC2 response for audio ID %d: %v", audioID, err)
+			return
+		}
+
+		if err := json.Unmarshal(bodyBytes, &ec2Response); err != nil {
+			// Update audio status to 'failed'
+			if updateErr := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update audio status: %v", updateErr)
+			}
+			log.Printf("Failed to parse EC2 response for audio ID %d: %v", audioID, err)
+			return
+		}
+
+		// Handle EC2 response based on status
+		switch ec2Response.Status {
+		case "succeeded":
+			updateAudio := &entity.Audio{
+				ID:        audioID,
+				Status:    entity.StatusSucceeded,
+				UpdatedAt: time.Now(),
+			}
+
+			// if ec2Response.Duration > 0 {
+			// 	updateAudio.Duration = ec2Response.Duration
+			// }
+
+			if err := h.audioService.UpdateAudio(updateAudio); err != nil {
+				log.Printf("Failed to update audio data for audio ID %d: %v", audioID, err)
+				return
+			}
+
+			log.Printf("Successfully processed audio ID %d", audioID)
+
+		case "failed":
+			// Update audio status to 'failed' with error message
+			if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update audio status for audio ID %d: %v", audioID, err)
+			}
+			log.Printf("EC2 TTS processing failed for audio ID %d: %s", audioID, ec2Response.Error)
+
+		case "timeout":
+			// Update audio status to 'failed' or a specific 'timeout' status if defined
+			if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update audio status for audio ID %d: %v", audioID, err)
+			}
+			log.Printf("EC2 TTS processing timed out for audio ID %d", audioID)
+
+		default:
+			// Handle unexpected status
+			if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update audio status for audio ID %d: %v", audioID, err)
+			}
+			log.Printf("EC2 TTS processing returned unknown status '%s' for audio ID %d", ec2Response.Status, audioID)
+		}
+	}(audioID, transcriptionID, transcription.Lang, folder, transcription.FileName)
 }
