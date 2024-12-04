@@ -97,11 +97,11 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 		protected.DELETE("/:transcription_id", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
 		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                     // Generate presigned upload URL
 		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
-		// Speech to text
-		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTextToText)
 		// Text to text
+		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTextToText)
+		// Speech to text
 		protected.POST("/process/:video_id", a.transcriptionController.ProcessSpeechToText) // Process video to transcription
-		protected.PUT("/:vitranscription_iddeo_id/status", a.transcriptionController.UpdateTranscriptionStatus)
+		protected.PUT("/:transcription_id/status", a.transcriptionController.UpdateTranscriptionStatus)
 	}
 }
 
@@ -119,6 +119,8 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 		protected.GET("/:audio_id/video/:video_id", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
 		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL)   // Generate presigned URL for audio upload
 		protected.GET("/:audio_id/download-url", a.audioController.GenerateDownloadURL)  // Generate presigned URL for audio download
+		// Text to speech
+		protected.POST("/process/:transcription_id", a.audioController.ProcessTextToSpeech)
 	}
 }
 
