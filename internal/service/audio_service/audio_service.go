@@ -10,13 +10,15 @@ import (
 type AudioService interface {
 	GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error)
 	GeneratePresignedDownloadURL(audioID uint64) (string, error)
-	CreateAudio(audio *entity.Audio) error
+	CreateAudio(audio *entity.Audio) (uint64, error)
 	GetAudioByID(audioID uint64) (*entity.Audio, string, error)
 	GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio, string, error)
 	ListAudiosByUserID(userID uint64) ([]entity.Audio, error)
 	GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, string, error)
 	ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error)
 	DeleteAudio(audioID uint64) error
+	UpdateAudio(audio *entity.Audio) error
+	UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error
 }
 
 type audioService struct {
@@ -52,7 +54,7 @@ func (s *audioService) GeneratePresignedDownloadURL(audioID uint64) (string, err
 	return presignedURL, nil
 }
 
-func (s *audioService) CreateAudio(audio *entity.Audio) error {
+func (s *audioService) CreateAudio(audio *entity.Audio) (uint64, error) {
 	return s.repo.CreateAudio(audio)
 }
 
@@ -109,4 +111,12 @@ func (s *audioService) ListAudiosByVideoID(videoID uint64) ([]entity.Audio, erro
 
 func (s *audioService) DeleteAudio(audioID uint64) error {
 	return s.repo.DeleteAudioByID(audioID)
+}
+
+func (s *audioService) UpdateAudio(audio *entity.Audio) error {
+	return s.repo.UpdateAudio(audio)
+}
+
+func (s *audioService) UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error {
+	return s.repo.UpdateAudioStatus(audioID, status)
 }

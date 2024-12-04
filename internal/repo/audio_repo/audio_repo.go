@@ -2,18 +2,21 @@ package audio_repo
 
 import (
 	"database/sql"
+	"fmt"
 	"mlvt/internal/entity"
 	"time"
 )
 
 type AudioRepository interface {
-	CreateAudio(audio *entity.Audio) error
+	CreateAudio(audio *entity.Audio) (uint64, error)
 	GetAudioByID(audioID uint64) (*entity.Audio, error)
 	GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio, error)
 	ListAudiosByUserID(userID uint64) ([]entity.Audio, error)
 	GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, error)
 	ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error)
 	DeleteAudioByID(audioID uint64) error
+	UpdateAudio(audio *entity.Audio) error
+	UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error
 }
 
 type audioRepo struct {
@@ -25,16 +28,25 @@ func NewAudioRepository(db *sql.DB) AudioRepository {
 }
 
 // CreateAudio inserts a new audio record into the database
-func (r *audioRepo) CreateAudio(audio *entity.Audio) error {
+func (r *audioRepo) CreateAudio(audio *entity.Audio) (uint64, error) {
 	query := `
 		INSERT INTO audios (video_id, user_id, duration, lang, folder, file_name, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
 	now := time.Now()
-	_, err := r.db.Exec(query,
+	result, err := r.db.Exec(query,
 		audio.VideoID, audio.UserID, audio.Duration, audio.Lang, audio.Folder, audio.FileName, now, now)
+	if err != nil {
+		return 0, err
+	}
 
-	return err
+	// Retrieve the last inserted ID
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(id), nil
 }
 
 // GetAudioByID fetches an audio by its ID and user ID
@@ -140,4 +152,50 @@ func (r *audioRepo) DeleteAudioByID(audioID uint64) error {
 	query := "DELETE FROM audios WHERE id = ?"
 	_, err := r.db.Exec(query, audioID)
 	return err
+}
+
+// UpdateAudio updates the entire Audio record
+func (r *audioRepo) UpdateAudio(audio *entity.Audio) error {
+	query := `
+        UPDATE audios
+        SET video_id = ?, user_id = ?, duration = ?, lang = ?, folder = ?, file_name = ?, status = ?, updated_at = ?
+        WHERE id = ?`
+	now := time.Now()
+	result, err := r.db.Exec(query,
+		audio.VideoID, audio.UserID, audio.Duration, audio.Lang, audio.Folder,
+		audio.FileName, audio.Status, now, audio.ID)
+	if err != nil {
+		return fmt.Errorf("failed to execute update: %v", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no audio found with id %d", audio.ID)
+	}
+	return nil
+}
+
+// UpdateAudioStatus updates only the status of an Audio record
+func (r *audioRepo) UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error {
+	query := `
+        UPDATE audios
+        SET status = ?, updated_at = ?
+        WHERE id = ?`
+	now := time.Now()
+	result, err := r.db.Exec(query, status, now, audioID)
+	if err != nil {
+		return fmt.Errorf("failed to update audio status: %v", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no audio found with id %d", audioID)
+	}
+
+	return nil
 }
