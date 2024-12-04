@@ -98,9 +98,9 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                     // Generate presigned upload URL
 		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
 		// Speech to text
-		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTranscriptionToTranslation)
+		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTextToText)
 		// Text to text
-		protected.POST("/process/:video_id", a.transcriptionController.ProcessVideoToTranscription) // Process video to transcription
+		protected.POST("/process/:video_id", a.transcriptionController.ProcessSpeechToText) // Process video to transcription
 		protected.PUT("/:vitranscription_iddeo_id/status", a.transcriptionController.UpdateTranscriptionStatus)
 	}
 }

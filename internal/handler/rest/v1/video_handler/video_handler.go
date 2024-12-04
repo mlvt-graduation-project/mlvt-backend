@@ -323,7 +323,6 @@ func (h *VideoController) ListVideosByUserID(c *gin.Context) {
 
 	videosWithURLs, err := h.videoService.ListVideosByUserID(userID)
 	if err != nil {
-		// Log the error (assuming you have a logger)
 		log.Errorf("Failed to list videos for user ID %d: %v", userID, err)
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
 		return
