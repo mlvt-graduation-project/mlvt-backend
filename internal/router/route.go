@@ -140,6 +140,8 @@ func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
 		public.POST("/ttt/:transcription_id", a.mlvtController.ProcessTextToText)
 		public.POST("/stt/:video_id", a.mlvtController.ProcessSpeechToText)
 		public.POST("/tts/:transcription_id", a.mlvtController.ProcessTextToSpeech)
+		public.POST("/lipsync/:video_id/:audio_id", a.mlvtController.ProcessLipSync)
+		public.POST("/pipeline/full/:video_id", a.mlvtController.ProcessFullPipeline)
 	}
 }
 
