@@ -676,3 +676,254 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		}
 	}(transcription, newTranscription, translatedTranscriptionID, folder)
 }
+
+// ProcessLipSync godoc
+// @Summary Process lip synchronization asynchronously
+// @Description Synchronizes lip movements in a video based on an audio track by processing it through an external service asynchronously
+// @Tags lipsync
+// @Accept json
+// @Produce json
+// @Param video_id path uint64 true "ID of the video to lip sync"
+// @Param audio_id path uint64 true "ID of the audio to use for lip sync"
+// @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /lipsync/{video_id}/{audio_id} [post]
+func (h *MlvtController) ProcessLipSync(c *gin.Context) {
+	videoIDStr := c.Param("video_id")
+	audioIDStr := c.Param("audio_id")
+
+	// Parse video_id
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid video ID"})
+		return
+	}
+
+	// Parse audio_id
+	audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid audio ID"})
+		return
+	}
+
+	// Optional: Authentication and Authorization
+	// userID, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: "unauthorized"})
+	// 	return
+	// }
+
+	// Retrieve the existing video
+	video, _, _, err := h.videoService.GetVideoByID(videoID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		return
+	}
+	if video == nil {
+		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
+		return
+	}
+
+	// Retrieve the existing audio
+	audio, _, err := h.audioService.GetAudioByID(audioID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
+		return
+	}
+	if audio == nil {
+		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "audio not found"})
+		return
+	}
+
+	// Optional: Verify ownership
+	// if video.UserID != userID.(uint64) || audio.UserID != userID.(uint64) {
+	// 	c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "forbidden"})
+	// 	return
+	// }
+
+	// Get folder from environment config or use a predefined folder
+	folder := env.EnvConfig.VideosFolder
+	if folder == "" {
+		folder = "raw_videos"
+	}
+
+	// Generate unique file name for output video
+	outputVideoFileName := fmt.Sprintf("lipsync_%d_%d.mp4", videoID, audioID)
+
+	// Create Video entity for the output lip-synced video with status 'processing' and store in DB
+	outputVideo := &entity.Video{
+		UserID:    video.UserID,
+		Folder:    video.Folder,
+		FileName:  outputVideoFileName,
+		Image:     video.Image,
+		Status:    entity.StatusProcessing,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	outputVideoID, err := h.videoService.CreateVideo(outputVideo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to store output video data"})
+		return
+	}
+
+	// Respond to the frontend immediately with the new output video ID and status 'processing'
+	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
+		Message: "Accepted for processing",
+		Id:      outputVideoID,
+	})
+
+	// Start the asynchronous processing in a separate goroutine
+	go func(outputVideoID uint64, videoID uint64, audioID uint64, folder string, outputVideoFileName string) {
+		// Ensure any panic in the goroutine does not crash the application
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("Recovered in goroutine: %v", r)
+				if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); err != nil {
+					log.Printf("Failed to update video status after panic: %v", err)
+				}
+			}
+		}()
+
+		// Generate presigned download URL for video
+		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to generate video download URL for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		// Generate presigned download URL for audio
+		audioDownloadURL, err := h.audioService.GeneratePresignedDownloadURL(audioID)
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to generate audio download URL for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		// Generate presigned upload URL for output video
+		fileType := "video/mp4"
+		outputVideoUploadURL, err := h.videoService.GeneratePresignedUploadURLForVideo(folder, outputVideoFileName, fileType)
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to generate output video upload URL for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		// Prepare request payload matching LSRequest struct
+		requestPayload := request.LSRequest{
+			InputVideoFileName:  video.FileName,
+			InputVideoLink:      videoDownloadURL,
+			InputAudioFileName:  audio.FileName,
+			InputAudioLink:      audioDownloadURL,
+			OutputVideoFileName: outputVideoFileName,
+			OutputVideoLink:     outputVideoUploadURL,
+			Model:               "", // Specify model if needed
+		}
+
+		jsonData, err := json.Marshal(requestPayload)
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to marshal request payload for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		// Create a custom HTTP client with a timeout
+		client := &http.Client{
+			Timeout: 5 * time.Minute, // Must match EC2's handler timeout
+		}
+
+		// Send request to EC2 server
+		ec2ServerURL := fmt.Sprintf("http://%s:%s/lipsync", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+		resp, err := client.Post(ec2ServerURL, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to send request to EC2 server for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+		defer resp.Body.Close()
+
+		// Read and parse the EC2 response
+		var ec2Response response.EC2Response
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to read EC2 response for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		if err := json.Unmarshal(bodyBytes, &ec2Response); err != nil {
+			// Update output video status to 'failed'
+			if updateErr := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); updateErr != nil {
+				log.Printf("Failed to update video status: %v", updateErr)
+			}
+			log.Printf("Failed to parse EC2 response for lip sync ID %d: %v", outputVideoID, err)
+			return
+		}
+
+		// Handle EC2 response based on status
+		switch ec2Response.Status {
+		case "succeeded":
+			updateVideo := &entity.Video{
+				ID:        outputVideoID,
+				Status:    entity.StatusSucceeded,
+				UpdatedAt: time.Now(),
+			}
+
+			if ec2Response.Result != "" {
+				// Assuming Result contains some relevant information, like duration or metadata
+				// Update accordingly
+				// For example:
+				// updateVideo.Duration = ec2Response.Duration
+			}
+
+			if err := h.videoService.UpdateVideo(updateVideo); err != nil {
+				log.Printf("Failed to update video data for lip sync ID %d: %v", outputVideoID, err)
+				return
+			}
+
+			log.Printf("Successfully processed lip sync ID %d", outputVideoID)
+
+		case "failed":
+			// Update video status to 'failed' with error message
+			if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update video status for lip sync ID %d: %v", outputVideoID, err)
+			}
+			log.Printf("EC2 LipSync processing failed for lip sync ID %d: %s", outputVideoID, ec2Response.Error)
+
+		case "timeout":
+			// Update video status to 'failed' or a specific 'timeout' status if defined
+			if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update video status for lip sync ID %d: %v", outputVideoID, err)
+			}
+			log.Printf("EC2 LipSync processing timed out for lip sync ID %d", outputVideoID)
+
+		default:
+			// Handle unexpected status
+			if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed); err != nil {
+				log.Printf("Failed to update video status for lip sync ID %d: %v", outputVideoID, err)
+			}
+			log.Printf("EC2 LipSync processing returned unknown status '%s' for lip sync ID %d", ec2Response.Status, outputVideoID)
+		}
+	}(outputVideoID, videoID, audioID, folder, outputVideoFileName)
+}
