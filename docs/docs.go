@@ -103,6 +103,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/audios/process/{transcription_id}": {
+            "post": {
+                "description": "Converts a transcription to audio using text-to-speech processing asynchronously",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "audios"
+                ],
+                "summary": "Convert transcription to speech asynchronously",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Transcription ID",
+                        "name": "transcription_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted for processing",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageCreateResponseWithID"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/audios/user/{user_id}": {
             "get": {
                 "description": "Retrieves all audio files belonging to a specific user.",
@@ -387,6 +437,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/lipsync/{video_id}/{audio_id}": {
+            "post": {
+                "description": "Synchronizes lip movements in a video based on an audio track asynchronously",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lipsync"
+                ],
+                "summary": "Perform lip synchronization asynchronously",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Video ID",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Audio ID",
+                        "name": "audio_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted for processing",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageCreateResponseWithID"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/pipeline/full/{video_id}": {
+            "post": {
+                "description": "Processes a video through the full pipeline: Speech-to-Text, Text-to-Text, Text-to-Speech, and Lip Sync asynchronously",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pipeline"
+                ],
+                "summary": "Process full pipeline asynchronously",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Video ID",
+                        "name": "video_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source language code",
+                        "name": "source_language",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target language code",
+                        "name": "target_language",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted for processing",
+                        "schema": {
+                            "$ref": "#/definitions/response.MessageCreateResponseWithID"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/transcriptions": {
             "post": {
                 "description": "Adds a new transcription file's metadata to the system.",
@@ -477,7 +648,7 @@ const docTemplate = `{
         },
         "/transcriptions/process/{video_id}": {
             "post": {
-                "description": "Converts a video to transcription by processing it through an external service",
+                "description": "Converts a video to text using speech-to-text processing asynchronously",
                 "consumes": [
                     "application/json"
                 ],
@@ -487,21 +658,21 @@ const docTemplate = `{
                 "tags": [
                     "transcriptions"
                 ],
-                "summary": "Process video to transcription",
+                "summary": "Convert video to transcription asynchronously",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID of the video to process",
+                        "description": "Video ID",
                         "name": "video_id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted for processing",
                         "schema": {
-                            "$ref": "#/definitions/response.TranscriptionResponse"
+                            "$ref": "#/definitions/response.MessageCreateResponseWithID"
                         }
                     },
                     "400": {
@@ -527,7 +698,7 @@ const docTemplate = `{
         },
         "/transcriptions/translate/{transcription_id}": {
             "post": {
-                "description": "Translates a transcription by processing it through an external service",
+                "description": "Translates a transcription from source language to target language asynchronously",
                 "consumes": [
                     "application/json"
                 ],
@@ -537,11 +708,11 @@ const docTemplate = `{
                 "tags": [
                     "transcriptions"
                 ],
-                "summary": "Process transcription to translation",
+                "summary": "Translate transcription asynchronously",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "ID of the transcription to translate",
+                        "description": "Transcription ID",
                         "name": "transcription_id",
                         "in": "path",
                         "required": true
@@ -562,10 +733,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "202": {
+                        "description": "Accepted for processing",
                         "schema": {
-                            "$ref": "#/definitions/response.TranscriptionResponse"
+                            "$ref": "#/definitions/response.MessageCreateResponseWithID"
                         }
                     },
                     "400": {
@@ -888,7 +1059,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpdateTranscriptionStatusRequest"
+                            "$ref": "#/definitions/transcription_handler.UpdateTranscriptionStatusRequest"
                         }
                     }
                 ],
@@ -1816,7 +1987,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpdateVideoStatusRequest"
+                            "$ref": "#/definitions/video_handler.UpdateVideoStatusRequest"
                         }
                     }
                 ],
@@ -1879,6 +2050,9 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/entity.StatusEntity"
                 },
+                "transcription_id": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "description": "Timestamp of the last update to the audio",
                     "type": "string"
@@ -1929,6 +2103,9 @@ const docTemplate = `{
                 "lang": {
                     "description": "Language of the transcription (e.g., \"en\", \"es\", etc.)",
                     "type": "string"
+                },
+                "original_transcription_id": {
+                    "type": "integer"
                 },
                 "status": {
                     "$ref": "#/definitions/entity.StatusEntity"
@@ -2009,6 +2186,9 @@ const docTemplate = `{
         "entity.Video": {
             "type": "object",
             "properties": {
+                "audio_id": {
+                    "type": "integer"
+                },
                 "created_at": {
                     "description": "Timestamp of when the video was created",
                     "type": "string"
@@ -2032,6 +2212,9 @@ const docTemplate = `{
                 "image": {
                     "type": "string"
                 },
+                "original_video_id": {
+                    "type": "integer"
+                },
                 "status": {
                     "$ref": "#/definitions/entity.StatusEntity"
                 },
@@ -2045,22 +2228,6 @@ const docTemplate = `{
                 "user_id": {
                     "description": "ID of the user who uploaded the video",
                     "type": "integer"
-                }
-            }
-        },
-        "handler.UpdateTranscriptionStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/entity.StatusEntity"
-                }
-            }
-        },
-        "handler.UpdateVideoStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/entity.StatusEntity"
                 }
             }
         },
@@ -2114,6 +2281,17 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.MessageCreateResponseWithID": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "message": {
                     "type": "string"
                 }
             }
@@ -2191,6 +2369,22 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entity.User"
                     }
+                }
+            }
+        },
+        "transcription_handler.UpdateTranscriptionStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
+                }
+            }
+        },
+        "video_handler.UpdateVideoStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
                 }
             }
         }

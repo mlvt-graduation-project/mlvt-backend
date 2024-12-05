@@ -20,6 +20,8 @@ definitions:
         type: string
       status:
         $ref: '#/definitions/entity.StatusEntity'
+      transcription_id:
+        type: integer
       updated_at:
         description: Timestamp of the last update to the audio
         type: string
@@ -58,6 +60,8 @@ definitions:
       lang:
         description: Language of the transcription (e.g., "en", "es", etc.)
         type: string
+      original_transcription_id:
+        type: integer
       status:
         $ref: '#/definitions/entity.StatusEntity'
       text:
@@ -115,6 +119,8 @@ definitions:
     type: object
   entity.Video:
     properties:
+      audio_id:
+        type: integer
       created_at:
         description: Timestamp of when the video was created
         type: string
@@ -131,6 +137,8 @@ definitions:
         type: integer
       image:
         type: string
+      original_video_id:
+        type: integer
       status:
         $ref: '#/definitions/entity.StatusEntity'
       title:
@@ -141,16 +149,6 @@ definitions:
       user_id:
         description: ID of the user who uploaded the video
         type: integer
-    type: object
-  handler.UpdateTranscriptionStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/entity.StatusEntity'
-    type: object
-  handler.UpdateVideoStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/entity.StatusEntity'
     type: object
   response.AudioResponse:
     properties:
@@ -184,6 +182,13 @@ definitions:
   response.ErrorResponse:
     properties:
       error:
+        type: string
+    type: object
+  response.MessageCreateResponseWithID:
+    properties:
+      id:
+        type: integer
+      message:
         type: string
     type: object
   response.MessageResponse:
@@ -233,6 +238,16 @@ definitions:
         items:
           $ref: '#/definitions/entity.User'
         type: array
+    type: object
+  transcription_handler.UpdateTranscriptionStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
+    type: object
+  video_handler.UpdateVideoStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
     type: object
 info:
   contact: {}
@@ -438,6 +453,40 @@ paths:
       summary: Generate presigned upload URL
       tags:
       - audios
+  /audios/process/{transcription_id}:
+    post:
+      consumes:
+      - application/json
+      description: Converts a transcription to audio using text-to-speech processing
+        asynchronously
+      parameters:
+      - description: Transcription ID
+        in: path
+        name: transcription_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted for processing
+          schema:
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Convert transcription to speech asynchronously
+      tags:
+      - audios
   /audios/user/{user_id}:
     get:
       description: Retrieves all audio files belonging to a specific user.
@@ -488,6 +537,88 @@ paths:
       summary: List audios by Video ID
       tags:
       - audios
+  /lipsync/{video_id}/{audio_id}:
+    post:
+      consumes:
+      - application/json
+      description: Synchronizes lip movements in a video based on an audio track asynchronously
+      parameters:
+      - description: Video ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - description: Audio ID
+        in: path
+        name: audio_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted for processing
+          schema:
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Perform lip synchronization asynchronously
+      tags:
+      - lipsync
+  /pipeline/full/{video_id}:
+    post:
+      consumes:
+      - application/json
+      description: 'Processes a video through the full pipeline: Speech-to-Text, Text-to-Text,
+        Text-to-Speech, and Lip Sync asynchronously'
+      parameters:
+      - description: Video ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - description: Source language code
+        in: query
+        name: source_language
+        required: true
+        type: string
+      - description: Target language code
+        in: query
+        name: target_language
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted for processing
+          schema:
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Process full pipeline asynchronously
+      tags:
+      - pipeline
   /transcriptions:
     post:
       consumes:
@@ -606,7 +737,7 @@ paths:
         name: status
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateTranscriptionStatusRequest'
+          $ref: '#/definitions/transcription_handler.UpdateTranscriptionStatusRequest'
       produces:
       - application/json
       responses:
@@ -720,10 +851,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Converts a video to transcription by processing it through an external
-        service
+      description: Converts a video to text using speech-to-text processing asynchronously
       parameters:
-      - description: ID of the video to process
+      - description: Video ID
         in: path
         name: video_id
         required: true
@@ -731,10 +861,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted for processing
           schema:
-            $ref: '#/definitions/response.TranscriptionResponse'
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
         "400":
           description: Bad Request
           schema:
@@ -747,17 +877,17 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorResponse'
-      summary: Process video to transcription
+      summary: Convert video to transcription asynchronously
       tags:
       - transcriptions
   /transcriptions/translate/{transcription_id}:
     post:
       consumes:
       - application/json
-      description: Translates a transcription by processing it through an external
-        service
+      description: Translates a transcription from source language to target language
+        asynchronously
       parameters:
-      - description: ID of the transcription to translate
+      - description: Transcription ID
         in: path
         name: transcription_id
         required: true
@@ -775,10 +905,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "202":
+          description: Accepted for processing
           schema:
-            $ref: '#/definitions/response.TranscriptionResponse'
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
         "400":
           description: Bad Request
           schema:
@@ -791,7 +921,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/response.ErrorResponse'
-      summary: Process transcription to translation
+      summary: Translate transcription asynchronously
       tags:
       - transcriptions
   /transcriptions/user/{user_id}:
@@ -1354,7 +1484,7 @@ paths:
         name: status
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateVideoStatusRequest'
+          $ref: '#/definitions/video_handler.UpdateVideoStatusRequest'
       produces:
       - application/json
       responses:
