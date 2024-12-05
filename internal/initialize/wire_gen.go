@@ -9,6 +9,7 @@ package initialize
 import (
 	"database/sql"
 	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -54,6 +55,7 @@ func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
 	transcriptionService := transcription_service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
 	audioController := audio_handler.NewAudioController(audioService, transcriptionService)
 	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
+	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
@@ -62,7 +64,7 @@ func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
 	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 

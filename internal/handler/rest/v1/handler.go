@@ -2,6 +2,7 @@ package handler
 
 import (
 	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -18,5 +19,6 @@ var ProviderSetHandler = wire.NewSet(
 	audio_handler.NewAudioController,
 	transcription_handler.NewTranscriptionController,
 	ping_handler.NewPingController,
+	mlvt_handler.NewMlvtController,
 	momo_handler.NewMoMoPaymentHandler,
 )

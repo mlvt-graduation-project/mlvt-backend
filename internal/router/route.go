@@ -2,6 +2,7 @@ package router
 
 import (
 	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -17,6 +18,7 @@ type AppRouter struct {
 	videoController         *video_handler.VideoController
 	audioController         *audio_handler.AudioController
 	transcriptionController *transcription_handler.TranscriptionController
+	mlvtController          *mlvt_handler.MlvtController
 	pingController          *ping_handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
 	momoPaymentController   *momo_handler.MoMoPaymentController
@@ -28,6 +30,7 @@ func NewAppRouter(
 	videoController *video_handler.VideoController,
 	audioController *audio_handler.AudioController,
 	transcriptionController *transcription_handler.TranscriptionController,
+	mlvtController *mlvt_handler.MlvtController,
 	pingController *ping_handler.PingController,
 	authMiddleware *middleware.AuthUserMiddleware,
 	momoPaymentController *momo_handler.MoMoPaymentController,
@@ -37,6 +40,7 @@ func NewAppRouter(
 		videoController:         videoController,
 		audioController:         audioController,
 		transcriptionController: transcriptionController,
+		mlvtController:          mlvtController,
 		pingController:          pingController,
 		authMiddleware:          authMiddleware,
 		momoPaymentController:   momoPaymentController,
@@ -97,10 +101,6 @@ func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
 		protected.DELETE("/:transcription_id", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
 		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                     // Generate presigned upload URL
 		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
-		// Text to text
-		protected.POST("/translate/:transcription_id", a.transcriptionController.ProcessTextToText)
-		// Speech to text
-		protected.POST("/process/:video_id", a.transcriptionController.ProcessSpeechToText) // Process video to transcription
 		protected.PUT("/:transcription_id/status", a.transcriptionController.UpdateTranscriptionStatus)
 	}
 }
@@ -119,8 +119,6 @@ func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
 		protected.GET("/:audio_id/video/:video_id", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
 		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL)   // Generate presigned URL for audio upload
 		protected.GET("/:audio_id/download-url", a.audioController.GenerateDownloadURL)  // Generate presigned URL for audio download
-		// Text to speech
-		protected.POST("/process/:transcription_id", a.audioController.ProcessTextToSpeech)
 	}
 }
 
@@ -133,6 +131,15 @@ func (a *AppRouter) RegisterPingStatusRoutes(r *gin.RouterGroup) {
 		public.GET("/voice-cloning/:id", a.pingController.PingVoiceCloning)
 		public.GET("/lipsync/:id", a.pingController.PingLipSync)
 		public.GET("/full-pipeline/:id", a.pingController.PingFullPipeline)
+	}
+}
+
+func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
+	public := r.Group("/mlvt")
+	{
+		public.POST("/ttt/:transcription_id", a.mlvtController.ProcessTextToText)
+		public.POST("/stt/:video_id", a.mlvtController.ProcessSpeechToText)
+		public.POST("/tts/:transcription_id", a.mlvtController.ProcessTextToSpeech)
 	}
 }
 
