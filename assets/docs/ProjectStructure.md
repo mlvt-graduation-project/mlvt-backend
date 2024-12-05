@@ -23,6 +23,7 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │   └── rest
 │   │       └── v1
 │   │           ├── audio_handler
+│   │           ├── mlvt_handler
 │   │           ├── payment_handler
 │   │           │   └── momo_handler
 │   │           ├── ping_handler
@@ -32,6 +33,7 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   ├── infra
 │   │   ├── aws
 │   │   ├── db
+│   │   │   └── mongodb
 │   │   ├── env
 │   │   ├── reason
 │   │   ├── seeder
@@ -112,9 +114,9 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │   └── main.go
 │   ├── migration
 │   │   └── migration.go
-│   ├── readme.md
 │   ├── seeder
-│   │   └── main.go
+│   │   ├── main.go
+│   │   └── readme.md
 │   └── server
 │       └── main.go
 ├── docker-compose.yml
@@ -152,6 +154,8 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │           ├── audio_handler
 │   │           │   └── audio_handler.go
 │   │           ├── handler.go
+│   │           ├── mlvt_handler
+│   │           │   └── mlvt_handler.go
 │   │           ├── payment_handler
 │   │           │   └── momo_handler
 │   │           │       └── momo_payment_handler.go
@@ -173,6 +177,10 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │   │   └── s3_mock.go
 │   │   ├── db
 │   │   │   ├── database.go
+│   │   │   ├── mongodb
+│   │   │   │   ├── filter.go
+│   │   │   │   ├── mongodb_adapter.go
+│   │   │   │   └── mongodb_client.go
 │   │   │   └── redis.go
 │   │   ├── env
 │   │   │   └── env.go
@@ -216,7 +224,10 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │   │   │   ├── auth_mock.go
 │   │   │   └── provider.go
 │   │   ├── request
+│   │   │   ├── base_request.go
+│   │   │   ├── ls_request.go
 │   │   │   ├── stt_request.go
+│   │   │   ├── tts_request.go
 │   │   │   └── ttt_request.go
 │   │   └── response
 │   │       ├── ec2_response.go
@@ -273,14 +284,14 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
 │           ├── video_service_mock.go
 │           └── video_service_test.go
 ├── logs
-│   ├── mlvt_err_2024-11-26.log
-│   ├── mlvt_err_2024-11-27.log
 │   ├── mlvt_err_2024-11-28.log
 │   ├── mlvt_err_2024-12-01.log
-│   ├── mlvt_info_2024-11-26.log
-│   ├── mlvt_info_2024-11-27.log
+│   ├── mlvt_err_2024-12-04.log
+│   ├── mlvt_err_2024-12-05.log
 │   ├── mlvt_info_2024-11-28.log
-│   └── mlvt_info_2024-12-01.log
+│   ├── mlvt_info_2024-12-01.log
+│   ├── mlvt_info_2024-12-04.log
+│   └── mlvt_info_2024-12-05.log
 ├── migration
 │   ├── 0001_create_users_table.down.sql
 │   ├── 0001_create_users_table.up.sql
@@ -303,6 +314,4 @@ Additionally, to understand the process of video streaming on AWS S3, you can re
     ├── run_all.sh
     ├── setup.sh
     └── swagger.sh
-
-65 directories, 164 files
 ```
