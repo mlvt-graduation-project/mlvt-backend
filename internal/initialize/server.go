@@ -29,6 +29,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	appRouter.RegisterVideoRoutes(api)
 	appRouter.RegisterAudioRoutes(api)
 	appRouter.RegisterTranscriptionRoutes(api)
+	appRouter.RegiserMlvtRoutes(api)
 	appRouter.RegisterPaymentRoutes(api)
 	appRouter.RegisterSwaggerRoutes(r.Group("/"))
 
