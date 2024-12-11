@@ -31,15 +31,28 @@ func (r *videoRepo) CreateVideo(video *entity.Video) (uint64, error) {
 		video.Status = entity.StatusRaw
 	}
 	query := `
-		INSERT INTO videos (title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		INSERT INTO videos (original_video_id, audio_id, title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	now := time.Now()
-	result, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, video.UserID, now, now)
+	result, err := r.db.Exec(
+		query,
+		video.OriginalVideoID,
+		video.AudioID,
+		video.Title,
+		video.Duration,
+		video.Description,
+		video.FileName,
+		video.Folder,
+		video.Image,
+		video.Status,
+		video.UserID,
+		now,
+		now,
+	)
 	if err != nil {
 		return 0, err
 	}
 
-	// Retrieve the last inserted ID
 	id, err := result.LastInsertId()
 	if err != nil {
 		return 0, err
@@ -50,35 +63,75 @@ func (r *videoRepo) CreateVideo(video *entity.Video) (uint64, error) {
 
 // GetVideoByID retrieves a video record by its ID
 func (r *videoRepo) GetVideoByID(videoID uint64) (*entity.Video, error) {
-	query := `SELECT id, title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at
-	          FROM videos WHERE id = ?`
+	query := `
+		SELECT id, original_video_id, audio_id, title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at
+		FROM videos
+		WHERE id = ?`
 	row := r.db.QueryRow(query, videoID)
 	video := &entity.Video{}
-	err := row.Scan(&video.ID, &video.Title, &video.Duration, &video.Description, &video.FileName, &video.Folder, &video.Image, &video.Status, &video.UserID, &video.CreatedAt, &video.UpdatedAt)
+	err := row.Scan(
+		&video.ID,
+		&video.OriginalVideoID,
+		&video.AudioID,
+		&video.Title,
+		&video.Duration,
+		&video.Description,
+		&video.FileName,
+		&video.Folder,
+		&video.Image,
+		&video.Status,
+		&video.UserID,
+		&video.CreatedAt,
+		&video.UpdatedAt,
+	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	return video, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve video: %v", err)
+	}
+	return video, nil
 }
 
 // ListVideosByUserID lists all videos uploaded by a specific user
 func (r *videoRepo) ListVideosByUserID(userID uint64) ([]entity.Video, error) {
-	query := `SELECT id, title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at
-	          FROM videos WHERE user_id = ?`
+	query := `
+		SELECT id, original_video_id, audio_id, title, duration, description, file_name, folder, image, status, user_id, created_at, updated_at
+		FROM videos
+		WHERE user_id = ?`
 	rows, err := r.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to query videos by user: %v", err)
 	}
 	defer rows.Close()
 
 	var videos []entity.Video
 	for rows.Next() {
-		var video entity.Video
-		if err := rows.Scan(&video.ID, &video.Title, &video.Duration, &video.Description, &video.FileName, &video.Folder, &video.Image, &video.Status, &video.UserID, &video.CreatedAt, &video.UpdatedAt); err != nil {
-			return nil, err
+		var v entity.Video
+		if err := rows.Scan(
+			&v.ID,
+			&v.OriginalVideoID,
+			&v.AudioID,
+			&v.Title,
+			&v.Duration,
+			&v.Description,
+			&v.FileName,
+			&v.Folder,
+			&v.Image,
+			&v.Status,
+			&v.UserID,
+			&v.CreatedAt,
+			&v.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan video: %v", err)
 		}
-		videos = append(videos, video)
+		videos = append(videos, v)
 	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating video rows: %v", err)
+	}
+
 	return videos, nil
 }
 
@@ -86,17 +139,32 @@ func (r *videoRepo) ListVideosByUserID(userID uint64) ([]entity.Video, error) {
 func (r *videoRepo) DeleteVideo(videoID uint64) error {
 	query := "DELETE FROM videos WHERE id = ?"
 	_, err := r.db.Exec(query, videoID)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete video %d: %v", videoID, err)
+	}
+	return nil
 }
 
 // UpdateVideo updates an existing video record
 func (r *videoRepo) UpdateVideo(video *entity.Video) error {
 	query := `
         UPDATE videos
-        SET title = ?, duration = ?, description = ?, file_name = ?, folder = ?, image = ?, status = ?, updated_at = ?
+        SET original_video_id = ?, audio_id = ?, title = ?, duration = ?, description = ?, file_name = ?, folder = ?, image = ?, status = ?, updated_at = ?
         WHERE id = ?`
 	now := time.Now()
-	result, err := r.db.Exec(query, video.Title, video.Duration, video.Description, video.FileName, video.Folder, video.Image, video.Status, now, video.ID)
+	result, err := r.db.Exec(query,
+		video.OriginalVideoID,
+		video.AudioID,
+		video.Title,
+		video.Duration,
+		video.Description,
+		video.FileName,
+		video.Folder,
+		video.Image,
+		video.Status,
+		now,
+		video.ID,
+	)
 	if err != nil {
 		return fmt.Errorf("failed to execute update: %v", err)
 	}
