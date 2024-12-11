@@ -1,0 +1,3 @@
+ALTER TABLE videos DROP COLUMN status;
+
+ALTER TABLE videos MODIFY COLUMN status TEXT NOT NULL DEFAULT 'raw';
