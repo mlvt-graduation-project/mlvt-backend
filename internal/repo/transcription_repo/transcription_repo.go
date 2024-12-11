@@ -32,6 +32,14 @@ func (r *transcriptionRepo) CreateTranscription(transcription *entity.Transcript
 	if transcription.Status == "" {
 		transcription.Status = entity.StatusRaw
 	}
+
+	var originalTranscriptionID interface{}
+	if transcription.OriginalTranscriptionID == 0 {
+		originalTranscriptionID = nil
+	} else {
+		originalTranscriptionID = transcription.OriginalTranscriptionID
+	}
+
 	query := `
 		INSERT INTO transcriptions (video_id, user_id, original_transcription_id, text, lang, folder, file_name, status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -39,7 +47,7 @@ func (r *transcriptionRepo) CreateTranscription(transcription *entity.Transcript
 	result, err := r.db.Exec(query,
 		transcription.VideoID,
 		transcription.UserID,
-		transcription.OriginalTranscriptionID,
+		originalTranscriptionID,
 		transcription.Text,
 		transcription.Lang,
 		transcription.Folder,
@@ -67,19 +75,22 @@ func (r *transcriptionRepo) GetTranscriptionByID(transcriptionID uint64) (*entit
 		FROM transcriptions
 		WHERE id = ?`
 	row := r.db.QueryRow(query, transcriptionID)
-	transcription := &entity.Transcription{}
+
+	var t entity.Transcription
+	var originalTranscriptionID sql.NullInt64
+
 	err := row.Scan(
-		&transcription.ID,
-		&transcription.VideoID,
-		&transcription.UserID,
-		&transcription.OriginalTranscriptionID,
-		&transcription.Text,
-		&transcription.Lang,
-		&transcription.Folder,
-		&transcription.FileName,
-		&transcription.Status,
-		&transcription.CreatedAt,
-		&transcription.UpdatedAt,
+		&t.ID,
+		&t.VideoID,
+		&t.UserID,
+		&originalTranscriptionID,
+		&t.Text,
+		&t.Lang,
+		&t.Folder,
+		&t.FileName,
+		&t.Status,
+		&t.CreatedAt,
+		&t.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -87,7 +98,14 @@ func (r *transcriptionRepo) GetTranscriptionByID(transcriptionID uint64) (*entit
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve transcription by ID: %v", err)
 	}
-	return transcription, nil
+
+	if originalTranscriptionID.Valid {
+		t.OriginalTranscriptionID = uint64(originalTranscriptionID.Int64)
+	} else {
+		t.OriginalTranscriptionID = 0
+	}
+
+	return &t, nil
 }
 
 // GetTranscriptionByIDAndUserID retrieves a transcription by its ID and User ID
@@ -97,19 +115,22 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndUserID(transcriptionID, userI
 		FROM transcriptions
 		WHERE id = ? AND user_id = ?`
 	row := r.db.QueryRow(query, transcriptionID, userID)
-	transcription := &entity.Transcription{}
+
+	var t entity.Transcription
+	var originalTranscriptionID sql.NullInt64
+
 	err := row.Scan(
-		&transcription.ID,
-		&transcription.VideoID,
-		&transcription.UserID,
-		&transcription.OriginalTranscriptionID,
-		&transcription.Text,
-		&transcription.Lang,
-		&transcription.Folder,
-		&transcription.FileName,
-		&transcription.Status,
-		&transcription.CreatedAt,
-		&transcription.UpdatedAt,
+		&t.ID,
+		&t.VideoID,
+		&t.UserID,
+		&originalTranscriptionID,
+		&t.Text,
+		&t.Lang,
+		&t.Folder,
+		&t.FileName,
+		&t.Status,
+		&t.CreatedAt,
+		&t.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -117,7 +138,14 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndUserID(transcriptionID, userI
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve transcription by ID and User ID: %v", err)
 	}
-	return transcription, nil
+
+	if originalTranscriptionID.Valid {
+		t.OriginalTranscriptionID = uint64(originalTranscriptionID.Int64)
+	} else {
+		t.OriginalTranscriptionID = 0
+	}
+
+	return &t, nil
 }
 
 // GetTranscriptionByIDAndVideoID retrieves a transcription by its ID and Video ID
@@ -127,19 +155,22 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndVideoID(transcriptionID, vide
 		FROM transcriptions
 		WHERE id = ? AND video_id = ?`
 	row := r.db.QueryRow(query, transcriptionID, videoID)
-	transcription := &entity.Transcription{}
+
+	var t entity.Transcription
+	var originalTranscriptionID sql.NullInt64
+
 	err := row.Scan(
-		&transcription.ID,
-		&transcription.VideoID,
-		&transcription.UserID,
-		&transcription.OriginalTranscriptionID,
-		&transcription.Text,
-		&transcription.Lang,
-		&transcription.Folder,
-		&transcription.FileName,
-		&transcription.Status,
-		&transcription.CreatedAt,
-		&transcription.UpdatedAt,
+		&t.ID,
+		&t.VideoID,
+		&t.UserID,
+		&originalTranscriptionID,
+		&t.Text,
+		&t.Lang,
+		&t.Folder,
+		&t.FileName,
+		&t.Status,
+		&t.CreatedAt,
+		&t.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -147,7 +178,14 @@ func (r *transcriptionRepo) GetTranscriptionByIDAndVideoID(transcriptionID, vide
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve transcription by ID and Video ID: %v", err)
 	}
-	return transcription, nil
+
+	if originalTranscriptionID.Valid {
+		t.OriginalTranscriptionID = uint64(originalTranscriptionID.Int64)
+	} else {
+		t.OriginalTranscriptionID = 0
+	}
+
+	return &t, nil
 }
 
 // ListTranscriptionsByUserID lists all transcriptions for a specific user
@@ -165,11 +203,13 @@ func (r *transcriptionRepo) ListTranscriptionsByUserID(userID uint64) ([]entity.
 	var transcriptions []entity.Transcription
 	for rows.Next() {
 		var t entity.Transcription
+		var originalTranscriptionID sql.NullInt64
+
 		if err := rows.Scan(
 			&t.ID,
 			&t.VideoID,
 			&t.UserID,
-			&t.OriginalTranscriptionID,
+			&originalTranscriptionID,
 			&t.Text,
 			&t.Lang,
 			&t.Folder,
@@ -180,6 +220,13 @@ func (r *transcriptionRepo) ListTranscriptionsByUserID(userID uint64) ([]entity.
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transcription: %v", err)
 		}
+
+		if originalTranscriptionID.Valid {
+			t.OriginalTranscriptionID = uint64(originalTranscriptionID.Int64)
+		} else {
+			t.OriginalTranscriptionID = 0
+		}
+
 		transcriptions = append(transcriptions, t)
 	}
 
@@ -205,11 +252,13 @@ func (r *transcriptionRepo) ListTranscriptionsByVideoID(videoID uint64) ([]entit
 	var transcriptions []entity.Transcription
 	for rows.Next() {
 		var t entity.Transcription
+		var originalTranscriptionID sql.NullInt64
+
 		if err := rows.Scan(
 			&t.ID,
 			&t.VideoID,
 			&t.UserID,
-			&t.OriginalTranscriptionID,
+			&originalTranscriptionID,
 			&t.Text,
 			&t.Lang,
 			&t.Folder,
@@ -220,6 +269,13 @@ func (r *transcriptionRepo) ListTranscriptionsByVideoID(videoID uint64) ([]entit
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan transcription: %v", err)
 		}
+
+		if originalTranscriptionID.Valid {
+			t.OriginalTranscriptionID = uint64(originalTranscriptionID.Int64)
+		} else {
+			t.OriginalTranscriptionID = 0
+		}
+
 		transcriptions = append(transcriptions, t)
 	}
 
@@ -242,13 +298,20 @@ func (r *transcriptionRepo) DeleteTranscription(transcriptionID uint64) error {
 
 // UpdateTranscription updates an existing transcription record
 func (r *transcriptionRepo) UpdateTranscription(transcription *entity.Transcription) error {
+	var originalTranscriptionID interface{}
+	if transcription.OriginalTranscriptionID == 0 {
+		originalTranscriptionID = nil
+	} else {
+		originalTranscriptionID = transcription.OriginalTranscriptionID
+	}
+
 	query := `
 		UPDATE transcriptions
 		SET original_transcription_id = ?, text = ?, lang = ?, folder = ?, file_name = ?, updated_at = ?
 		WHERE id = ?`
 	now := time.Now()
 	result, err := r.db.Exec(query,
-		transcription.OriginalTranscriptionID,
+		originalTranscriptionID,
 		transcription.Text,
 		transcription.Lang,
 		transcription.Folder,
