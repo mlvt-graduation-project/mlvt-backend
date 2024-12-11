@@ -3,9 +3,7 @@ package initialize
 import (
 	"database/sql"
 	"fmt"
-	"mlvt/cmd/migration"
 	"mlvt/internal/infra/db"
-	"mlvt/internal/infra/zap-logging/log"
 )
 
 // InitDatabase establishes a database connection and runs migrations.
@@ -16,12 +14,12 @@ func InitDatabase() (*sql.DB, error) {
 	}
 
 	// Run migrations
-	if err := migration.MigrateDB(dbConn); err != nil {
-		log.Errorf("Migration failed: %v", err)
-		return nil, fmt.Errorf("migration failed: %w", err)
-	}
+	// if err := migration.MigrateDB(dbConn); err != nil {
+	// 	log.Errorf("Migration failed: %v", err)
+	// 	return nil, fmt.Errorf("migration failed: %w", err)
+	// }
 
-	log.Info("Migrations applied successfully.")
+	// log.Info("Migrations applied successfully.")
 
 	return dbConn, nil
 }
