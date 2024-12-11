@@ -32,6 +32,14 @@ func (r *audioRepo) CreateAudio(audio *entity.Audio) (uint64, error) {
 	if audio.Status == "" {
 		audio.Status = entity.StatusRaw
 	}
+
+	var transcriptionID interface{}
+	if audio.TranscriptionID == 0 {
+		transcriptionID = nil
+	} else {
+		transcriptionID = audio.TranscriptionID
+	}
+
 	query := `
 		INSERT INTO audios (video_id, user_id, transcription_id, duration, lang, folder, file_name, status, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -40,7 +48,7 @@ func (r *audioRepo) CreateAudio(audio *entity.Audio) (uint64, error) {
 	result, err := r.db.Exec(query,
 		audio.VideoID,
 		audio.UserID,
-		audio.TranscriptionID,
+		transcriptionID,
 		audio.Duration,
 		audio.Lang,
 		audio.Folder,
@@ -71,19 +79,20 @@ func (r *audioRepo) GetAudioByID(audioID uint64) (*entity.Audio, error) {
 
 	row := r.db.QueryRow(query, audioID)
 
-	audio := &entity.Audio{}
+	var a entity.Audio
+	var transcriptionID sql.NullInt64
 	err := row.Scan(
-		&audio.ID,
-		&audio.VideoID,
-		&audio.UserID,
-		&audio.TranscriptionID,
-		&audio.Duration,
-		&audio.Lang,
-		&audio.Folder,
-		&audio.FileName,
-		&audio.Status,
-		&audio.CreatedAt,
-		&audio.UpdatedAt,
+		&a.ID,
+		&a.VideoID,
+		&a.UserID,
+		&transcriptionID,
+		&a.Duration,
+		&a.Lang,
+		&a.Folder,
+		&a.FileName,
+		&a.Status,
+		&a.CreatedAt,
+		&a.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -92,7 +101,14 @@ func (r *audioRepo) GetAudioByID(audioID uint64) (*entity.Audio, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve audio by ID: %v", err)
 	}
-	return audio, nil
+
+	if transcriptionID.Valid {
+		a.TranscriptionID = uint64(transcriptionID.Int64)
+	} else {
+		a.TranscriptionID = 0
+	}
+
+	return &a, nil
 }
 
 // GetAudioByIDAndUserID retrieves a single audio by its ID and User ID (owner)
@@ -104,19 +120,20 @@ func (r *audioRepo) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio
 
 	row := r.db.QueryRow(query, audioID, userID)
 
-	audio := &entity.Audio{}
+	var a entity.Audio
+	var transcriptionID sql.NullInt64
 	err := row.Scan(
-		&audio.ID,
-		&audio.VideoID,
-		&audio.UserID,
-		&audio.TranscriptionID,
-		&audio.Duration,
-		&audio.Lang,
-		&audio.Folder,
-		&audio.FileName,
-		&audio.Status,
-		&audio.CreatedAt,
-		&audio.UpdatedAt,
+		&a.ID,
+		&a.VideoID,
+		&a.UserID,
+		&transcriptionID,
+		&a.Duration,
+		&a.Lang,
+		&a.Folder,
+		&a.FileName,
+		&a.Status,
+		&a.CreatedAt,
+		&a.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil // No record found
@@ -124,7 +141,14 @@ func (r *audioRepo) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve audio by ID and User ID: %v", err)
 	}
-	return audio, nil
+
+	if transcriptionID.Valid {
+		a.TranscriptionID = uint64(transcriptionID.Int64)
+	} else {
+		a.TranscriptionID = 0
+	}
+
+	return &a, nil
 }
 
 // ListAudiosByUserID returns all audios associated with a given user ID
@@ -142,23 +166,31 @@ func (r *audioRepo) ListAudiosByUserID(userID uint64) ([]entity.Audio, error) {
 
 	var audios []entity.Audio
 	for rows.Next() {
-		var audio entity.Audio
+		var a entity.Audio
+		var transcriptionID sql.NullInt64
 		if err := rows.Scan(
-			&audio.ID,
-			&audio.VideoID,
-			&audio.UserID,
-			&audio.TranscriptionID,
-			&audio.Duration,
-			&audio.Lang,
-			&audio.Folder,
-			&audio.FileName,
-			&audio.Status,
-			&audio.CreatedAt,
-			&audio.UpdatedAt,
+			&a.ID,
+			&a.VideoID,
+			&a.UserID,
+			&transcriptionID,
+			&a.Duration,
+			&a.Lang,
+			&a.Folder,
+			&a.FileName,
+			&a.Status,
+			&a.CreatedAt,
+			&a.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan audio: %v", err)
 		}
-		audios = append(audios, audio)
+
+		if transcriptionID.Valid {
+			a.TranscriptionID = uint64(transcriptionID.Int64)
+		} else {
+			a.TranscriptionID = 0
+		}
+
+		audios = append(audios, a)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -177,19 +209,20 @@ func (r *audioRepo) GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, e
 
 	row := r.db.QueryRow(query, videoID, audioID)
 
-	audio := &entity.Audio{}
+	var a entity.Audio
+	var transcriptionID sql.NullInt64
 	err := row.Scan(
-		&audio.ID,
-		&audio.VideoID,
-		&audio.UserID,
-		&audio.TranscriptionID,
-		&audio.Duration,
-		&audio.Lang,
-		&audio.Folder,
-		&audio.FileName,
-		&audio.Status,
-		&audio.CreatedAt,
-		&audio.UpdatedAt,
+		&a.ID,
+		&a.VideoID,
+		&a.UserID,
+		&transcriptionID,
+		&a.Duration,
+		&a.Lang,
+		&a.Folder,
+		&a.FileName,
+		&a.Status,
+		&a.CreatedAt,
+		&a.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
@@ -198,7 +231,14 @@ func (r *audioRepo) GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve audio by VideoID and AudioID: %v", err)
 	}
-	return audio, nil
+
+	if transcriptionID.Valid {
+		a.TranscriptionID = uint64(transcriptionID.Int64)
+	} else {
+		a.TranscriptionID = 0
+	}
+
+	return &a, nil
 }
 
 // ListAudiosByVideoID returns all audios associated with a given video ID
@@ -216,23 +256,32 @@ func (r *audioRepo) ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error) 
 
 	var audios []entity.Audio
 	for rows.Next() {
-		var audio entity.Audio
+		var a entity.Audio
+		var transcriptionID sql.NullInt64
+
 		if err := rows.Scan(
-			&audio.ID,
-			&audio.VideoID,
-			&audio.UserID,
-			&audio.TranscriptionID,
-			&audio.Duration,
-			&audio.Lang,
-			&audio.Folder,
-			&audio.FileName,
-			&audio.Status,
-			&audio.CreatedAt,
-			&audio.UpdatedAt,
+			&a.ID,
+			&a.VideoID,
+			&a.UserID,
+			&transcriptionID,
+			&a.Duration,
+			&a.Lang,
+			&a.Folder,
+			&a.FileName,
+			&a.Status,
+			&a.CreatedAt,
+			&a.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan audio: %v", err)
 		}
-		audios = append(audios, audio)
+
+		if transcriptionID.Valid {
+			a.TranscriptionID = uint64(transcriptionID.Int64)
+		} else {
+			a.TranscriptionID = 0
+		}
+
+		audios = append(audios, a)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -254,6 +303,13 @@ func (r *audioRepo) DeleteAudioByID(audioID uint64) error {
 
 // UpdateAudio updates the entire Audio record
 func (r *audioRepo) UpdateAudio(audio *entity.Audio) error {
+	var transcriptionID interface{}
+	if audio.TranscriptionID == 0 {
+		transcriptionID = nil
+	} else {
+		transcriptionID = audio.TranscriptionID
+	}
+
 	query := `
         UPDATE audios
         SET video_id = ?, user_id = ?, transcription_id = ?, duration = ?, lang = ?, folder = ?, file_name = ?, status = ?, updated_at = ?
@@ -262,7 +318,7 @@ func (r *audioRepo) UpdateAudio(audio *entity.Audio) error {
 	result, err := r.db.Exec(query,
 		audio.VideoID,
 		audio.UserID,
-		audio.TranscriptionID,
+		transcriptionID,
 		audio.Duration,
 		audio.Lang,
 		audio.Folder,
