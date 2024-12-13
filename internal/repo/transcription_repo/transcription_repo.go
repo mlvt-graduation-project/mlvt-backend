@@ -307,15 +307,13 @@ func (r *transcriptionRepo) UpdateTranscription(transcription *entity.Transcript
 
 	query := `
 		UPDATE transcriptions
-		SET original_transcription_id = ?, text = ?, lang = ?, folder = ?, file_name = ?, updated_at = ?
+		SET original_transcription_id = ?, text = ?, lang = ?, updated_at = ?
 		WHERE id = ?`
 	now := time.Now()
 	result, err := r.db.Exec(query,
 		originalTranscriptionID,
 		transcription.Text,
 		transcription.Lang,
-		transcription.Folder,
-		transcription.FileName,
 		now,
 		transcription.ID,
 	)
