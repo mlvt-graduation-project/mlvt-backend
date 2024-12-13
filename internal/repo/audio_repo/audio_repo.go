@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
+	"strings"
 	"time"
 )
 
@@ -303,40 +304,76 @@ func (r *audioRepo) DeleteAudioByID(audioID uint64) error {
 
 // UpdateAudio updates the entire Audio record
 func (r *audioRepo) UpdateAudio(audio *entity.Audio) error {
-	var transcriptionID interface{}
-	if audio.TranscriptionID == 0 {
-		transcriptionID = nil
-	} else {
-		transcriptionID = audio.TranscriptionID
+	var setClauses []string
+	var args []interface{}
+
+	// Dynamically add SET clauses based on non-zero or non-empty fields
+
+	if audio.VideoID != 0 {
+		setClauses = append(setClauses, "video_id = ?")
+		args = append(args, audio.VideoID)
 	}
 
-	query := `
-        UPDATE audios
-        SET video_id = ?, user_id = ?, transcription_id = ?, duration = ?, lang = ?, folder = ?, file_name = ?, status = ?, updated_at = ?
-        WHERE id = ?`
-	now := time.Now()
-	result, err := r.db.Exec(query,
-		audio.VideoID,
-		audio.UserID,
-		transcriptionID,
-		audio.Duration,
-		audio.Lang,
-		audio.Folder,
-		audio.FileName,
-		audio.Status,
-		now,
-		audio.ID,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to execute update: %v", err)
+	if audio.UserID != 0 {
+		setClauses = append(setClauses, "user_id = ?")
+		args = append(args, audio.UserID)
 	}
+
+	if audio.TranscriptionID != 0 {
+		setClauses = append(setClauses, "transcription_id = ?")
+		args = append(args, audio.TranscriptionID)
+	}
+
+	if audio.Duration != 0 {
+		setClauses = append(setClauses, "duration = ?")
+		args = append(args, audio.Duration)
+	}
+
+	if audio.Lang != "" {
+		setClauses = append(setClauses, "lang = ?")
+		args = append(args, audio.Lang)
+	}
+
+	if audio.Folder != "" {
+		setClauses = append(setClauses, "folder = ?")
+		args = append(args, audio.Folder)
+	}
+
+	if audio.FileName != "" {
+		setClauses = append(setClauses, "file_name = ?")
+		args = append(args, audio.FileName)
+	}
+
+	// Always update updated_at
+	now := time.Now().Format(time.RFC3339) // Format as RFC3339 string
+	setClauses = append(setClauses, "updated_at = ?")
+	args = append(args, now)
+
+	if len(setClauses) == 0 {
+		return fmt.Errorf("no fields to update")
+	}
+
+	// Add the audio.ID for the WHERE clause
+	args = append(args, audio.ID)
+
+	// Construct the final SQL query
+	query := fmt.Sprintf("UPDATE audios SET %s WHERE id = ?", strings.Join(setClauses, ", "))
+
+	// Execute the query with the arguments
+	result, err := r.db.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute update: %w", err)
+	}
+
+	// Check if any row was affected
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("no audio found with id %d", audio.ID)
 	}
+
 	return nil
 }
 
