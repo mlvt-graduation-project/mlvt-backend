@@ -624,6 +624,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		OriginalVideoID: videoID,
 		UserID:          video.UserID,
 		Folder:          videoFolder,
+		Image:           video.Image,
 		FileName:        outputVideoFileName,
 		Status:          entity.StatusProcessing,
 		CreatedAt:       time.Now(),
