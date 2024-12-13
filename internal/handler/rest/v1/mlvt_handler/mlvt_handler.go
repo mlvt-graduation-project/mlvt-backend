@@ -154,6 +154,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
+		log.Printf("ec2 response: %v\n\n", ec2Response)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 			log.Printf("EC2 processing failed: %v", err)
@@ -163,12 +164,16 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		updateTranscription := &entity.Transcription{
 			ID:        transcriptionID,
 			Text:      ec2Response.Result,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		}
 
 		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
 			log.Printf("Failed to update transcription data: %v", err)
+		}
+
+		// Update status to succeeded
+		if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update transcription status: %v", err)
 		}
 	}()
 }
@@ -288,12 +293,16 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		updateTranscription := &entity.Transcription{
 			ID:        translatedTranscriptionID,
 			Text:      ec2Response.Result,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		}
 
 		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
 			log.Printf("Failed to update transcription data: %v", err)
+		}
+
+		// Update status to succeeded
+		if err := h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update transcription status: %v", err)
 		}
 	}()
 }
@@ -399,12 +408,15 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 
 		updateAudio := &entity.Audio{
 			ID:        audioID,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		}
 
 		if err := h.audioService.UpdateAudio(updateAudio); err != nil {
 			log.Printf("Failed to update audio data: %v", err)
+		}
+		// Update status to succeeded
+		if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update audio status: %v", err)
 		}
 	}()
 }
@@ -530,12 +542,16 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 
 		updateVideo := &entity.Video{
 			ID:        outputVideoID,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		}
 
 		if err := h.videoService.UpdateVideo(updateVideo); err != nil {
 			log.Printf("Failed to update video data: %v", err)
+		}
+
+		// Update status to succeeded
+		if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update video status: %v", err)
 		}
 	}()
 }
@@ -671,9 +687,13 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		h.transcriptionService.UpdateTranscription(&entity.Transcription{
 			ID:        transcriptionID,
 			Text:      ec2STTResponse.Result,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		})
+
+		// Update status to succeeded
+		if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update transcription status: %v", err)
+		}
 
 		// Step 2: Text-to-Text
 		translatedFileName := fmt.Sprintf("transcription_%d_%s.txt", transcriptionID, targetLang)
@@ -736,9 +756,13 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		h.transcriptionService.UpdateTranscription(&entity.Transcription{
 			ID:        translatedTranscriptionID,
 			Text:      ec2TTTResponse.Result,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		})
+
+		// Update status to succeeded
+		if err := h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update transcription status: %v", err)
+		}
 
 		// Step 3: Text-to-Speech
 		audioFolder := env.EnvConfig.AudioFolder
@@ -801,9 +825,13 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 
 		h.audioService.UpdateAudio(&entity.Audio{
 			ID:        audioID,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		})
+
+		// Update status to succeeded
+		if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update audio status: %v", err)
+		}
 
 		// Step 4: Lip Sync
 		outputVideo.AudioID = audioID
@@ -854,8 +882,12 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 
 		h.videoService.UpdateVideo(&entity.Video{
 			ID:        outputVideoID,
-			Status:    entity.StatusSucceeded,
 			UpdatedAt: time.Now(),
 		})
+
+		// Update status to succeeded
+		if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
+			log.Printf("Failed to update video status: %v", err)
+		}
 	}()
 }
