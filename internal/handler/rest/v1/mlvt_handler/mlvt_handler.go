@@ -533,7 +533,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		}
 
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 15*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
@@ -879,7 +879,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		}
 
 		ec2LSURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 5*time.Minute)
+		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 15*time.Minute)
 		if err != nil || ec2LSResponse.Status != "succeeded" {
 			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			log.Errorf("EC2 Lip Sync processing failed: %v", err)

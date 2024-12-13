@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
+	"strings"
 	"time"
 )
 
@@ -195,49 +196,97 @@ func (r *videoRepo) DeleteVideo(videoID uint64) error {
 }
 
 func (r *videoRepo) UpdateVideo(video *entity.Video) error {
-	// If IDs are 0, treat them as NULL in the DB
-	var originalVideoID interface{}
-	if video.OriginalVideoID == 0 {
-		originalVideoID = nil
-	} else {
-		originalVideoID = video.OriginalVideoID
+	var setClauses []string
+	var args []interface{}
+
+	// Handle OriginalVideoID
+	if video.OriginalVideoID != 0 {
+		setClauses = append(setClauses, "original_video_id = ?")
+		args = append(args, video.OriginalVideoID)
 	}
 
-	var audioID interface{}
-	if video.AudioID == 0 {
-		audioID = nil
+	// Handle AudioID
+	if video.AudioID != 0 {
+		setClauses = append(setClauses, "audio_id = ?")
+		args = append(args, video.AudioID)
 	} else {
-		audioID = video.AudioID
+		// Set to NULL if zero
+		setClauses = append(setClauses, "audio_id = NULL")
 	}
 
-	query := `
-        UPDATE videos
-        SET original_video_id = ?, audio_id = ?, title = ?, duration = ?, description = ?, file_name = ?, folder = ?, image = ?, status = ?, updated_at = ?
-        WHERE id = ?`
+	// Handle Title
+	if video.Title != "" {
+		setClauses = append(setClauses, "title = ?")
+		args = append(args, video.Title)
+	}
+
+	// Handle Duration
+	if video.Duration != 0 {
+		setClauses = append(setClauses, "duration = ?")
+		args = append(args, video.Duration)
+	}
+
+	// Handle Description
+	if video.Description != "" {
+		setClauses = append(setClauses, "description = ?")
+		args = append(args, video.Description)
+	}
+
+	// Handle FileName
+	if video.FileName != "" {
+		setClauses = append(setClauses, "file_name = ?")
+		args = append(args, video.FileName)
+	}
+
+	// Handle Folder
+	if video.Folder != "" {
+		setClauses = append(setClauses, "folder = ?")
+		args = append(args, video.Folder)
+	}
+
+	// Handle Image
+	if video.Image != "" {
+		setClauses = append(setClauses, "image = ?")
+		args = append(args, video.Image)
+	}
+
+	// Handle UserID
+	if video.UserID != 0 {
+		setClauses = append(setClauses, "user_id = ?")
+		args = append(args, video.UserID)
+	}
+
+	// Always update updated_at
 	now := time.Now()
-	result, err := r.db.Exec(query,
-		originalVideoID,
-		audioID,
-		video.Title,
-		video.Duration,
-		video.Description,
-		video.FileName,
-		video.Folder,
-		video.Image,
-		video.Status,
-		now,
-		video.ID,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to execute update: %v", err)
+	setClauses = append(setClauses, "updated_at = ?")
+	args = append(args, now)
+
+	// Check if there are any fields to update
+	if len(setClauses) == 0 {
+		return fmt.Errorf("no fields to update")
 	}
+
+	// Add the video.ID for the WHERE clause
+	args = append(args, video.ID)
+
+	// Construct the final SQL query
+	query := fmt.Sprintf("UPDATE videos SET %s WHERE id = ?", strings.Join(setClauses, ", "))
+
+	// Execute the query with the arguments
+	result, err := r.db.Exec(query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to execute update: %w", err)
+	}
+
+	// Check if any row was affected
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("failed to retrieve rows affected: %v", err)
+		return fmt.Errorf("failed to retrieve rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
 		return fmt.Errorf("no video found with id %d", video.ID)
 	}
+
 	return nil
 }
 
