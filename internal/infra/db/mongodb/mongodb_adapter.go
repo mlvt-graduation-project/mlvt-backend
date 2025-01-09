@@ -101,3 +101,11 @@ func (m *MongoDBAdapter[T]) BulkWrite(data map[string]T) error {
 
 	return nil
 }
+
+func (m *MongoDBAdapter[T]) InsertOne(data T) (uint64, error) {
+	result, err := m.collection.InsertOne(m.ctx, data)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert document: %v", err)
+	}
+	return result.InsertedID.(uint64), nil
+}
