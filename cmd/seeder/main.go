@@ -24,7 +24,7 @@ func main() {
 	}
 
 	// Initialize Database
-	dbConn, err := initialize.InitDatabase()
+	dbConn, _, err := initialize.InitDatabase()
 	if err != nil {
 		log.Errorf("Database initialization failed: %v", err)
 		os.Exit(1)
