@@ -43,6 +43,7 @@ type Config struct {
 	Ec2Port              string
 	Language             string
 	MigrationsPath       string
+	MongoDBEndPoint      string
 	I18NPath             string
 	RootDir              string
 }
@@ -119,6 +120,7 @@ func initializeConfig() error {
 		Ec2IPAddress:         viper.GetString("EC2_IP_ADDRESS"),
 		Ec2Port:              viper.GetString("EC2_PORT"),
 		MigrationsPath:       viper.GetString("MIGRATIONS_PATH"),
+		MongoDBEndPoint:      viper.GetString("MONGODB_ENDPOINT"),
 		I18NPath:             i18nPath,
 		RootDir:              rootDir,
 	}
