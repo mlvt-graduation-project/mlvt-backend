@@ -19,7 +19,7 @@ func Run() {
 	}
 
 	// Initialize Database
-	dbConn, err := InitDatabase()
+	dbConn, mongoConn, err := InitDatabase()
 	if err != nil {
 		log.Errorf("Database initialization failed: %v", err)
 		os.Exit(1)
@@ -27,6 +27,11 @@ func Run() {
 	defer func() {
 		if err := dbConn.Close(); err != nil {
 			log.Warnf("Error closing database connection: %v", err)
+		}
+	}()
+	defer func() {
+		if err := mongoConn.Close(); err != nil {
+			log.Warnf("Error closing MongoDB connection: %v", err)
 		}
 	}()
 
@@ -38,7 +43,7 @@ func Run() {
 	// }
 
 	// Initialize Router
-	appRouter, err := InitAppRouter(dbConn)
+	appRouter, err := InitAppRouter(dbConn, mongoConn)
 	if err != nil {
 		log.Errorf("AppRouter initialization failed: %v", err)
 		os.Exit(1)
