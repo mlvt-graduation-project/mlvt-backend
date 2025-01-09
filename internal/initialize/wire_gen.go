@@ -16,10 +16,12 @@ import (
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo/audio_repo"
 	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
+	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/video_repo"
@@ -29,6 +31,7 @@ import (
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/payment_service/momo_service"
 	"mlvt/internal/service/ping_service"
+	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/video_service"
@@ -36,7 +39,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
+func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRouter, error) {
 	userRepository := user_repo.NewUserRepo(db)
 	s3ClientInterface, err := aws.NewS3Client()
 	if err != nil {
@@ -55,7 +58,9 @@ func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
 	transcriptionService := transcription_service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
 	audioController := audio_handler.NewAudioController(audioService, transcriptionService)
 	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
-	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService)
+	progressRepository := progress_repo.NewProgressRepo(mongoConn)
+	progressService := progress_service.NewProgressService(progressRepository)
+	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)

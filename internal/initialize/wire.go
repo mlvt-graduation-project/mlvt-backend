@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	handler "mlvt/internal/handler/rest/v1"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo"
 	"mlvt/internal/router"
@@ -16,7 +17,7 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeApp(db *sql.DB) (*router.AppRouter, error) {
+func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRouter, error) {
 	wire.Build(
 		aws.ProviderSetAwsBucket,
 		repo.ProviderSetRepository,

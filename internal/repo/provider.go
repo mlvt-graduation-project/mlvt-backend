@@ -4,6 +4,7 @@ import (
 	"mlvt/internal/repo/audio_repo"
 	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
+	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/video_repo"
@@ -17,6 +18,7 @@ var ProviderSetRepository = wire.NewSet(
 	video_repo.NewVideoRepo,
 	audio_repo.NewAudioRepository,
 	transcription_repo.NewTranscriptionRepository,
+	progress_repo.NewProgressRepo,
 	momo_repo.NewMoMoRepo,
 	ping_repo.NewPingRepo,
 	// wire.Bind(new(UserRepository), new(*userRepo)),
