@@ -2,6 +2,7 @@ package mlvt_handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/audio_service"
+	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/video_service"
 	"net/http"
@@ -24,13 +26,20 @@ type MlvtController struct {
 	audioService         audio_service.AudioService
 	transcriptionService transcription_service.TranscriptionService
 	videoService         video_service.VideoService
+	progressService      progress_service.ProgressService
 }
 
-func NewMlvtController(audioService audio_service.AudioService, transcriptionService transcription_service.TranscriptionService, videoService video_service.VideoService) *MlvtController {
+func NewMlvtController(
+	audioService audio_service.AudioService,
+	transcriptionService transcription_service.TranscriptionService,
+	videoService video_service.VideoService,
+	progressService progress_service.ProgressService,
+) *MlvtController {
 	return &MlvtController{
 		audioService:         audioService,
 		transcriptionService: transcriptionService,
 		videoService:         videoService,
+		progressService:      progressService,
 	}
 }
 
@@ -111,6 +120,26 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
 	}
+
+	// Insert to mongodb
+	sttDocument := &entity.Progress{
+		UserID:                    video.UserID,
+		ProgressType:              entity.ProgressTypeSTT,
+		OriginalVideoID:           videoID,
+		OriginalTranscriptionID:   transcriptionID,
+		TranslatedTranscriptionID: 0,
+		AudioID:                   0,
+		ProgressedVideoID:         0,
+		Status:                    entity.StatusProcessing,
+		CreatedAt:                 time.Now(),
+		UpdatedAt:                 time.Now(),
+	}
+
+	documentId, err := h.progressService.Create(context.Background(), *sttDocument)
+	if err != nil {
+		log.Errorf("Failed to insert document")
+	}
+	log.Infof("Added document STT, Id: ", documentId)
 
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
