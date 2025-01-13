@@ -418,6 +418,26 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
+	// Insert to mongodb
+	sttDocument := &entity.Progress{
+		UserID:                    transcription.UserID,
+		ProgressType:              entity.ProgressTypeTTT,
+		OriginalVideoID:           transcription.VideoID,
+		OriginalTranscriptionID:   transcription.OriginalTranscriptionID,
+		TranslatedTranscriptionID: transcription.ID,
+		AudioID:                   audioID,
+		ProgressedVideoID:         0,
+		Status:                    entity.StatusProcessing,
+		CreatedAt:                 time.Now(),
+		UpdatedAt:                 time.Now(),
+	}
+
+	documentId, err := h.progressService.Create(context.Background(), *sttDocument)
+	if err != nil {
+		log.Errorf("Failed to insert document ", err)
+	}
+	log.Infof("Added document STT, Id: ", documentId)
+
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
@@ -430,12 +450,14 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
 				h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
 		transcriptionDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
 		if err != nil {
 			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription download URL: %v", err)
 			return
 		}
@@ -444,6 +466,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		audioUploadURL, err := h.audioService.GeneratePresignedUploadURL(folder, audioFileName, fileType)
 		if err != nil {
 			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate audio upload URL: %v", err)
 			return
 		}
@@ -463,6 +486,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
 		}
@@ -479,6 +503,8 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update audio status: %v", err)
 		}
+
+		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
 	}()
 }
 
