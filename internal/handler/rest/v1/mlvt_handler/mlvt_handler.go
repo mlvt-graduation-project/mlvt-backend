@@ -141,8 +141,6 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	}
 	log.Infof("Added document STT, Id: ", documentId)
 
-	log.Info(sttDocument)
-
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
@@ -275,6 +273,26 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		return
 	}
 
+	// Insert to mongodb
+	sttDocument := &entity.Progress{
+		UserID:                    originalTranscription.UserID,
+		ProgressType:              entity.ProgressTypeTTT,
+		OriginalVideoID:           originalTranscription.VideoID,
+		OriginalTranscriptionID:   originalTranscription.ID,
+		TranslatedTranscriptionID: translatedTranscriptionID,
+		AudioID:                   0,
+		ProgressedVideoID:         0,
+		Status:                    entity.StatusProcessing,
+		CreatedAt:                 time.Now(),
+		UpdatedAt:                 time.Now(),
+	}
+
+	documentId, err := h.progressService.Create(context.Background(), *sttDocument)
+	if err != nil {
+		log.Errorf("Failed to insert document ", err)
+	}
+	log.Infof("Added document STT, Id: ", documentId)
+
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
@@ -287,12 +305,14 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
 				h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
 		originalDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
 		if err != nil {
 			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate original transcription download URL: %v", err)
 			return
 		}
@@ -301,6 +321,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		translationUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, translatedFileName, fileType)
 		if err != nil {
 			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate translation upload URL: %v", err)
 			return
 		}
@@ -323,6 +344,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
 		}
@@ -341,6 +363,8 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		if err := h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
+
+		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
 	}()
 }
 
