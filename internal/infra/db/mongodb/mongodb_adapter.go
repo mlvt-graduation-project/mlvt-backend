@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -102,10 +103,17 @@ func (m *MongoDBAdapter[T]) BulkWrite(data map[string]T) error {
 	return nil
 }
 
-func (m *MongoDBAdapter[T]) InsertOne(data T) (uint64, error) {
+func (m *MongoDBAdapter[T]) InsertOne(data T) (primitive.ObjectID, error) {
 	result, err := m.collection.InsertOne(m.ctx, data)
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert document: %v", err)
+		return primitive.NilObjectID, fmt.Errorf("failed to insert document: %v", err)
 	}
-	return result.InsertedID.(uint64), nil
+
+	// Attempt to cast insertedID to primitive.ObjectID
+	oid, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, fmt.Errorf("failed to cast inserted ID to ObjectID")
+	}
+
+	return oid, nil
 }

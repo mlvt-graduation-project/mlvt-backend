@@ -137,9 +137,11 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 
 	documentId, err := h.progressService.Create(context.Background(), *sttDocument)
 	if err != nil {
-		log.Errorf("Failed to insert document")
+		log.Errorf("Failed to insert document ", err)
 	}
 	log.Infof("Added document STT, Id: ", documentId)
+
+	log.Info(sttDocument)
 
 	// assign id
 	sttDocument.ID = documentId

@@ -7,10 +7,11 @@ import (
 	"mlvt/internal/infra/db/mongodb"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProgressRepository interface {
-	Insert(ctx context.Context, progress entity.Progress) (uint64, error)
+	Insert(ctx context.Context, progress entity.Progress) (primitive.ObjectID, error)
 	Get(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, queryOpts mongodb.QueryOptions) ([]entity.Progress, error)
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}) error
@@ -30,10 +31,10 @@ func NewProgressRepo(db *mongodb.MongoDBClient) ProgressRepository {
 	}
 }
 
-func (r *progressRepo) Insert(ctx context.Context, progress entity.Progress) (uint64, error) {
+func (r *progressRepo) Insert(ctx context.Context, progress entity.Progress) (primitive.ObjectID, error) {
 	insertedID, err := r.adapter.InsertOne(progress)
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert progress: %w", err)
+		return primitive.NilObjectID, fmt.Errorf("failed to insert progress: %w", err)
 	}
 	return insertedID, nil
 }

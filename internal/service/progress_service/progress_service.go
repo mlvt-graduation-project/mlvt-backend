@@ -5,10 +5,12 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/repo/progress_repo"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProgressService interface {
-	Create(ctx context.Context, p entity.Progress) (uint64, error)
+	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
 	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
 	UpdateOne(ctx context.Context, filter interface{}, update interface{}) error
@@ -24,7 +26,7 @@ func NewProgressService(repo progress_repo.ProgressRepository) ProgressService {
 	}
 }
 
-func (s *progressService) Create(ctx context.Context, p entity.Progress) (uint64, error) {
+func (s *progressService) Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error) {
 	return s.repo.Insert(ctx, p)
 }
 
