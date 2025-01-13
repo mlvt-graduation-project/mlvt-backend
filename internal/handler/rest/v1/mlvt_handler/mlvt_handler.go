@@ -141,7 +141,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	}
 	log.Infof("Added document STT, Id: ", documentId)
 
-	// assign id for future updating
+	// assign id
 	sttDocument.ID = documentId
 
 	// Respond immediately to the client
