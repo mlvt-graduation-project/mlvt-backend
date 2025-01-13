@@ -141,6 +141,9 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	}
 	log.Infof("Added document STT, Id: ", documentId)
 
+	// assign id for future updating
+	sttDocument.ID = documentId
+
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
