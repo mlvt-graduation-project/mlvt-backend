@@ -14,7 +14,7 @@ type ProgressRepository interface {
 	Insert(ctx context.Context, progress entity.Progress) (primitive.ObjectID, error)
 	Get(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, queryOpts mongodb.QueryOptions) ([]entity.Progress, error)
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}) error
+	UpdateFields(ctx context.Context, filter interface{}, updateFields interface{}) error
 }
 
 type progressRepo struct {
@@ -66,10 +66,10 @@ func (r *progressRepo) GetByFilter(
 	return docs, nil
 }
 
-func (r *progressRepo) UpdateOne(ctx context.Context, filter interface{}, update interface{}) error {
-	err := r.adapter.UpdateOne(filter, update)
-	if err != nil {
-		return fmt.Errorf("failed to update progress: %w", err)
-	}
-	return nil
+func (r *progressRepo) UpdateFields(
+	ctx context.Context,
+	filter interface{},
+	updateFields interface{},
+) error {
+	return r.adapter.UpdateOne(filter, updateFields)
 }

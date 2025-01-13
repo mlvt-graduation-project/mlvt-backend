@@ -5,7 +5,9 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/repo/progress_repo"
+	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -13,7 +15,7 @@ type ProgressService interface {
 	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
 	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
-	UpdateOne(ctx context.Context, filter interface{}, update interface{}) error
+	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
 }
 
 type progressService struct {
@@ -38,6 +40,13 @@ func (s *progressService) GetByFilter(ctx context.Context, qo mongodb.QueryOptio
 	return s.repo.GetByFilter(ctx, qo)
 }
 
-func (s *progressService) UpdateOne(ctx context.Context, filter interface{}, update interface{}) error {
-	return s.repo.UpdateOne(ctx, filter, update)
+func (s *progressService) UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error {
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		"status":     newStatus,
+		"updated_at": time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
 }

@@ -143,9 +143,6 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 
 	log.Info(sttDocument)
 
-	// assign id
-	sttDocument.ID = documentId
-
 	// Respond immediately to the client
 	c.JSON(http.StatusAccepted, response.MessageCreateResponseWithID{
 		Message: "Accepted for processing",
@@ -158,12 +155,14 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
 				h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
 		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
 			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate video download URL: %v", err)
 			return
 		}
@@ -172,6 +171,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
 		if err != nil {
 			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription upload URL: %v", err)
 			return
 		}
@@ -191,6 +191,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		log.Infof("ec2 response: %v\n\n", ec2Response)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
 		}
@@ -209,6 +210,8 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
+
+		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
 	}()
 }
 
