@@ -16,6 +16,7 @@ type ProgressService interface {
 	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
 	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
+	GetProgressByUserID(ctx context.Context, userID uint64) ([]entity.Progress, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
 	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
 }
@@ -67,6 +68,33 @@ func (s *progressService) UpdateFieldId(ctx context.Context, id primitive.Object
 	}
 
 	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) GetProgressByUserID(
+	ctx context.Context,
+	userID uint64,
+) (
+	[]entity.Progress,
+	error,
+) {
+	qo := mongodb.QueryOptions{
+		Filters: []mongodb.FilterCondition{
+			{
+				Key:       "user_id",
+				Operation: mongodb.OpEqual,
+				Value:     userID,
+			},
+		},
+		Sorts: []mongodb.SortCondition{
+			{
+				Field:     "created_at",
+				Direction: mongodb.SortDesc,
+			},
+		},
+		// Not set the Field to return all columns
+	}
+
+	return s.repo.GetByFilter(ctx, qo)
 }
 
 func isValidProgressIDField(fieldName string) (string, error) {
