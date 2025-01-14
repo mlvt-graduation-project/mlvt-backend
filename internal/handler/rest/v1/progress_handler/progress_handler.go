@@ -49,7 +49,14 @@ func (h *ProgressController) GetUserProgress(c *gin.Context) {
 		return
 	}
 
+	progressWithThumbnail, err := h.progressService.GetProgressThumbnails(progresses)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to add thumbnail to progress entity"})
+		log.Errorf("failed to add thumbnail to progress entity")
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"progresses": progresses,
+		"progresses": progressWithThumbnail,
 	})
 }

@@ -1,6 +1,11 @@
 package response
 
-import "mlvt/internal/entity"
+import (
+	"mlvt/internal/entity"
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // ErrorResponse represents an error response
 type ErrorResponse struct {
@@ -89,6 +94,22 @@ type ListVideosByUserIDResponse struct {
 
 type PingStatusResponse struct {
 	Status entity.StatusEntity `json:"status"`
+}
+
+// Progress with thumbnail
+type ProgressResponse struct {
+	ID                        primitive.ObjectID  `json:"id"`
+	UserID                    uint64              `json:"user_id"`
+	ProgressType              entity.ProgressType `json:"progress_type"`
+	OriginalVideoID           uint64              `json:"original_video_id"`
+	OriginalTranscriptionID   uint64              `json:"original_transcription_id"`
+	TranslatedTranscriptionID uint64              `json:"translated_transcription_id"`
+	AudioID                   uint64              `json:"audio_id"`
+	ProgressedVideoID         uint64              `json:"progressed_video_id"`
+	Status                    entity.StatusEntity `json:"status"`
+	CreatedAt                 time.Time           `json:"created_at"`
+	UpdatedAt                 time.Time           `json:"updated_at"`
+	ThumbnailUrl              string              `json:"thumbnail_url"`
 }
 
 func (p *PingStatusResponse) ValidateStatus() {

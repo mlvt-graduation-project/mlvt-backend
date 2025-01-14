@@ -60,7 +60,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	audioController := audio_handler.NewAudioController(audioService, transcriptionService)
 	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
-	progressService := progress_service.NewProgressService(progressRepository)
+	progressService := progress_service.NewProgressService(progressRepository, videoRepository, s3ClientInterface)
 	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService)
 	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
