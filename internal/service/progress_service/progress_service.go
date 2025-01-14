@@ -2,6 +2,7 @@ package progress_service
 
 import (
 	"context"
+	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/repo/progress_repo"
@@ -16,6 +17,7 @@ type ProgressService interface {
 	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
+	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
 }
 
 type progressService struct {
@@ -49,4 +51,37 @@ func (s *progressService) UpdateStatus(ctx context.Context, id primitive.ObjectI
 	}
 
 	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error {
+	bsonFieldName, err := isValidProgressIDField(fieldName)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		bsonFieldName: value,
+		"updated_at":  time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func isValidProgressIDField(fieldName string) (string, error) {
+	switch fieldName {
+	case "OriginalVideoID":
+		return "original_video_id", nil
+	case "OriginalTranscriptionID":
+		return "original_transcription_id", nil
+	case "TranslatedTranscriptionID":
+		return "translated_transcription_id", nil
+	case "AudioID":
+		return "audio_id", nil
+	case "ProgressedVideoID":
+		return "progressed_video_id", nil
+	default:
+		return "", errors.New("invalid field name")
+	}
 }

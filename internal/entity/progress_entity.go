@@ -13,6 +13,7 @@ const (
 	ProgressTypeSTT ProgressType = "stt"
 	ProgressTypeTTS ProgressType = "tts"
 	ProgressTypeLS  ProgressType = "ls"
+	ProgressTypeFP  ProgressType = "fp" // Full pipeline
 )
 
 type Progress struct {
