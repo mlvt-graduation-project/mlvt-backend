@@ -5,6 +5,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
@@ -20,5 +21,6 @@ var ProviderSetHandler = wire.NewSet(
 	transcription_handler.NewTranscriptionController,
 	ping_handler.NewPingController,
 	mlvt_handler.NewMlvtController,
+	progress_handler.NewProgressService,
 	momo_handler.NewMoMoPaymentHandler,
 )

@@ -5,6 +5,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
@@ -19,6 +20,7 @@ type AppRouter struct {
 	audioController         *audio_handler.AudioController
 	transcriptionController *transcription_handler.TranscriptionController
 	mlvtController          *mlvt_handler.MlvtController
+	progressController      *progress_handler.ProgressController
 	pingController          *ping_handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
 	momoPaymentController   *momo_handler.MoMoPaymentController
@@ -31,6 +33,7 @@ func NewAppRouter(
 	audioController *audio_handler.AudioController,
 	transcriptionController *transcription_handler.TranscriptionController,
 	mlvtController *mlvt_handler.MlvtController,
+	progressController *progress_handler.ProgressController,
 	pingController *ping_handler.PingController,
 	authMiddleware *middleware.AuthUserMiddleware,
 	momoPaymentController *momo_handler.MoMoPaymentController,
@@ -41,6 +44,7 @@ func NewAppRouter(
 		audioController:         audioController,
 		transcriptionController: transcriptionController,
 		mlvtController:          mlvtController,
+		progressController:      progressController,
 		pingController:          pingController,
 		authMiddleware:          authMiddleware,
 		momoPaymentController:   momoPaymentController,
@@ -142,6 +146,14 @@ func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
 		public.POST("/tts/:transcription_id", a.mlvtController.ProcessTextToSpeech)
 		public.POST("/lipsync/:video_id/:audio_id", a.mlvtController.ProcessLipSync)
 		public.POST("/pipeline/full/:video_id", a.mlvtController.ProcessFullPipeline)
+	}
+}
+
+// RegisterProgressRoutes sets ip the routes for all progress-related operations
+func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
+	public := r.Group("/progress")
+	{
+		public.POST("/:user_id", a.progressController.GetUserProgress)
 	}
 }
 

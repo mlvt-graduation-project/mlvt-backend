@@ -12,6 +12,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
@@ -61,6 +62,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository)
 	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService)
+	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
@@ -69,7 +71,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
 	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 
