@@ -12,6 +12,7 @@ const (
 type ModelOption struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id"`
 	ModelType   ProgressType       `json:"model_type" bson:"model_type"`
+	ModelName   string             `json:"model_name" bson:"model_name"`
 	Description string             `json:"description" bson:"description"`
 	Status      ModelOptionStatus  `json:"status" bson:"status"`
 	Token       int64              `json:"token" bson:"token"`
