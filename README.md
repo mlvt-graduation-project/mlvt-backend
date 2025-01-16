@@ -89,71 +89,78 @@ For API testing instructions, refer to the [API Testing](#api-testing) section.
 ```bash
 .
 ├── assets
-│   ├── avatars
-│   ├── docs
-│   └── videos
+│   ├── avatars
+│   ├── docs
+│   └── videos
 ├── cmd
-│   ├── cleanup
-│   ├── migration
-│   ├── seeder
-│   └── server
+│   ├── cleanup
+│   ├── migration
+│   │   └── migrate
+│   │       └── v1
+│   ├── seeder
+│   └── server
 ├── docs
 ├── i18n
 ├── internal
-│   ├── entity
-│   ├── handler
-│   │   └── rest
-│   │       └── v1
-│   │           ├── audio_handler
-│   │           ├── mlvt_handler
-│   │           ├── payment_handler
-│   │           │   └── momo_handler
-│   │           ├── ping_handler
-│   │           ├── transcription_handler
-│   │           ├── user_handler
-│   │           └── video_handler
-│   ├── infra
-│   │   ├── aws
-│   │   ├── db
-│   │   │   └── mongodb
-│   │   ├── env
-│   │   ├── reason
-│   │   ├── seeder
-│   │   ├── server
-│   │   │   ├── grpc
-│   │   │   └── http
-│   │   └── zap-logging
-│   │       ├── log
-│   │       └── zap
-│   ├── initialize
-│   ├── pkg
-│   │   ├── json
-│   │   ├── localization
-│   │   ├── middleware
-│   │   ├── request
-│   │   └── response
-│   ├── repo
-│   │   ├── audio_repo
-│   │   ├── payment_repo
-│   │   │   └── momo_repo
-│   │   ├── ping_repo
-│   │   ├── transcription_repo
-│   │   ├── user_repo
-│   │   └── video_repo
-│   ├── router
-│   ├── schema
-│   └── service
-│       ├── audio_service
-│       ├── auth_service
-│       ├── payment_service
-│       │   └── momo_service
-│       ├── ping_service
-│       ├── transcription_service
-│       ├── user_service
-│       └── video_service
+│   ├── entity
+│   ├── handler
+│   │   └── rest
+│   │       └── v1
+│   │           ├── audio_handler
+│   │           ├── mlvt_handler
+│   │           ├── payment_handler
+│   │           │   └── momo_handler
+│   │           ├── ping_handler
+│   │           ├── progress_handler
+│   │           ├── transcription_handler
+│   │           ├── user_handler
+│   │           └── video_handler
+│   ├── infra
+│   │   ├── aws
+│   │   ├── db
+│   │   │   └── mongodb
+│   │   ├── env
+│   │   ├── reason
+│   │   ├── seeder
+│   │   ├── server
+│   │   │   ├── grpc
+│   │   │   └── http
+│   │   └── zap-logging
+│   │       ├── log
+│   │       └── zap
+│   ├── initialize
+│   ├── pkg
+│   │   ├── json
+│   │   ├── localization
+│   │   ├── middleware
+│   │   ├── request
+│   │   └── response
+│   ├── repo
+│   │   ├── audio_repo
+│   │   ├── payment_repo
+│   │   │   └── momo_repo
+│   │   ├── ping_repo
+│   │   ├── progress_repo
+│   │   ├── transcription_repo
+│   │   ├── user_repo
+│   │   └── video_repo
+│   ├── router
+│   ├── schema
+│   └── service
+│       ├── audio_service
+│       ├── auth_service
+│       ├── payment_service
+│       │   └── momo_service
+│       ├── ping_service
+│       ├── progress_service
+│       ├── transcription_service
+│       ├── user_service
+│       └── video_service
 ├── logs
 ├── migration
 └── script
+
+72 directories
 ```
 
 ## Configuration Details
