@@ -11,9 +11,15 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type AdminService interface{}
+type AdminService interface {
+	GetServerConfig(ctx context.Context) (*entity.AdminConfig, error)
+	GetModelList(ctx context.Context, adminID uint64, qo mongodb.QueryOptions) ([]entity.ModelOption, error)
+	UpdateServerConfig(ctx context.Context, adminID uint64, modelType string, modelName string) error
+}
 
 type adminService struct {
 	userRepo  user_repo.UserRepository
@@ -80,6 +86,42 @@ func (s *adminService) GetModelList(ctx context.Context, adminID uint64, qo mong
 	}
 
 	return s.adminRepo.LoadModelOptions(ctx, qo)
+}
+
+func (s *adminService) AddModelOption(ctx context.Context, adminID uint64, modelOption entity.ModelOption) (primitive.ObjectID, error) {
+	if !s.isAdmin(adminID) {
+		return primitive.NilObjectID, fmt.Errorf("access denied: only admins can add new model option")
+	}
+
+	// Check if model name exists yet
+	qo := mongodb.QueryOptions{
+		Filters: []mongodb.FilterCondition{
+			{
+				Key:       "model_name",
+				Operation: mongodb.OpEqual,
+				Value:     modelOption.ModelName,
+			},
+			{
+				Key:       "model_type",
+				Operation: mongodb.OpEqual,
+				Value:     modelOption.ModelType,
+			},
+		},
+	}
+
+	result, err := s.adminRepo.LoadModelOptions(ctx, qo)
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("error when loading modelopiton data")
+	}
+
+	if err != mongo.ErrNoDocuments {
+		return primitive.NilObjectID, fmt.Errorf("this option already exists in system")
+	}
+	if result != nil {
+		return primitive.NilObjectID, fmt.Errorf("this option already exists in system")
+	}
+
+	return s.adminRepo.AddModelOptions(ctx, modelOption)
 }
 
 func (s *adminService) UpdateServerConfig(ctx context.Context, adminID uint64, modelType string, modelName string) error {
