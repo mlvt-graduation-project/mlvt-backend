@@ -1,6 +1,10 @@
 package entity
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type ModelOptionStatus string
 
@@ -16,4 +20,5 @@ type ModelOption struct {
 	Description string             `json:"description" bson:"description"`
 	Status      ModelOptionStatus  `json:"status" bson:"status"`
 	Token       int64              `json:"token" bson:"token"`
+	UpdatedAt   time.Time          `json:"updated_at" bson:"updated_at"`
 }

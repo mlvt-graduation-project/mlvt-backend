@@ -7,6 +7,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -37,6 +38,13 @@ type AdminRepository interface {
 		filter interface{},
 		updatedFields interface{},
 	) error
+	GetModelOptionByID(
+		ctx context.Context,
+		id primitive.ObjectID,
+	) (
+		*entity.ModelOption,
+		error,
+	)
 }
 
 type adminRepo struct {
@@ -111,6 +119,28 @@ func (r *adminRepo) LoadModelOptions(
 	}
 
 	return docs, nil
+}
+
+func (r *adminRepo) GetModelOptionByID(
+	ctx context.Context,
+	id primitive.ObjectID,
+) (
+	*entity.ModelOption,
+	error,
+) {
+	filter := bson.M{
+		"_id": id,
+	}
+	result, err := r.modelOptionAdapter.FindOne(filter)
+	if err != nil {
+		return nil, fmt.Errorf("cannot find document with id %s: %w", id, err)
+	}
+
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
+
+	return result, nil
 }
 
 func (r *adminRepo) UpdateModelOption(

@@ -17,8 +17,9 @@ import (
 
 type AdminService interface {
 	GetServerConfig(ctx context.Context) (*entity.AdminConfig, error)
-	GetModelList(ctx context.Context, adminID uint64, qo mongodb.QueryOptions) ([]entity.ModelOption, error)
 	UpdateServerConfig(ctx context.Context, adminID uint64, modelType string, modelName string) error
+	GetModelList(ctx context.Context, adminID uint64, qo mongodb.QueryOptions) ([]entity.ModelOption, error)
+	AddModelOption(ctx context.Context, adminID uint64, modelOption entity.ModelOption) (primitive.ObjectID, error)
 }
 
 type adminService struct {
@@ -88,7 +89,14 @@ func (s *adminService) GetModelList(ctx context.Context, adminID uint64, qo mong
 	return s.adminRepo.LoadModelOptions(ctx, qo)
 }
 
-func (s *adminService) AddModelOption(ctx context.Context, adminID uint64, modelOption entity.ModelOption) (primitive.ObjectID, error) {
+func (s *adminService) AddModelOption(
+	ctx context.Context,
+	adminID uint64,
+	modelOption entity.ModelOption,
+) (
+	primitive.ObjectID,
+	error,
+) {
 	if !s.isAdmin(adminID) {
 		return primitive.NilObjectID, fmt.Errorf("access denied: only admins can add new model option")
 	}
@@ -122,6 +130,71 @@ func (s *adminService) AddModelOption(ctx context.Context, adminID uint64, model
 	}
 
 	return s.adminRepo.AddModelOptions(ctx, modelOption)
+}
+
+func (s *adminService) UpdateModelOption(
+	ctx context.Context,
+	adminID uint64,
+	modelOption entity.ModelOption,
+) error {
+	if !s.isAdmin(adminID) {
+		return fmt.Errorf("access denied: only admins can update the model options")
+	}
+
+	// verify that the model option to update actually exists
+	originalModelOption, err := s.adminRepo.GetModelOptionByID(ctx, modelOption.ID)
+	if err != nil {
+		return fmt.Errorf("failed to find document by id %s: %w", modelOption.ID, err)
+	}
+
+	// if the model name or type has changed, ensure it doesn't conflict with an existing option
+	if originalModelOption.ModelName != modelOption.ModelName || originalModelOption.ModelType != modelOption.ModelType {
+		qo := mongodb.QueryOptions{
+			Filters: []mongodb.FilterCondition{
+				{
+					Key:       "model_name",
+					Operation: mongodb.OpEqual,
+					Value:     modelOption.ModelName,
+				},
+				{
+					Key:       "model_type",
+					Operation: mongodb.OpEqual,
+					Value:     modelOption.ModelType,
+				},
+				{
+					// Exclude the current document from the search
+					Key:       "_id",
+					Operation: mongodb.OpNotEqual,
+					Value:     modelOption.ID,
+				},
+			},
+		}
+
+		existing, err := s.adminRepo.LoadModelOptions(ctx, qo)
+		if err != nil && err != mongo.ErrNoDocuments {
+			return fmt.Errorf("error checking for existing model options %w", err)
+		}
+		if existing != nil && len(existing) > 0 {
+			return fmt.Errorf("model option with the same name and type already exists")
+		}
+	}
+
+	updatedFields := bson.M{
+		"model_name":   modelOption.ModelName,
+		"model_type":   modelOption.ModelType,
+		"descriptions": modelOption.Description,
+		"updated_at":   time.Now(),
+	}
+
+	filter := bson.M{"_id": modelOption.ID}
+
+	modelOption.UpdatedAt = time.Now()
+
+	if err := s.adminRepo.UpdateModelOption(ctx, filter, updatedFields); err != nil {
+		return fmt.Errorf("failed to update model option: %w", err)
+	}
+
+	return nil
 }
 
 func (s *adminService) UpdateServerConfig(ctx context.Context, adminID uint64, modelType string, modelName string) error {
