@@ -188,8 +188,6 @@ func (s *adminService) UpdateModelOption(
 
 	filter := bson.M{"_id": modelOption.ID}
 
-	modelOption.UpdatedAt = time.Now()
-
 	if err := s.adminRepo.UpdateModelOption(ctx, filter, updatedFields); err != nil {
 		return fmt.Errorf("failed to update model option: %w", err)
 	}
