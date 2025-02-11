@@ -1,6 +1,7 @@
 package router
 
 import (
+	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/audio_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
@@ -23,6 +24,7 @@ type AppRouter struct {
 	progressController      *progress_handler.ProgressController
 	pingController          *ping_handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
+	adminController         *admin_handler.AdminController
 	momoPaymentController   *momo_handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
@@ -36,6 +38,7 @@ func NewAppRouter(
 	progressController *progress_handler.ProgressController,
 	pingController *ping_handler.PingController,
 	authMiddleware *middleware.AuthUserMiddleware,
+	adminController *admin_handler.AdminController,
 	momoPaymentController *momo_handler.MoMoPaymentController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
@@ -47,6 +50,7 @@ func NewAppRouter(
 		progressController:      progressController,
 		pingController:          pingController,
 		authMiddleware:          authMiddleware,
+		adminController:         adminController,
 		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
 	}
@@ -149,11 +153,23 @@ func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
 	}
 }
 
-// RegisterProgressRoutes sets ip the routes for all progress-related operations
+// RegisterProgressRoutes sets up the routes for all progress-related operations
 func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
 	public := r.Group("/progress")
 	{
 		public.POST("/:user_id", a.progressController.GetUserProgress)
+	}
+}
+
+// RegisterAdminRoutes sets up the routes for all permission-related operations
+func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
+	public := r.Group("/admin")
+	{
+		public.GET("/:adminID/config", a.adminController.GetServerConfig)
+		public.POST("/:adminID/config", a.adminController.UpdateServerConfig)
+		public.GET("/:adminID/models", a.adminController.GetModelList)
+		public.POST("/:adminID/models", a.adminController.AddModelOption)
+		public.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
 	}
 }
 
