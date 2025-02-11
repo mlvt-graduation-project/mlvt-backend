@@ -8,6 +8,7 @@ package initialize
 
 import (
 	"database/sql"
+	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/audio_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
@@ -19,6 +20,7 @@ import (
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
+	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/audio_repo"
 	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
@@ -28,6 +30,7 @@ import (
 	"mlvt/internal/repo/video_repo"
 	"mlvt/internal/router"
 	"mlvt/internal/service"
+	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/payment_service/momo_service"
@@ -67,11 +70,14 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
+	adminRepository := admin_repo.NewAminRepo(mongoConn)
+	adminService := admin_service.NewAminService(userRepository, adminRepository)
+	adminController := admin_handler.NewAdminController(adminService)
 	moMoRepo := momo_repo.NewMoMoRepo()
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
 	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 
