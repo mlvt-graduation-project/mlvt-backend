@@ -20,6 +20,11 @@ type AdminService interface {
 	UpdateServerConfig(ctx context.Context, adminID uint64, modelType string, modelName string) error
 	GetModelList(ctx context.Context, adminID uint64, qo mongodb.QueryOptions) ([]entity.ModelOption, error)
 	AddModelOption(ctx context.Context, adminID uint64, modelOption entity.ModelOption) (primitive.ObjectID, error)
+	UpdateModelOption(
+		ctx context.Context,
+		adminID uint64,
+		modelOption entity.ModelOption,
+	) error
 }
 
 type adminService struct {
