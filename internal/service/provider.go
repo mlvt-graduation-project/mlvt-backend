@@ -2,6 +2,7 @@ package service
 
 import (
 	"mlvt/internal/infra/env"
+	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/payment_service/momo_service"
@@ -24,6 +25,7 @@ var ProviderSetService = wire.NewSet(
 	audio_service.NewAudioService,
 	transcription_service.NewTranscriptionService,
 	progress_service.NewProgressService,
+	admin_service.NewAminService,
 	momo_service.NewMoMoPaymentService,
 	ping_service.NewPingService,
 	wire.Value(SecretKey),

@@ -33,6 +33,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	appRouter.RegisterProgressRoutes(api)
 	appRouter.RegisterPingStatusRoutes(api)
 	appRouter.RegisterPaymentRoutes(api)
+	appRouter.RegisterAdminRoutes(api)
 	appRouter.RegisterSwaggerRoutes(r.Group("/"))
 
 	// Create the HTTP server
