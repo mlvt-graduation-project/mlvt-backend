@@ -6,6 +6,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/infra/zap-logging/log"
+	"mlvt/internal/pkg/request"
 	"mlvt/internal/service/admin_service"
 	"net/http"
 	"strconv"
@@ -38,11 +39,6 @@ func (h *AdminController) GetServerConfig(c *gin.Context) {
 	c.JSON(http.StatusOK, config)
 }
 
-type updateServerConfigRequest struct {
-	ModelType string `json:"model_type" binding:"required"`
-	ModelName string `json:"model_name" binding:"required"`
-}
-
 func (h *AdminController) UpdateServerConfig(c *gin.Context) {
 	ctx := context.Background()
 
@@ -53,7 +49,7 @@ func (h *AdminController) UpdateServerConfig(c *gin.Context) {
 		return
 	}
 
-	var req updateServerConfigRequest
+	var req request.UpdateServerConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request payload"})
 		return
