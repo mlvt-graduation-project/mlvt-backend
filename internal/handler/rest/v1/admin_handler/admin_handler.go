@@ -103,7 +103,9 @@ func (h *AdminController) AddModelOption(c *gin.Context) {
 		return
 	}
 
-	modelOption.ID = primitive.NilObjectID
+	if modelOption.ID == primitive.NilObjectID {
+		modelOption.ID = primitive.NewObjectID()
+	}
 	modelOption.UpdatedAt = time.Now()
 
 	insertedId, err := h.adminService.AddModelOption(ctx, adminId, modelOption)
