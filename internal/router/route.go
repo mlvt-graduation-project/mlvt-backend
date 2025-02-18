@@ -163,13 +163,14 @@ func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
 
 // RegisterAdminRoutes sets up the routes for all permission-related operations
 func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
-	public := r.Group("/admin")
+	protected := r.Group("/admin")
+	protected.Use(a.authMiddleware.MustAuth())
 	{
-		public.GET("/:adminID/config", a.adminController.GetServerConfig)
-		public.POST("/:adminID/config", a.adminController.UpdateServerConfig)
-		public.GET("/:adminID/models", a.adminController.GetModelList)
-		public.POST("/:adminID/models", a.adminController.AddModelOption)
-		public.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
+		protected.GET("/:adminID/config", a.adminController.GetServerConfig)
+		protected.POST("/:adminID/config", a.adminController.UpdateServerConfig)
+		protected.GET("/:adminID/models", a.adminController.GetModelList)
+		protected.POST("/:adminID/models", a.adminController.AddModelOption)
+		protected.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
 	}
 }
 
