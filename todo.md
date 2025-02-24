@@ -1,0 +1,4 @@
+- migration user status from int to UserStatus
+- remove premium fields
+- change user role from string to UserPermission
+- implement user wallet

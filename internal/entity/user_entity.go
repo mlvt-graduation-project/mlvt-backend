@@ -9,6 +9,17 @@ const (
 	UserStatusDeleted   = 10
 )
 
+type UserStatus string
+type UserPermission string
+
+const (
+	UserStatusActive   UserStatus = "active"
+	UserStatusInactive UserStatus = "inactive"
+
+	AdminRole UserPermission = "admin"
+	UserRole  UserPermission = "user"
+)
+
 // User represents the schema for user data
 type User struct {
 	ID           uint64    `json:"id"`         // Unique identifier for the user
