@@ -1,5 +1,9 @@
 package entity
 
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
 type TrafficActionType string
 
 const (
@@ -37,3 +41,12 @@ const (
 	AdminConfigAction           TrafficActionType = "admin_config"       // CRUD
 	AdminSetDefaultConfigAction TrafficActionType = "admin_set_default_config"
 )
+
+type Traffic struct {
+	Id             primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	ActionType     TrafficActionType  `json:"action_type" bson:"action_type"`
+	Description    string             `json:"description" bson:"description"`
+	UserID         uint64             `json:"user_id" bson:"user_id"`
+	UserPermission UserPermission     `json:"user_permission" bson:"user_permission"`
+	Timestamp      int64              `json:"timestamp" bson:"timestamp"`
+}
