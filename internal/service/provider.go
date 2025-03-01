@@ -8,6 +8,7 @@ import (
 	"mlvt/internal/service/payment_service/momo_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
+	"mlvt/internal/service/traffic_service"
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/video_service"
@@ -25,6 +26,7 @@ var ProviderSetService = wire.NewSet(
 	audio_service.NewAudioService,
 	transcription_service.NewTranscriptionService,
 	progress_service.NewProgressService,
+	traffic_service.NewTrafficService,
 	admin_service.NewAminService,
 	momo_service.NewMoMoPaymentService,
 	ping_service.NewPingService,
