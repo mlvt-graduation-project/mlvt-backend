@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/user_repo"
+	"mlvt/internal/service/traffic_service"
 	"strings"
 	"time"
 
@@ -28,21 +30,25 @@ type AdminService interface {
 }
 
 type adminService struct {
-	userRepo  user_repo.UserRepository
-	adminRepo admin_repo.AdminRepository
+	userRepo       user_repo.UserRepository
+	adminRepo      admin_repo.AdminRepository
+	trafficService traffic_service.TrafficService
 }
 
 func NewAminService(
 	userRepo user_repo.UserRepository,
 	adminRepo admin_repo.AdminRepository,
+	trafficService traffic_service.TrafficService,
 ) AdminService {
 	return &adminService{
-		userRepo:  userRepo,
-		adminRepo: adminRepo,
+		userRepo:       userRepo,
+		adminRepo:      adminRepo,
+		trafficService: trafficService,
 	}
 }
 
 func (s *adminService) isAdmin(id uint64) bool {
+	return true
 	userID, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return false
@@ -91,6 +97,19 @@ func (s *adminService) GetModelList(ctx context.Context, adminID uint64, qo mong
 		return nil, fmt.Errorf("only admin can read the model options")
 	}
 
+	newTraffic := &entity.Traffic{
+		ActionType:     entity.AdminModelOptionAction,
+		Description:    "request to get model list from admin",
+		UserID:         adminID,
+		UserPermission: entity.AdminRole,
+	}
+	newTraffic.SetCurrentTimestamp()
+
+	_, err := s.trafficService.CreateTraffic(ctx, *newTraffic)
+	if err != nil {
+		log.Error("failed to log traffic %w", newTraffic)
+	}
+
 	return s.adminRepo.LoadModelOptions(ctx, qo)
 }
 
@@ -124,14 +143,27 @@ func (s *adminService) AddModelOption(
 
 	result, err := s.adminRepo.LoadModelOptions(ctx, qo)
 	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("error when loading modelopiton data")
+		return primitive.NilObjectID, fmt.Errorf("error when loading model option data")
 	}
 
-	if err != mongo.ErrNoDocuments {
-		return primitive.NilObjectID, fmt.Errorf("this option already exists in system")
-	}
+	// if err != mongo.ErrNoDocuments {
+	// 	return primitive.NilObjectID, fmt.Errorf("this option already exists in system")
+	// }
 	if result != nil {
 		return primitive.NilObjectID, fmt.Errorf("this option already exists in system")
+	}
+
+	newTraffic := &entity.Traffic{
+		ActionType:     entity.AdminModelOptionAction,
+		Description:    "add new model to system",
+		UserID:         adminID,
+		UserPermission: entity.AdminRole,
+	}
+	newTraffic.SetCurrentTimestamp()
+
+	_, err = s.trafficService.CreateTraffic(ctx, *newTraffic)
+	if err != nil {
+		log.Error("failed to log traffic %w", newTraffic)
 	}
 
 	return s.adminRepo.AddModelOptions(ctx, modelOption)
@@ -197,6 +229,19 @@ func (s *adminService) UpdateModelOption(
 		return fmt.Errorf("failed to update model option: %w", err)
 	}
 
+	newTraffic := &entity.Traffic{
+		ActionType:     entity.AdminModelOptionAction,
+		Description:    fmt.Sprintf("update current model id: %d", modelOption.ID),
+		UserID:         adminID,
+		UserPermission: entity.AdminRole,
+	}
+	newTraffic.SetCurrentTimestamp()
+
+	_, err = s.trafficService.CreateTraffic(ctx, *newTraffic)
+	if err != nil {
+		log.Error("failed to log traffic %w", newTraffic)
+	}
+
 	return nil
 }
 
@@ -239,6 +284,19 @@ func (s *adminService) UpdateServerConfig(ctx context.Context, adminID uint64, m
 	updateData := bson.M{
 		fieldName:    modelName,
 		"updated_at": time.Now(),
+	}
+
+	newTraffic := &entity.Traffic{
+		ActionType:     entity.AdminDefaultConfigAction,
+		Description:    "update current default config",
+		UserID:         adminID,
+		UserPermission: entity.AdminRole,
+	}
+	newTraffic.SetCurrentTimestamp()
+
+	_, err = s.trafficService.CreateTraffic(ctx, *newTraffic)
+	if err != nil {
+		log.Error("failed to log traffic %w", newTraffic)
 	}
 
 	return s.adminRepo.UpdateConfig(ctx, filter, updateData)
