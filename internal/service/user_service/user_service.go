@@ -1,11 +1,14 @@
 package user_service
 
 import (
+	"context"
 	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/service/auth_service"
+	"mlvt/internal/service/traffic_service"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -25,16 +28,23 @@ type UserService interface {
 }
 
 type userService struct {
-	repo     user_repo.UserRepository
-	s3Client aws.S3ClientInterface
-	auth     auth_service.AuthServiceInterface
+	repo           user_repo.UserRepository
+	s3Client       aws.S3ClientInterface
+	auth           auth_service.AuthServiceInterface
+	trafficService traffic_service.TrafficService
 }
 
-func NewUserService(repo user_repo.UserRepository, s3Client aws.S3ClientInterface, auth auth_service.AuthServiceInterface) UserService {
+func NewUserService(
+	repo user_repo.UserRepository,
+	s3Client aws.S3ClientInterface,
+	auth auth_service.AuthServiceInterface,
+	trafficService traffic_service.TrafficService,
+) UserService {
 	return &userService{
-		repo:     repo,
-		s3Client: s3Client,
-		auth:     auth,
+		repo:           repo,
+		s3Client:       s3Client,
+		auth:           auth,
+		trafficService: trafficService,
 	}
 }
 
@@ -49,12 +59,33 @@ func (s *userService) RegisterUser(user *entity.User) error {
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
+	ctx := context.Background()
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.CreateAccountAction,
+		Description: "new user created",
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: create new user account")
+	}
+
 	return s.repo.CreateUser(user)
 }
 
 // Login handles user login
 func (s *userService) Login(email, password string) (string, uint64, error) {
-	return s.auth.Login(email, password)
+	ctx := context.Background()
+	token, userID, err := s.auth.Login(email, password)
+
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.LoginAction,
+		Description: "user login",
+		UserID:      userID,
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: login account")
+	}
+
+	return token, userID, err
 }
 
 // ChangePassword changes a user's password
@@ -76,17 +107,46 @@ func (s *userService) ChangePassword(userID uint64, oldPassword, newPassword str
 		return err
 	}
 
+	ctx := context.Background()
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.ChangePasswordAction,
+		Description: "user change password",
+		UserID:      userID,
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: change password account")
+	}
+
 	return s.repo.UpdateUserPassword(userID, string(hashedPassword))
 }
 
 // UpdateUser updates user information (except avatar)
 func (s *userService) UpdateUser(user *entity.User) error {
 	user.UpdatedAt = time.Now()
+
+	ctx := context.Background()
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.UpdateProfileAction,
+		Description: "user update profile",
+		UserID:      user.ID,
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: update profile")
+	}
 	return s.repo.UpdateUser(user)
 }
 
 // UpdateAvatar updates the user's avatar
 func (s *userService) UpdateAvatar(userID uint64, avatarPath, avatarFolder string) error {
+	ctx := context.Background()
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.UploadAvatarAction,
+		Description: "user update avatar",
+		UserID:      userID,
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: update avatar")
+	}
 	return s.repo.UpdateUserAvatar(userID, avatarPath, avatarFolder)
 }
 

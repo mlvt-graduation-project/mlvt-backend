@@ -53,7 +53,9 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	}
 	string2 := _wireStringValue
 	authServiceInterface := auth_service.NewAuthService(userRepository, string2)
-	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface)
+	trafficRepository := traffic_repo.NewTrafficRepo(mongoConn)
+	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
+	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService)
 	userController := user_handler.NewUserController(userService)
 	videoRepository := video_repo.NewVideoRepo(db)
 	videoService := video_service.NewVideoService(videoRepository, s3ClientInterface)
@@ -66,8 +68,6 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository, videoRepository, s3ClientInterface)
-	trafficRepository := traffic_repo.NewTrafficRepo(mongoConn)
-	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
 	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService, trafficService)
 	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
