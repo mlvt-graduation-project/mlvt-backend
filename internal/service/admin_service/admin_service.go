@@ -48,7 +48,6 @@ func NewAminService(
 }
 
 func (s *adminService) isAdmin(id uint64) bool {
-	return true
 	userID, err := s.userRepo.GetUserByID(id)
 	if err != nil {
 		return false

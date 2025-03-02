@@ -37,11 +37,11 @@ const (
 	DeleteFileAction TrafficActionType = "delete_file"
 
 	// activities belong to admin
-	AdminUserProfileAction      TrafficActionType = "admin_user_profile" // edit: info, active-inactive
-	AdminVoucherAction          TrafficActionType = "admin_voucher"      // CRUD
-	AdminModelOptionAction      TrafficActionType = "admin_model_option" // CRUD
-	AdminConfigAction           TrafficActionType = "admin_config"       // CRUD
-	AdminSetDefaultConfigAction TrafficActionType = "admin_set_default_config"
+	AdminUserProfileAction   TrafficActionType = "admin_user_profile" // edit: info, active-inactive
+	AdminVoucherAction       TrafficActionType = "admin_voucher"      // CRUD
+	AdminModelOptionAction   TrafficActionType = "admin_model_option" // CRUD
+	AdminConfigAction        TrafficActionType = "admin_config"       // CRUD
+	AdminDefaultConfigAction TrafficActionType = "admin_set_default_config"
 )
 
 type Traffic struct {

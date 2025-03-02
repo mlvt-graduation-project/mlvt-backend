@@ -13,6 +13,7 @@ import (
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/progress_service"
+	"mlvt/internal/service/traffic_service"
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/video_service"
 	"net/http"
@@ -27,6 +28,7 @@ type MlvtController struct {
 	transcriptionService transcription_service.TranscriptionService
 	videoService         video_service.VideoService
 	progressService      progress_service.ProgressService
+	trafficService       traffic_service.TrafficService
 }
 
 func NewMlvtController(
@@ -34,12 +36,14 @@ func NewMlvtController(
 	transcriptionService transcription_service.TranscriptionService,
 	videoService video_service.VideoService,
 	progressService progress_service.ProgressService,
+	trafficService traffic_service.TrafficService,
 ) *MlvtController {
 	return &MlvtController{
 		audioService:         audioService,
 		transcriptionService: transcriptionService,
 		videoService:         videoService,
 		progressService:      progressService,
+		trafficService:       trafficService,
 	}
 }
 
@@ -71,6 +75,69 @@ func sendRequestToEC2(requestPayload interface{}, ec2Endpoint string, timeout ti
 	}
 
 	return &ec2Response, nil
+}
+
+func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, userID uint64, entityID uint64) {
+	ctx := context.Background()
+	switch trafficType {
+	case entity.ProcessSTTModelAction:
+		if _, err := h.trafficService.CreateTraffic(ctx, entity.Traffic{
+			ActionType:     trafficType,
+			Description:    fmt.Sprintf("process new STT pipeline, text id: %d", entityID),
+			UserID:         userID,
+			UserPermission: entity.UserRole,
+			Timestamp:      time.Now().Unix(),
+		}); err != nil {
+			log.Errorf("failed to log traffic of %s", trafficType)
+		}
+		return
+	case entity.ProcessTTTModelAction:
+		if _, err := h.trafficService.CreateTraffic(ctx, entity.Traffic{
+			ActionType:     trafficType,
+			Description:    fmt.Sprintf("process new TTT pipeline, text id: %d", entityID),
+			UserID:         userID,
+			UserPermission: entity.UserRole,
+			Timestamp:      time.Now().Unix(),
+		}); err != nil {
+			log.Errorf("failed to log traffic of %s", trafficType)
+		}
+		return
+	case entity.ProcessTTSModelAction:
+		if _, err := h.trafficService.CreateTraffic(ctx, entity.Traffic{
+			ActionType:     trafficType,
+			Description:    fmt.Sprintf("process new TTS pipeline, audio id: %d", entityID),
+			UserID:         userID,
+			UserPermission: entity.UserRole,
+			Timestamp:      time.Now().Unix(),
+		}); err != nil {
+			log.Errorf("failed to log traffic of %s", trafficType)
+		}
+		return
+	case entity.ProcessLSModelAction:
+		if _, err := h.trafficService.CreateTraffic(ctx, entity.Traffic{
+			ActionType:     trafficType,
+			Description:    fmt.Sprintf("process new LS pipeline, video id: %d", entityID),
+			UserID:         userID,
+			UserPermission: entity.UserRole,
+			Timestamp:      time.Now().Unix(),
+		}); err != nil {
+			log.Errorf("failed to log traffic of %s", trafficType)
+		}
+		return
+	case entity.ProcessFullPipelineModelAction:
+		if _, err := h.trafficService.CreateTraffic(ctx, entity.Traffic{
+			ActionType:     trafficType,
+			Description:    fmt.Sprintf("process new Full pipeline, video id: %d", entityID),
+			UserID:         userID,
+			UserPermission: entity.UserRole,
+			Timestamp:      time.Now().Unix(),
+		}); err != nil {
+			log.Errorf("failed to log traffic of %s", trafficType)
+		}
+		return
+	default:
+		return
+	}
 }
 
 // ProcessSpeechToText godoc
@@ -120,6 +187,8 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
 	}
+
+	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID)
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -273,6 +342,8 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		return
 	}
 
+	h.quickLogTraffic(entity.ProcessTTTModelAction, originalTranscription.UserID, translatedTranscriptionID)
+
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
 		UserID:                    originalTranscription.UserID,
@@ -417,6 +488,8 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store audio data"})
 		return
 	}
+
+	h.quickLogTraffic(entity.ProcessTTSModelAction, transcription.UserID, audioID)
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -572,6 +645,8 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		return
 	}
 
+	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
+
 	translatedTranscription, _, err := h.transcriptionService.GetTranscriptionByID(audio.TranscriptionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get translated transcription by id"})
@@ -694,6 +769,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 	sourceLang := c.Query("source_language")
 	targetLang := c.Query("target_language")
 
+	// region STT
+
 	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid video ID"})
@@ -733,6 +810,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		return
 	}
 
+	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID)
+
 	// Create output Video entity
 	videoFolder := env.EnvConfig.VideosFolder
 	if videoFolder == "" {
@@ -755,6 +834,9 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store output video data"})
 		return
 	}
+
+	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
+	h.quickLogTraffic(entity.ProcessFullPipelineModelAction, video.UserID, outputVideoID)
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -839,6 +921,10 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
+		// #endregion
+
+		// #region TTT
+
 		// Step 2: Text-to-Text
 		log.Infof("step 2: text to text \n")
 		translatedFileName := fmt.Sprintf("transcription_%d_%s.txt", transcriptionID, targetLang)
@@ -861,6 +947,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			log.Errorf("Failed to create translated transcription: %v", err)
 			return
 		}
+
+		h.quickLogTraffic(entity.ProcessTTTModelAction, video.UserID, translatedTranscriptionID)
 
 		// Update translated transcription ID to mongodb progress
 		h.progressService.UpdateFieldId(context.Background(), documentId, "TranslatedTranscriptionID", translatedTranscriptionID)
@@ -916,6 +1004,10 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
+		// #endregion
+
+		// region TTS
+
 		// Step 3: Text-to-Speech
 		log.Infof("step 3: text to speech \n")
 		audioFolder := env.EnvConfig.AudioFolder
@@ -942,6 +1034,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			log.Errorf("Failed to create audio: %v", err)
 			return
 		}
+
+		h.quickLogTraffic(entity.ProcessTTSModelAction, video.UserID, audioID)
 
 		// update audio ID to mongodb progress collection
 		h.progressService.UpdateFieldId(context.Background(), documentId, "AudioID", audioID)
@@ -992,6 +1086,10 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			log.Errorf("Failed to update audio status: %v", err)
 		}
 
+		// #endregion
+
+		// #region LS
+
 		// Step 4: Lip Sync
 		log.Infof("step 4: lipsync \n")
 		outputVideo.AudioID = audioID
@@ -1038,6 +1136,21 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			Model:               "",
 		}
 
+		// Marshal the payload to JSON
+		payloadBytes, err := json.Marshal(lsPayload)
+		if err != nil {
+			log.Warnf("Error marshaling payload: %v", err)
+		}
+
+		// Construct the EC2 URL (adjust your EC2 IP and Port as needed)
+		ec2URL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build the curl command string
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2URL, string(payloadBytes))
+
+		// Print the curl command to the console
+		fmt.Println(curlCmd)
+
 		ec2LSURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 15*time.Minute)
 		if err != nil || ec2LSResponse.Status != "succeeded" {
@@ -1056,6 +1169,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update video status: %v", err)
 		}
+
+		// #endregion
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
 
