@@ -25,6 +25,7 @@ import (
 	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
+	"mlvt/internal/repo/traffic_repo"
 	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/video_repo"
@@ -36,6 +37,7 @@ import (
 	"mlvt/internal/service/payment_service/momo_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
+	"mlvt/internal/service/traffic_service"
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/video_service"
@@ -64,14 +66,16 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository, videoRepository, s3ClientInterface)
-	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService)
+	trafficRepository := traffic_repo.NewTrafficRepo(mongoConn)
+	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
+	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService, trafficService)
 	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
 	adminRepository := admin_repo.NewAminRepo(mongoConn)
-	adminService := admin_service.NewAminService(userRepository, adminRepository)
+	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
 	moMoRepo := momo_repo.NewMoMoRepo()
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
