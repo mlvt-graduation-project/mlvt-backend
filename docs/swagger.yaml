@@ -103,14 +103,14 @@ definitions:
       password:
         description: User's hashed password
         type: string
-      premium:
-        type: boolean
       role:
+        allOf:
+        - $ref: '#/definitions/entity.UserPermission'
         description: Role of the user (User, Admin, etc.)
-        type: string
       status:
+        allOf:
+        - $ref: '#/definitions/entity.UserStatus'
         description: Status of the user (available, suspended, deleted)
-        type: integer
       updated_at:
         description: Timestamp of the last update to the user's data
         type: string
@@ -119,6 +119,22 @@ definitions:
       wallet_balance:
         type: integer
     type: object
+  entity.UserPermission:
+    enum:
+    - admin
+    - user
+    type: string
+    x-enum-varnames:
+    - AdminRole
+    - UserRole
+  entity.UserStatus:
+    enum:
+    - active
+    - inactive
+    type: string
+    x-enum-varnames:
+    - UserStatusActive
+    - UserStatusInactive
   entity.Video:
     properties:
       audio_id:

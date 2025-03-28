@@ -2357,16 +2357,21 @@ const docTemplate = `{
                     "description": "User's hashed password",
                     "type": "string"
                 },
-                "premium": {
-                    "type": "boolean"
-                },
                 "role": {
                     "description": "Role of the user (User, Admin, etc.)",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.UserPermission"
+                        }
+                    ]
                 },
                 "status": {
                     "description": "Status of the user (available, suspended, deleted)",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entity.UserStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "description": "Timestamp of the last update to the user's data",
@@ -2379,6 +2384,28 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "entity.UserPermission": {
+            "type": "string",
+            "enum": [
+                "admin",
+                "user"
+            ],
+            "x-enum-varnames": [
+                "AdminRole",
+                "UserRole"
+            ]
+        },
+        "entity.UserStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "inactive"
+            ],
+            "x-enum-varnames": [
+                "UserStatusActive",
+                "UserStatusInactive"
+            ]
         },
         "entity.Video": {
             "type": "object",
