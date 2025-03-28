@@ -57,7 +57,7 @@ func (am *AuthUserMiddleware) MustAuth() gin.HandlerFunc {
 		}
 
 		userInfo, err := am.authService.GetUserByToken(token)
-		if err != nil || userInfo == nil || userInfo.Status == entity.UserStatusSuspended || userInfo.Status == entity.UserStatusDeleted {
+		if err != nil || userInfo == nil || userInfo.Status == entity.UserStatusInactive {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			return
 		}
