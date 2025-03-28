@@ -10,6 +10,7 @@ import (
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
+	"mlvt/internal/handler/rest/v1/wallet_handler"
 	"mlvt/internal/pkg/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +26,7 @@ type AppRouter struct {
 	pingController          *ping_handler.PingController
 	authMiddleware          *middleware.AuthUserMiddleware
 	adminController         *admin_handler.AdminController
+	walletController        *wallet_handler.WalletController
 	momoPaymentController   *momo_handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
@@ -39,6 +41,7 @@ func NewAppRouter(
 	pingController *ping_handler.PingController,
 	authMiddleware *middleware.AuthUserMiddleware,
 	adminController *admin_handler.AdminController,
+	walletController *wallet_handler.WalletController,
 	momoPaymentController *momo_handler.MoMoPaymentController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
@@ -51,6 +54,7 @@ func NewAppRouter(
 		pingController:          pingController,
 		authMiddleware:          authMiddleware,
 		adminController:         adminController,
+		walletController:        walletController,
 		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
 	}
@@ -171,6 +175,16 @@ func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
 		protected.GET("/:adminID/models", a.adminController.GetModelList)
 		protected.POST("/:adminID/models", a.adminController.AddModelOption)
 		protected.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
+	}
+}
+
+func (a *AppRouter) RegisterWalletRoutes(r *gin.RouterGroup) {
+	protected := r.Group("/wallet")
+	protected.Use(a.authMiddleware.MustAuth())
+	{
+		protected.GET("/deposit", a.walletController.Deposit)
+		protected.POST("/withdraw", a.walletController.Withdraw)
+		protected.GET("/balance", a.walletController.GetBalance)
 	}
 }
 

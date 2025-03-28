@@ -12,6 +12,7 @@ import (
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/video_service"
+	"mlvt/internal/service/wallet_service"
 
 	"github.com/google/wire"
 )
@@ -27,6 +28,7 @@ var ProviderSetService = wire.NewSet(
 	transcription_service.NewTranscriptionService,
 	progress_service.NewProgressService,
 	traffic_service.NewTrafficService,
+	wallet_service.NewWalletService,
 	admin_service.NewAminService,
 	momo_service.NewMoMoPaymentService,
 	ping_service.NewPingService,

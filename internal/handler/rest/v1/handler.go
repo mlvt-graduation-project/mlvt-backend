@@ -10,6 +10,7 @@ import (
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
+	"mlvt/internal/handler/rest/v1/wallet_handler"
 
 	"github.com/google/wire"
 )
@@ -24,5 +25,6 @@ var ProviderSetHandler = wire.NewSet(
 	mlvt_handler.NewMlvtController,
 	progress_handler.NewProgressService,
 	admin_handler.NewAdminController,
+	wallet_handler.NewWalletController,
 	momo_handler.NewMoMoPaymentHandler,
 )

@@ -17,6 +17,7 @@ import (
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
+	"mlvt/internal/handler/rest/v1/wallet_handler"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
@@ -29,6 +30,7 @@ import (
 	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/video_repo"
+	"mlvt/internal/repo/wallet_repo"
 	"mlvt/internal/router"
 	"mlvt/internal/service"
 	"mlvt/internal/service/admin_service"
@@ -41,6 +43,7 @@ import (
 	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/video_service"
+	"mlvt/internal/service/wallet_service"
 )
 
 // Injectors from wire.go:
@@ -77,11 +80,14 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	adminRepository := admin_repo.NewAminRepo(mongoConn)
 	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
+	walletRepository := wallet_repo.NewWalletRepo(db)
+	walletService := wallet_service.NewWalletService(walletRepository)
+	walletController := wallet_handler.NewWalletController(walletService)
 	moMoRepo := momo_repo.NewMoMoRepo()
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
 	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, moMoPaymentController, swaggerRouter)
 	return appRouter, nil
 }
 
