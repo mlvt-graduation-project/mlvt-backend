@@ -106,8 +106,7 @@ func (s *UserVideoSeeder) SeedUsersFromFolder(avatarsFolder string) error {
 			UserName:     username,
 			Email:        email,
 			Password:     string(hashedPassword),
-			Status:       entity.UserStatusAvailable,
-			Premium:      false,
+			Status:       entity.UserStatusActive,
 			Role:         "User",
 			Avatar:       "", // To be updated after upload
 			AvatarFolder: "", // To be updated after upload
