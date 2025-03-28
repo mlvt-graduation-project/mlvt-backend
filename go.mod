@@ -1,8 +1,8 @@
 module mlvt
 
-go 1.22.0
+go 1.23.0
 
-toolchain go1.23.0
+toolchain go1.24.1
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
@@ -17,7 +17,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/google/wire v0.6.0
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
-	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/viper v1.19.0
@@ -104,7 +103,7 @@ require (
 	golang.org/x/arch v0.10.0 // indirect
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect

@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"mlvt/internal/entity"
+	"time"
 )
 
 type WalletRepository interface {
@@ -27,11 +29,28 @@ func (r *walletRepo) Deposit(ctx context.Context, userID uint64, amount int64) e
 	}
 	defer tx.Rollback()
 
+	// update user balance
 	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = balance + ? WHERE id = ?", amount, userID)
 	if err != nil {
 		return err
 	}
+
+	// transaction record
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO wallet_transactions (user_id, type, amount, created_at)
+         VALUES (?, ?, ?, ?)`,
+		userID,
+		entity.TransactionTypeDeposit,
+		amount,
+		time.Now(),
+	)
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit()
+
 }
 
 func (r *walletRepo) Withdraw(ctx context.Context, userID uint64, amount int64) error {
@@ -51,10 +70,26 @@ func (r *walletRepo) Withdraw(ctx context.Context, userID uint64, amount int64) 
 		return errors.New("insufficient balance")
 	}
 
+	// update user balance
 	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = balance - ? WHERE id = ?", amount, userID)
 	if err != nil {
 		return err
 	}
+
+	// transaction record
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO wallet_transactions (user_id, type, amount, created_at)
+         VALUES (?, ?, ?, ?)`,
+		userID,
+		entity.TransactionTypeWithdraw,
+		amount,
+		time.Now(),
+	)
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }
 
