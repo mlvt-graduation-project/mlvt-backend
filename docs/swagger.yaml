@@ -116,6 +116,8 @@ definitions:
         type: string
       username:
         type: string
+      wallet_balance:
+        type: integer
     type: object
   entity.Video:
     properties:
@@ -619,6 +621,36 @@ paths:
       summary: Process full pipeline asynchronously
       tags:
       - pipeline
+  /progress/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the progress data for a specified user by user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'A JSON object containing progress data. Key: ''progresses'''
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get user progress
+      tags:
+      - Progress
   /transcriptions:
     post:
       consumes:
@@ -1597,4 +1629,103 @@ paths:
       summary: List videos by user ID
       tags:
       - Videos
+  /wallet/balance:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the current wallet balance for a user
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'Example: {"balance": 100}'
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Invalid user_id
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get wallet balance
+      tags:
+      - Wallet
+  /wallet/deposit:
+    post:
+      consumes:
+      - application/json
+      description: Deposit a positive amount into a user's wallet
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      - description: Amount to deposit
+        in: query
+        name: amount
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deposit successful
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Invalid user ID or amount
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Deposit to the wallet
+      tags:
+      - Wallet
+  /wallet/withdraw:
+    post:
+      consumes:
+      - application/json
+      description: Withdraw a positive amount from a user's wallet if sufficient balance
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      - description: Amount to withdraw
+        in: query
+        name: amount
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Withdrawal successful
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Invalid user ID, amount, or insufficient balance
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Withdraw from the wallet
+      tags:
+      - Wallet
 swagger: "2.0"
