@@ -55,7 +55,7 @@ func (s *userService) RegisterUser(user *entity.User) error {
 		return err
 	}
 	user.Password = string(hashedPassword)
-	user.Status = entity.UserStatusAvailable
+	user.Status = entity.UserStatusActive
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
