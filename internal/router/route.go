@@ -10,6 +10,7 @@ import (
 	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/video_handler"
+	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
 	"mlvt/internal/pkg/middleware"
 
@@ -27,6 +28,7 @@ type AppRouter struct {
 	authMiddleware          *middleware.AuthUserMiddleware
 	adminController         *admin_handler.AdminController
 	walletController        *wallet_handler.WalletController
+	voucherController       *voucher_handler.VoucherController
 	momoPaymentController   *momo_handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
@@ -42,6 +44,7 @@ func NewAppRouter(
 	authMiddleware *middleware.AuthUserMiddleware,
 	adminController *admin_handler.AdminController,
 	walletController *wallet_handler.WalletController,
+	voucherController *voucher_handler.VoucherController,
 	momoPaymentController *momo_handler.MoMoPaymentController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
@@ -55,6 +58,7 @@ func NewAppRouter(
 		authMiddleware:          authMiddleware,
 		adminController:         adminController,
 		walletController:        walletController,
+		voucherController:       voucherController,
 		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
 	}
@@ -185,6 +189,18 @@ func (a *AppRouter) RegisterWalletRoutes(r *gin.RouterGroup) {
 		protected.GET("/deposit", a.walletController.Deposit)
 		protected.POST("/use-token", a.walletController.UseToken)
 		protected.GET("/balance", a.walletController.GetBalance)
+	}
+}
+
+func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
+	protected := r.Group("/voucher")
+	protected.Use(a.authMiddleware.MustAuth())
+	{
+		protected.POST("/voucher", a.voucherController.CreateVoucher)
+		protected.POST("/voucher/use/:code", a.voucherController.UseVoucher)
+		protected.PATCH("/voucher/:id", a.voucherController.UpdateVoucher)
+		protected.GET("/voucher", a.voucherController.GetAllVouchers)
+		protected.GET("/voucher/:id", a.voucherController.GetVoucherByID)
 	}
 }
 
