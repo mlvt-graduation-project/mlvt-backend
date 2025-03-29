@@ -24,8 +24,8 @@ type MessageResponse struct {
 
 // MessageCreateResponseWithID represents a message response
 type MessageCreateResponseWithID struct {
-	Message string `json:"message"`
-	Id      uint64 `json:"id"`
+	Message string      `json:"message"`
+	Id      interface{} `json:"id"`
 }
 
 // TokenResponse represents the response containing a token

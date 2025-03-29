@@ -30,7 +30,7 @@ func NewVoucherController(voucherSvc voucher_service.VoucherService) *VoucherCon
 // @Accept json
 // @Produce json
 // @Param voucher body entity.VoucherCode true "Voucher info"
-// @Success 200 {object} gin.H
+// @Success 200 {object} response.MessageCreateResponseWithID
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /voucher [post]
@@ -48,9 +48,9 @@ func (vc *VoucherController) CreateVoucher(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "voucher created successfully",
-		"id":      newID.Hex(),
+	c.JSON(http.StatusOK, response.MessageCreateResponseWithID{
+		Message: "voucher created successfully",
+		Id:      newID.Hex(),
 	})
 }
 
