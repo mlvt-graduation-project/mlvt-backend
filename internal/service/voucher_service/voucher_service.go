@@ -32,10 +32,30 @@ func NewVoucherService(repo voucher_repo.VoucherRepository) VoucherService {
 
 // CreateVoucher inserts a new voucher into the database.
 func (s *voucherService) CreateVoucher(ctx context.Context, vc entity.VoucherCode) (primitive.ObjectID, error) {
-	vc.CreatedAt = time.Now()
-	vc.UpdatedAt = time.Now()
+	// Attempt to find an existing voucher with the same code
+	existingVoucher, err := s.repo.FindByCode(ctx, vc.Code)
 
-	return s.repo.Insert(ctx, vc)
+	if err == nil && existingVoucher != nil {
+		// We found an existing code. Check if it's expired.
+		if time.Now().Before(existingVoucher.ExpiredTime) {
+			// This means the code is still valid (not expired).
+			return primitive.NilObjectID, fmt.Errorf("voucher code already exists and is not expired")
+		}
+		// If we reach here, the code exists but is expired, so we can reuse the code.
+	}
+	// If err != nil, it's possible the code wasn't found (or a database error occurred).
+	// We'll proceed to create a new voucher if the code isn't actively valid.
+
+	// Now create the new voucher
+	vc.CreatedAt = time.Now()
+	vc.UpdatedAt = vc.CreatedAt
+
+	insertedID, insertErr := s.repo.Insert(ctx, vc)
+	if insertErr != nil {
+		return primitive.NilObjectID, fmt.Errorf("failed to insert voucher: %w", insertErr)
+	}
+
+	return insertedID, nil
 }
 
 // UseVoucher checks if a voucher is valid, updates usage if it is, and returns the updated voucher.
