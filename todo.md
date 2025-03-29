@@ -5,5 +5,7 @@
 
 -----
 
-- implement voucher feature
+- implement voucher feature [done]
+- only allow admin to create/update voucher
+- refactor update fields in admin package
 - refactor source code (combine feature to reduce number of folders in handler, service, repo)
