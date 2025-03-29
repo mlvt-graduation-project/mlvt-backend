@@ -10,6 +10,7 @@ import (
 	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/video_repo"
+	"mlvt/internal/repo/voucher_repo"
 	"mlvt/internal/repo/wallet_repo"
 
 	"github.com/google/wire"
@@ -25,6 +26,7 @@ var ProviderSetRepository = wire.NewSet(
 	admin_repo.NewAminRepo,
 	traffic_repo.NewTrafficRepo,
 	wallet_repo.NewWalletRepo,
+	voucher_repo.NewVoucherRepo,
 	momo_repo.NewMoMoRepo,
 	ping_repo.NewPingRepo,
 	// wire.Bind(new(UserRepository), new(*userRepo)),
