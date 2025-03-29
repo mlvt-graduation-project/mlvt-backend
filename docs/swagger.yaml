@@ -168,6 +168,25 @@ definitions:
         description: ID of the user who uploaded the video
         type: integer
     type: object
+  entity.VoucherCode:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      expired_time:
+        type: string
+      id:
+        type: string
+      max_usage:
+        type: integer
+      token:
+        type: integer
+      updated_at:
+        type: string
+      used_count:
+        type: integer
+    type: object
   response.AudioResponse:
     properties:
       audio:
@@ -204,8 +223,7 @@ definitions:
     type: object
   response.MessageCreateResponseWithID:
     properties:
-      id:
-        type: integer
+      id: {}
       message:
         type: string
     type: object
@@ -1645,6 +1663,153 @@ paths:
       summary: List videos by user ID
       tags:
       - Videos
+  /voucher:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all vouchers without pagination.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.VoucherCode'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Retrieves all vouchers
+      tags:
+      - Voucher
+    post:
+      consumes:
+      - application/json
+      description: Creates a new voucher with specified data.
+      parameters:
+      - description: Voucher info
+        in: body
+        name: voucher
+        required: true
+        schema:
+          $ref: '#/definitions/entity.VoucherCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create a new voucher
+      tags:
+      - Voucher
+  /voucher/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a single voucher based on its unique ID
+      parameters:
+      - description: Voucher ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.VoucherCode'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Get voucher by ID
+      tags:
+      - Voucher
+    patch:
+      consumes:
+      - application/json
+      description: Updates specific voucher fields. For instance, adjust usage data.
+      parameters:
+      - description: Voucher ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: fields
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Updates voucher info
+      tags:
+      - Voucher
+  /voucher/use/{code}:
+    post:
+      consumes:
+      - application/json
+      description: Increments the used count of a voucher code if valid and not expired.
+      parameters:
+      - description: Voucher Code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.VoucherCode'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Use a voucher by code
+      tags:
+      - Voucher
   /wallet/balance:
     get:
       consumes:
