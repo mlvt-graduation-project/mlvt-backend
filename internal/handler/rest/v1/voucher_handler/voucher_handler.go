@@ -90,7 +90,7 @@ func (vc *VoucherController) UseVoucher(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Voucher ID"
 // @Param fields body map[string]interface{} true "Fields to update"
-// @Success 200 {object} gin.H
+// @Success 200 {object} response.MessageResponse
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
 // @Router /voucher/{id} [patch]
@@ -119,7 +119,9 @@ func (vc *VoucherController) UpdateVoucher(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "voucher updated successfully"})
+	c.JSON(http.StatusOK, response.MessageResponse{
+		Message: "voucher updated successfully",
+	})
 }
 
 // GetAllVouchers godoc
