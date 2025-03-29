@@ -81,7 +81,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
 	walletRepository := wallet_repo.NewWalletRepo(db)
-	walletService := wallet_service.NewWalletService(walletRepository)
+	walletService := wallet_service.NewWalletService(walletRepository, trafficService)
 	walletController := wallet_handler.NewWalletController(walletService)
 	moMoRepo := momo_repo.NewMoMoRepo()
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
