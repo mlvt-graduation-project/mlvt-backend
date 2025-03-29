@@ -196,11 +196,11 @@ func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/voucher")
 	protected.Use(a.authMiddleware.MustAuth())
 	{
-		protected.POST("/voucher", a.voucherController.CreateVoucher)
-		protected.POST("/voucher/use/:code", a.voucherController.UseVoucher)
-		protected.PATCH("/voucher/:id", a.voucherController.UpdateVoucher)
-		protected.GET("/voucher", a.voucherController.GetAllVouchers)
-		protected.GET("/voucher/:id", a.voucherController.GetVoucherByID)
+		protected.POST("/create", a.voucherController.CreateVoucher)
+		protected.POST("/use/:code", a.voucherController.UseVoucher)
+		protected.PATCH("/:id", a.voucherController.UpdateVoucher)
+		protected.GET("/get-all", a.voucherController.GetAllVouchers)
+		protected.GET("/:id", a.voucherController.GetVoucherByID)
 	}
 }
 
