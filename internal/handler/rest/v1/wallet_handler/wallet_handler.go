@@ -57,19 +57,19 @@ func (wc *WalletController) Deposit(c *gin.Context) {
 	c.JSON(http.StatusOK, response.MessageResponse{Message: "Deposit successful"})
 }
 
-// Withdraw godoc
-// @Summary      Withdraw from the wallet
-// @Description  Withdraw a positive amount from a user's wallet if sufficient balance
+// UseToken godoc
+// @Summary      UseToken from the wallet
+// @Description  UseToken a positive amount from a user's wallet if sufficient balance
 // @Tags         Wallet
 // @Accept       json
 // @Produce      json
 // @Param        user_id  query     uint64 true  "User ID"
-// @Param        amount   query     int    true   "Amount to withdraw"
-// @Success      200  {object}  response.MessageResponse  "Withdrawal successful"
+// @Param        amount   query     int    true   "Amount to use token"
+// @Success      200  {object}  response.MessageResponse  "UseTokenal successful"
 // @Failure      400  {object}  response.ErrorResponse    "Invalid user ID, amount, or insufficient balance"
 // @Failure      500  {object}  response.ErrorResponse    "Server error"
-// @Router       /wallet/withdraw [post]
-func (wc *WalletController) Withdraw(c *gin.Context) {
+// @Router       /wallet/use-token [post]
+func (wc *WalletController) UseToken(c *gin.Context) {
 	userIDStr := c.Query("user_id")
 	amountStr := c.Query("amount")
 
@@ -85,13 +85,13 @@ func (wc *WalletController) Withdraw(c *gin.Context) {
 		return
 	}
 
-	err = wc.walletService.Withdraw(context.Background(), userID, amount)
+	err = wc.walletService.UseToken(context.Background(), userID, amount)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, response.MessageResponse{Message: "Withdrawal successful"})
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "UseTokenal successful"})
 }
 
 // GetBalance godoc

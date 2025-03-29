@@ -1710,18 +1710,18 @@ paths:
       summary: Deposit to the wallet
       tags:
       - Wallet
-  /wallet/withdraw:
+  /wallet/use-token:
     post:
       consumes:
       - application/json
-      description: Withdraw a positive amount from a user's wallet if sufficient balance
+      description: UseToken a positive amount from a user's wallet if sufficient balance
       parameters:
       - description: User ID
         in: query
         name: user_id
         required: true
         type: integer
-      - description: Amount to withdraw
+      - description: Amount to use token
         in: query
         name: amount
         required: true
@@ -1730,7 +1730,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Withdrawal successful
+          description: UseTokenal successful
           schema:
             $ref: '#/definitions/response.MessageResponse'
         "400":
@@ -1741,7 +1741,7 @@ paths:
           description: Server error
           schema:
             $ref: '#/definitions/response.ErrorResponse'
-      summary: Withdraw from the wallet
+      summary: UseToken from the wallet
       tags:
       - Wallet
 swagger: "2.0"

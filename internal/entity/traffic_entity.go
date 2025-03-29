@@ -30,6 +30,7 @@ const (
 
 	// related to user wallet
 	UseTokenAction      TrafficActionType = "use_token"
+	DepositTokenAction  TrafficActionType = "deposit_token"
 	RedeemVoucherAction TrafficActionType = "redeem_voucher"
 
 	// file handling

@@ -10,7 +10,7 @@ import (
 
 type WalletRepository interface {
 	Deposit(ctx context.Context, userID uint64, amount int64) error
-	Withdraw(ctx context.Context, userID uint64, amount int64) error
+	UseToken(ctx context.Context, userID uint64, amount int64) error
 	GetBalance(ctx context.Context, userID uint64) (int64, error)
 }
 
@@ -53,7 +53,7 @@ func (r *walletRepo) Deposit(ctx context.Context, userID uint64, amount int64) e
 
 }
 
-func (r *walletRepo) Withdraw(ctx context.Context, userID uint64, amount int64) error {
+func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (r *walletRepo) Withdraw(ctx context.Context, userID uint64, amount int64) 
 		`INSERT INTO wallet_transactions (user_id, type, amount, created_at)
          VALUES (?, ?, ?, ?)`,
 		userID,
-		entity.TransactionTypeWithdraw,
+		entity.TransactionTypeUseToken,
 		amount,
 		time.Now(),
 	)

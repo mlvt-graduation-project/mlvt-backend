@@ -183,7 +183,7 @@ func (a *AppRouter) RegisterWalletRoutes(r *gin.RouterGroup) {
 	protected.Use(a.authMiddleware.MustAuth())
 	{
 		protected.GET("/deposit", a.walletController.Deposit)
-		protected.POST("/withdraw", a.walletController.Withdraw)
+		protected.POST("/use-token", a.walletController.UseToken)
 		protected.GET("/balance", a.walletController.GetBalance)
 	}
 }

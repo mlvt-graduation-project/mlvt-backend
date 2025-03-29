@@ -2162,9 +2162,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/wallet/withdraw": {
+        "/wallet/use-token": {
             "post": {
-                "description": "Withdraw a positive amount from a user's wallet if sufficient balance",
+                "description": "UseToken a positive amount from a user's wallet if sufficient balance",
                 "consumes": [
                     "application/json"
                 ],
@@ -2174,7 +2174,7 @@ const docTemplate = `{
                 "tags": [
                     "Wallet"
                 ],
-                "summary": "Withdraw from the wallet",
+                "summary": "UseToken from the wallet",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2185,7 +2185,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "Amount to withdraw",
+                        "description": "Amount to use token",
                         "name": "amount",
                         "in": "query",
                         "required": true
@@ -2193,7 +2193,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Withdrawal successful",
+                        "description": "UseTokenal successful",
                         "schema": {
                             "$ref": "#/definitions/response.MessageResponse"
                         }
