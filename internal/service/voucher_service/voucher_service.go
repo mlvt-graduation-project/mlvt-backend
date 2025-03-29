@@ -103,9 +103,6 @@ func (s *voucherService) UpdateVoucher(ctx context.Context, voucher entity.Vouch
 		return fmt.Errorf("voucher does not exist")
 	}
 
-	// Update "UpdatedAt" to ensure we consistently track edits.
-	voucher.UpdatedAt = time.Now()
-
 	updatedFields := bson.M{}
 	if voucher.Code != "" {
 		updatedFields["code"] = voucher.Code
