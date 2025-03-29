@@ -3,6 +3,7 @@ package voucher_handler
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -33,7 +34,7 @@ func NewVoucherController(voucherSvc voucher_service.VoucherService) *VoucherCon
 // @Success 200 {object} response.MessageCreateResponseWithID
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /voucher [post]
+// @Router /voucher/create [post]
 func (vc *VoucherController) CreateVoucher(c *gin.Context) {
 	var req entity.VoucherCode
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -95,27 +96,32 @@ func (vc *VoucherController) UseVoucher(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /voucher/{id} [patch]
 func (vc *VoucherController) UpdateVoucher(c *gin.Context) {
-	idHex := c.Param("id")
-	if idHex == "" {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid voucher ID"})
-		return
-	}
+	ctx := context.Background()
 
-	oid, err := primitive.ObjectIDFromHex(idHex)
+	voucherIDStr := c.Param("voucherID")
+	objectID, err := primitive.ObjectIDFromHex(voucherIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid voucher ID format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid voucher ID"})
 		return
 	}
 
-	var fields map[string]interface{}
-	if err := c.ShouldBindJSON(&fields); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid request body"})
+	// Bind request body into a voucher struct.
+	var voucher entity.VoucherCode
+	if err := c.ShouldBindJSON(&voucher); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	if err := vc.voucherSvc.UpdateVoucher(context.Background(), oid, fields); err != nil {
+	// Ensure we set the correct ID and update timestamp.
+	voucher.Id = objectID
+	voucher.UpdatedAt = time.Now()
+
+	// Pass along to the service for the actual update.
+	if err := vc.voucherSvc.UpdateVoucher(ctx, voucher); err != nil {
 		log.Errorf("Failed to update voucher: %v", err)
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to update voucher"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "failed to update voucher",
+		})
 		return
 	}
 
@@ -132,7 +138,7 @@ func (vc *VoucherController) UpdateVoucher(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} entity.VoucherCode
 // @Failure 500 {object} response.ErrorResponse
-// @Router /voucher [get]
+// @Router /voucher/get-all [get]
 func (vc *VoucherController) GetAllVouchers(c *gin.Context) {
 	vouchers, err := vc.voucherSvc.GetAllVouchers(context.Background())
 	if err != nil {

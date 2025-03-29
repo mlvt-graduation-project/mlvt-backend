@@ -15,7 +15,7 @@ import (
 type VoucherService interface {
 	CreateVoucher(ctx context.Context, vc entity.VoucherCode) (primitive.ObjectID, error)
 	UseVoucher(ctx context.Context, code string) (*entity.VoucherCode, error)
-	UpdateVoucher(ctx context.Context, id primitive.ObjectID, fields map[string]interface{}) error
+	UpdateVoucher(ctx context.Context, voucher entity.VoucherCode) error
 	GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error)
 	GetVoucherByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error)
 }
@@ -85,7 +85,7 @@ func (s *voucherService) UseVoucher(ctx context.Context, code string) (*entity.V
 		"used_count": voucher.UsedCount,
 		"updated_at": voucher.UpdatedAt,
 	}
-	if err := s.repo.UpdateFields(ctx, filter, bson.M{"$set": updateData}); err != nil {
+	if err := s.repo.UpdateVoucher(ctx, filter, bson.M{"$set": updateData}); err != nil {
 		return nil, fmt.Errorf("failed to update voucher usage: %w", err)
 	}
 
@@ -93,15 +93,28 @@ func (s *voucherService) UseVoucher(ctx context.Context, code string) (*entity.V
 }
 
 // UpdateVoucher updates one or more fields for a given voucher ID.
-func (s *voucherService) UpdateVoucher(ctx context.Context, id primitive.ObjectID, fields map[string]interface{}) error {
-	fields["updated_at"] = time.Now()
+func (s *voucherService) UpdateVoucher(ctx context.Context, voucher entity.VoucherCode) error {
+	existing, err := s.repo.FindByID(ctx, voucher.Id)
+	if err != nil {
+		return fmt.Errorf("failed to find voucher: %w", err)
+	}
+	if existing == nil {
+		return fmt.Errorf("voucher does not exist")
+	}
 
-	filter := bson.M{"_id": id}
-	updateData := bson.M{"$set": fields}
+	// Update "UpdatedAt" to ensure we consistently track edits.
+	voucher.UpdatedAt = time.Now()
 
-	if err := s.repo.UpdateFields(ctx, filter, updateData); err != nil {
+	// Build the update as a full-doc update or partial "$set". In the
+	// admin code, "UpdateModelOption" sends the entire struct with "$set".
+	updateFields := bson.M{"$set": voucher}
+
+	filter := bson.M{"_id": voucher.Id}
+
+	if err := s.repo.UpdateVoucher(ctx, filter, updateFields); err != nil {
 		return fmt.Errorf("failed to update voucher: %w", err)
 	}
+
 	return nil
 }
 

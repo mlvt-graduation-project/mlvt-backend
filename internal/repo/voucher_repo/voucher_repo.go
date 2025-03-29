@@ -14,7 +14,7 @@ type VoucherRepository interface {
 	Insert(ctx context.Context, voucher entity.VoucherCode) (primitive.ObjectID, error)
 	FindByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error)
 	FindByCode(ctx context.Context, code string) (*entity.VoucherCode, error)
-	UpdateFields(ctx context.Context, filter interface{}, updateFields interface{}) error
+	UpdateVoucher(ctx context.Context, filter interface{}, updatedFields interface{}) error
 	GetAll(ctx context.Context) ([]entity.VoucherCode, error)
 }
 
@@ -60,8 +60,15 @@ func (r *voucherRepo) FindByCode(ctx context.Context, code string) (*entity.Vouc
 	return result, nil
 }
 
-func (r *voucherRepo) UpdateFields(ctx context.Context, filter interface{}, updateFields interface{}) error {
-	return r.adapter.UpdateOne(filter, updateFields)
+func (r *voucherRepo) UpdateVoucher(
+	ctx context.Context,
+	filter interface{},
+	updatedFields interface{},
+) error {
+	if err := r.adapter.UpdateOne(filter, updatedFields); err != nil {
+		return fmt.Errorf("failed to update voucher: %w", err)
+	}
+	return nil
 }
 
 func (r *voucherRepo) GetAll(ctx context.Context) ([]entity.VoucherCode, error) {
