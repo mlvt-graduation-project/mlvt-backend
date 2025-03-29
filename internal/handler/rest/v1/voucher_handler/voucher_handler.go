@@ -94,7 +94,7 @@ func (vc *VoucherController) UseVoucher(c *gin.Context) {
 // @Success 200 {object} response.MessageResponse
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /voucher/{id} [patch]
+// @Router /voucher/{voucherID} [patch]
 func (vc *VoucherController) UpdateVoucher(c *gin.Context) {
 	ctx := context.Background()
 
@@ -161,9 +161,9 @@ func (vc *VoucherController) GetAllVouchers(c *gin.Context) {
 // @Failure 400 {object} response.ErrorResponse
 // @Failure 404 {object} response.ErrorResponse
 // @Failure 500 {object} response.ErrorResponse
-// @Router /voucher/{id} [get]
+// @Router /voucher/{voucherID} [get]
 func (vc *VoucherController) GetVoucherByID(c *gin.Context) {
-	idHex := c.Param("id")
+	idHex := c.Param("voucherID")
 	if idHex == "" {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid voucher ID"})
 		return

@@ -198,9 +198,9 @@ func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
 	{
 		protected.POST("/create", a.voucherController.CreateVoucher)
 		protected.POST("/use/:code", a.voucherController.UseVoucher)
-		protected.PATCH("/:id", a.voucherController.UpdateVoucher)
+		protected.PATCH("/:voucherID", a.voucherController.UpdateVoucher)
 		protected.GET("/get-all", a.voucherController.GetAllVouchers)
-		protected.GET("/:id", a.voucherController.GetVoucherByID)
+		protected.GET("/:voucherID", a.voucherController.GetVoucherByID)
 	}
 }
 
