@@ -1663,56 +1663,6 @@ paths:
       summary: List videos by user ID
       tags:
       - Videos
-  /voucher:
-    get:
-      consumes:
-      - application/json
-      description: Returns a list of all vouchers without pagination.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/entity.VoucherCode'
-            type: array
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Retrieves all vouchers
-      tags:
-      - Voucher
-    post:
-      consumes:
-      - application/json
-      description: Creates a new voucher with specified data.
-      parameters:
-      - description: Voucher info
-        in: body
-        name: voucher
-        required: true
-        schema:
-          $ref: '#/definitions/entity.VoucherCode'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/response.MessageCreateResponseWithID'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/response.ErrorResponse'
-      summary: Create a new voucher
-      tags:
-      - Voucher
   /voucher/{id}:
     get:
       consumes:
@@ -1779,6 +1729,57 @@ paths:
           schema:
             $ref: '#/definitions/response.ErrorResponse'
       summary: Updates voucher info
+      tags:
+      - Voucher
+  /voucher/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new voucher with specified data.
+      parameters:
+      - description: Voucher info
+        in: body
+        name: voucher
+        required: true
+        schema:
+          $ref: '#/definitions/entity.VoucherCode'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.MessageCreateResponseWithID'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Create a new voucher
+      tags:
+      - Voucher
+  /voucher/get-all:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all vouchers without pagination.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.VoucherCode'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Retrieves all vouchers
       tags:
       - Voucher
   /voucher/use/{code}:
