@@ -81,11 +81,12 @@ func (s *voucherService) UseVoucher(ctx context.Context, code string) (*entity.V
 
 	// Update in DB
 	filter := bson.M{"_id": voucher.Id}
-	updateData := bson.M{
-		"used_count": voucher.UsedCount,
-		"updated_at": voucher.UpdatedAt,
+	updatedFields := bson.M{}
+	if voucher.UsedCount != 0 {
+		updatedFields["used_count"] = voucher.UsedCount
 	}
-	if err := s.repo.UpdateVoucher(ctx, filter, bson.M{"$set": updateData}); err != nil {
+	updatedFields["updated_at"] = time.Now()
+	if err := s.repo.UpdateVoucher(ctx, filter, updatedFields); err != nil {
 		return nil, fmt.Errorf("failed to update voucher usage: %w", err)
 	}
 
@@ -105,13 +106,29 @@ func (s *voucherService) UpdateVoucher(ctx context.Context, voucher entity.Vouch
 	// Update "UpdatedAt" to ensure we consistently track edits.
 	voucher.UpdatedAt = time.Now()
 
-	// Build the update as a full-doc update or partial "$set". In the
-	// admin code, "UpdateModelOption" sends the entire struct with "$set".
-	updateFields := bson.M{"$set": voucher}
+	updatedFields := bson.M{}
+	if voucher.Code != "" {
+		updatedFields["code"] = voucher.Code
+	}
+	if voucher.Token != 0 {
+		updatedFields["token"] = voucher.Token
+	}
+	if voucher.MaxUsage != 0 {
+		updatedFields["max_usage"] = voucher.MaxUsage
+	}
+	if voucher.UsedCount != 0 {
+		updatedFields["used_count"] = voucher.UsedCount
+	}
+	if !voucher.ExpiredTime.IsZero() {
+		updatedFields["expired_time"] = voucher.ExpiredTime
+	}
+
+	// Always update updated_at
+	updatedFields["updated_at"] = time.Now()
 
 	filter := bson.M{"_id": voucher.Id}
 
-	if err := s.repo.UpdateVoucher(ctx, filter, updateFields); err != nil {
+	if err := s.repo.UpdateVoucher(ctx, filter, updatedFields); err != nil {
 		return fmt.Errorf("failed to update voucher: %w", err)
 	}
 
