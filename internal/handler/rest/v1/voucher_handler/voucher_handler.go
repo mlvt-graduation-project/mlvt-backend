@@ -141,3 +141,39 @@ func (vc *VoucherController) GetAllVouchers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, vouchers)
 }
+
+// GetVoucherByID godoc
+// @Summary Get voucher by ID
+// @Description Retrieves a single voucher based on its unique ID
+// @Tags Voucher
+// @Accept  json
+// @Produce  json
+// @Param   id path string true "Voucher ID"
+// @Success 200 {object} entity.VoucherCode
+// @Failure 400 {object} response.ErrorResponse
+// @Failure 404 {object} response.ErrorResponse
+// @Failure 500 {object} response.ErrorResponse
+// @Router /voucher/{id} [get]
+func (vc *VoucherController) GetVoucherByID(c *gin.Context) {
+	idHex := c.Param("id")
+	if idHex == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid voucher ID"})
+		return
+	}
+
+	oid, err := primitive.ObjectIDFromHex(idHex)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid voucher ID format"})
+		return
+	}
+
+	// Call service to retrieve voucher
+	voucher, err := vc.voucherSvc.GetVoucherByID(context.Background(), oid)
+	if err != nil {
+		log.Errorf("Failed to get voucher by ID %s: %v", idHex, err)
+		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Voucher not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, voucher)
+}

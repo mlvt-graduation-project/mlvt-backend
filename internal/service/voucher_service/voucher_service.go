@@ -17,6 +17,7 @@ type VoucherService interface {
 	UseVoucher(ctx context.Context, code string) (*entity.VoucherCode, error)
 	UpdateVoucher(ctx context.Context, id primitive.ObjectID, fields map[string]interface{}) error
 	GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error)
+	GetVoucherByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error)
 }
 
 type voucherService struct {
@@ -87,4 +88,12 @@ func (s *voucherService) UpdateVoucher(ctx context.Context, id primitive.ObjectI
 // GetAllVouchers returns a list of all vouchers.
 func (s *voucherService) GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error) {
 	return s.repo.GetAll(ctx)
+}
+
+func (s *voucherService) GetVoucherByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error) {
+	voucher, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find voucher by ID: %w", err)
+	}
+	return voucher, nil
 }
