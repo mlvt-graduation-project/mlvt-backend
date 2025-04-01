@@ -174,11 +174,17 @@ func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/admin")
 	protected.Use(a.authMiddleware.MustAuth())
 	{
+		// Config
 		protected.GET("/:adminID/config", a.adminController.GetServerConfig)
 		protected.POST("/:adminID/config", a.adminController.UpdateServerConfig)
+
+		// Model Options
 		protected.GET("/:adminID/models", a.adminController.GetModelList)
 		protected.POST("/:adminID/models", a.adminController.AddModelOption)
 		protected.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
+
+		// Monitor
+		protected.POST("/:adminID/monitor/data-type-report", a.adminController.AddModelOption)
 	}
 }
 
