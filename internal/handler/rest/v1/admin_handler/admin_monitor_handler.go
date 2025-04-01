@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *AdminController) GetMonitorDataTypeD(c *gin.Context) {
+func (h *AdminController) GetMonitorDataType(c *gin.Context) {
 	ctx := context.Background()
 
 	// Parse the "adminID" (or requestor ID) from URL params
