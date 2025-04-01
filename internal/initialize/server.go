@@ -15,7 +15,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	// Create a new Gin router
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"}, // Set your allowed origins
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"}, // base, admin
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
