@@ -161,7 +161,7 @@ func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
 func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
 	public := r.Group("/progress")
 	{
-		public.POST("/:user_id", a.progressController.GetUserProgress)
+		public.GET("/:user_id", a.progressController.GetUserProgress)
 	}
 }
 
