@@ -2186,7 +2186,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/voucher/{id}": {
+        "/voucher/{voucherID}": {
             "get": {
                 "description": "Retrieves a single voucher based on its unique ID",
                 "consumes": [

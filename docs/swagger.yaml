@@ -1663,7 +1663,7 @@ paths:
       summary: List videos by user ID
       tags:
       - Videos
-  /voucher/{id}:
+  /voucher/{voucherID}:
     get:
       consumes:
       - application/json
