@@ -43,7 +43,7 @@ func (s *walletService) Deposit(ctx context.Context, userID uint64, amount int64
 		Description: fmt.Sprintf("account ID: %d, action deposit", userID),
 		Timestamp:   time.Now().Unix(),
 	}); err != nil {
-		log.Errorf("failed to log traffic: deposit to user account, err: %s", resultErr)
+		log.Errorf("failed to log traffic: deposit to user account, err: %s", err)
 	}
 
 	return resultErr
@@ -60,7 +60,7 @@ func (s *walletService) UseToken(ctx context.Context, userID uint64, amount int6
 		Description: fmt.Sprintf("account ID: %d, action use token", userID),
 		Timestamp:   time.Now().Unix(),
 	}); err != nil {
-		log.Errorf("failed to log traffic: user use token, err: %s", resultErr)
+		log.Errorf("failed to log traffic: user use token, err: %s", err)
 	}
 
 	return resultErr
@@ -75,7 +75,7 @@ func (s *walletService) GetBalance(ctx context.Context, userID uint64) (int64, e
 		Description: fmt.Sprintf("get balance of account ID: %d", userID),
 		Timestamp:   time.Now().Unix(),
 	}); err != nil {
-		log.Errorf("failed to log traffic: get balance of user account, err: %s", resultErr)
+		log.Errorf("failed to log traffic: get balance of user account, err: %s", err)
 	}
 
 	return amount, resultErr
