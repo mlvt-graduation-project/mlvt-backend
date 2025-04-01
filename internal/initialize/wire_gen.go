@@ -87,7 +87,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	walletService := wallet_service.NewWalletService(walletRepository, trafficService)
 	walletController := wallet_handler.NewWalletController(walletService)
 	voucherRepository := voucher_repo.NewVoucherRepo(mongoConn)
-	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService)
+	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService, walletService)
 	voucherController := voucher_handler.NewVoucherController(voucherService)
 	moMoRepo := momo_repo.NewMoMoRepo()
 	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)

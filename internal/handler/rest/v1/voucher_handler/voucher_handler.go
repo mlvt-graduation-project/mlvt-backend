@@ -55,6 +55,10 @@ func (vc *VoucherController) CreateVoucher(c *gin.Context) {
 	})
 }
 
+type UseVoucherRequest struct {
+	UserID uint64 `json:"user_id"`
+}
+
 // UseVoucher godoc
 // @Summary Use a voucher by code
 // @Description Increments the used count of a voucher code if valid and not expired.
@@ -73,7 +77,13 @@ func (vc *VoucherController) UseVoucher(c *gin.Context) {
 		return
 	}
 
-	voucher, err := vc.voucherSvc.UseVoucher(context.Background(), code)
+	var req UseVoucherRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid request body"})
+		return
+	}
+
+	voucher, err := vc.voucherSvc.UseVoucher(context.Background(), code, req.UserID)
 	if err != nil {
 		log.Errorf("Failed to use voucher: %v", err)
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
