@@ -159,6 +159,11 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid video ID"})
 		return
 	}
+	sourceLang := c.Query("source_language")
+	if sourceLang == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "source_language and target_language are required"})
+		return
+	}
 
 	video, _, _, err := h.videoService.GetVideoByID(videoID)
 	if err != nil || video == nil {
@@ -176,6 +181,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		VideoID:   videoID,
 		UserID:    video.UserID,
 		Folder:    folder,
+		Lang:      sourceLang,
 		FileName:  transcriptionFileName,
 		Status:    entity.StatusProcessing,
 		CreatedAt: time.Now(),

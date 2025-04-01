@@ -71,6 +71,9 @@ func (s *videoService) ListVideosByUserID(userID uint64) ([]response.ListVideosB
 
 	var videoWithURLsList []response.ListVideosByUserIDResponse
 	for _, video := range videos {
+		if video.Status != "raw" && video.Status != "succeeded" {
+			continue
+		}
 		// Generate the presigned URL for the video
 		videoURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.FileName, "video/mp4")
 		if err != nil {

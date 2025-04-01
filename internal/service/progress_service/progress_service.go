@@ -118,16 +118,29 @@ func (s *progressService) GetProgressThumbnails(
 	error,
 ) {
 	var result []response.ProgressResponse
-	for _, progress := range progresses {
-		video, err := s.videoRepo.GetVideoByID(progress.OriginalVideoID)
-		if err != nil {
-			log.Error("Failed to get video id, GetProgressthumbnails funtion")
-			return nil, fmt.Errorf("failed to get video with ID %d: %w", progress.OriginalVideoID, err)
-		}
+	thumbnailURL := ""
 
-		thumbnailURL, err := s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.Image, "image/jpeg")
-		if err != nil {
-			log.Errorf("Failed to generate presigned download url for video id: %d", progress.OriginalVideoID)
+	for _, progress := range progresses {
+		if progress.ProgressType == "stt" || progress.ProgressType == "ls" || progress.ProgressType == "fp" {
+			video, err := s.videoRepo.GetVideoByID(progress.OriginalVideoID)
+			if err != nil {
+				log.Errorf("Failed to get video with ID %d: %v", progress.OriginalVideoID, err)
+				return nil, fmt.Errorf("failed to get video with ID %d: %w", progress.OriginalVideoID, err)
+			}
+
+			// Prevent nil pointer dereference
+			if video == nil {
+				log.Errorf("Video with ID %d is nil", progress.OriginalVideoID)
+				return nil, fmt.Errorf("video with ID %d not found", progress.OriginalVideoID)
+			}
+
+			log.Infof("Video found: Folder=%s, Image=%s", video.Folder, video.Image)
+
+			thumbnailURL, err = s.s3Client.GeneratePresignedDownloadURL("video_frames", video.Image, "image/jpeg")
+			if err != nil {
+				log.Errorf("Failed to generate presigned download URL for video ID %d: %v", progress.OriginalVideoID, err)
+				thumbnailURL = "" // Ensure the response still contains valid data even if thumbnail generation fails
+			}
 		}
 
 		resp := response.ProgressResponse{
