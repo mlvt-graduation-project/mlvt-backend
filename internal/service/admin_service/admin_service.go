@@ -22,7 +22,7 @@ type AdminService interface {
 	UpdateModelOption(ctx context.Context, adminID uint64, modelOption entity.ModelOption) error
 
 	// Monitor
-	// GetMonitorDataTypeByUserID(ctx context.Context, requestorID, userID uint64) (entity.MonitorDataType, error)
+	GetMonitorDataType(ctx context.Context, adminID uint64) (entity.MonitorDataType, error)
 }
 
 type adminService struct {
