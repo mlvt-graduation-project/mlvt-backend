@@ -11,7 +11,6 @@ import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/audio_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
-	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -24,7 +23,6 @@ import (
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/audio_repo"
-	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/traffic_repo"
@@ -38,7 +36,6 @@ import (
 	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
-	"mlvt/internal/service/payment_service/momo_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
@@ -89,11 +86,8 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	voucherRepository := voucher_repo.NewVoucherRepo(mongoConn)
 	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService, walletService)
 	voucherController := voucher_handler.NewVoucherController(voucherService)
-	moMoRepo := momo_repo.NewMoMoRepo()
-	moMoPaymentService := momo_service.NewMoMoPaymentService(moMoRepo)
-	moMoPaymentController := momo_handler.NewMoMoPaymentHandler(moMoPaymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, moMoPaymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, swaggerRouter)
 	return appRouter, nil
 }
 

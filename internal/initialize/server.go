@@ -32,7 +32,6 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	appRouter.RegiserMlvtRoutes(api)
 	appRouter.RegisterProgressRoutes(api)
 	appRouter.RegisterPingStatusRoutes(api)
-	appRouter.RegisterPaymentRoutes(api)
 	appRouter.RegisterAdminRoutes(api)
 	appRouter.RegisterWalletRoutes(api)
 	appRouter.RegisteVoucherRoutes(api)

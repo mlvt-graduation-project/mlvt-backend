@@ -4,7 +4,6 @@ import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/audio_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
-	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -28,5 +27,4 @@ var ProviderSetHandler = wire.NewSet(
 	admin_handler.NewAdminController,
 	wallet_handler.NewWalletController,
 	voucher_handler.NewVoucherController,
-	momo_handler.NewMoMoPaymentHandler,
 )

@@ -5,7 +5,6 @@ import (
 	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
-	"mlvt/internal/service/payment_service/momo_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
@@ -32,7 +31,6 @@ var ProviderSetService = wire.NewSet(
 	wallet_service.NewWalletService,
 	voucher_service.NewVoucherService,
 	admin_service.NewAminService,
-	momo_service.NewMoMoPaymentService,
 	ping_service.NewPingService,
 	wire.Value(SecretKey),
 )

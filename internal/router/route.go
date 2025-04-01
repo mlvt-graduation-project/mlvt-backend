@@ -4,7 +4,6 @@ import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/audio_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
-	"mlvt/internal/handler/rest/v1/payment_handler/momo_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/transcription_handler"
@@ -29,7 +28,6 @@ type AppRouter struct {
 	adminController         *admin_handler.AdminController
 	walletController        *wallet_handler.WalletController
 	voucherController       *voucher_handler.VoucherController
-	momoPaymentController   *momo_handler.MoMoPaymentController
 	swaggerRouter           *SwaggerRouter
 }
 
@@ -45,7 +43,6 @@ func NewAppRouter(
 	adminController *admin_handler.AdminController,
 	walletController *wallet_handler.WalletController,
 	voucherController *voucher_handler.VoucherController,
-	momoPaymentController *momo_handler.MoMoPaymentController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:          userController,
@@ -59,7 +56,6 @@ func NewAppRouter(
 		adminController:         adminController,
 		walletController:        walletController,
 		voucherController:       voucherController,
-		momoPaymentController:   momoPaymentController,
 		swaggerRouter:           swaggerRouter,
 	}
 }
@@ -207,22 +203,6 @@ func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
 		protected.PATCH("/:voucherID", a.voucherController.UpdateVoucher)
 		protected.GET("/get-all", a.voucherController.GetAllVouchers)
 		protected.GET("/:voucherID", a.voucherController.GetVoucherByID)
-	}
-}
-
-// RegisterPaymentRoutes sets up the routes for all payment-related operations
-func (a *AppRouter) RegisterPaymentRoutes(r *gin.RouterGroup) {
-	payment := r.Group("/payments")
-	{
-		// Group for MoMo-specific routes
-		momo := payment.Group("/momo")
-		{
-			momo.POST("/create", a.momoPaymentController.CreateMoMoPayment)     // Create MoMo payment and return QR code
-			momo.POST("/check-status", a.momoPaymentController.CheckMoMoStatus) // Check status of MoMo payment
-			momo.POST("/refund", a.momoPaymentController.RefundMoMoPayment)     // Refund MoMo payment
-		}
-
-		// More payment methods can be added here...
 	}
 }
 

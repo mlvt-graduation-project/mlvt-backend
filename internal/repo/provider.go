@@ -3,7 +3,6 @@ package repo
 import (
 	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/audio_repo"
-	"mlvt/internal/repo/payment_repo/momo_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/traffic_repo"
@@ -27,7 +26,6 @@ var ProviderSetRepository = wire.NewSet(
 	traffic_repo.NewTrafficRepo,
 	wallet_repo.NewWalletRepo,
 	voucher_repo.NewVoucherRepo,
-	momo_repo.NewMoMoRepo,
 	ping_repo.NewPingRepo,
 	// wire.Bind(new(UserRepository), new(*userRepo)),
 	// wire.Bind(new(VideoRepository), new(*videoRepo)),
