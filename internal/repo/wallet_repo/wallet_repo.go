@@ -30,7 +30,7 @@ func (r *walletRepo) Deposit(ctx context.Context, userID uint64, amount int64) e
 	defer tx.Rollback()
 
 	// update user balance
-	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = balance + ? WHERE id = ?", amount, userID)
+	_, err = tx.ExecContext(ctx, "UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", amount, userID)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 	defer tx.Rollback()
 
 	var currentBalance int64
-	err = tx.QueryRowContext(ctx, "SELECT balance FROM users WHERE id = ?", userID).Scan(&currentBalance)
+	err = tx.QueryRowContext(ctx, "SELECT wallet_balance FROM users WHERE id = ?", userID).Scan(&currentBalance)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 	}
 
 	// update user balance
-	_, err = tx.ExecContext(ctx, "UPDATE users SET balance = balance - ? WHERE id = ?", amount, userID)
+	_, err = tx.ExecContext(ctx, "UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?", amount, userID)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 
 func (r *walletRepo) GetBalance(ctx context.Context, userID uint64) (int64, error) {
 	var balance int64
-	err := r.db.QueryRowContext(ctx, "SELECT balance FROM users WHERE id = ?", userID).Scan(&balance)
+	err := r.db.QueryRowContext(ctx, "SELECT wallet_balance FROM users WHERE id = ?", userID).Scan(&balance)
 	if err != nil {
 		return 0, err
 	}
