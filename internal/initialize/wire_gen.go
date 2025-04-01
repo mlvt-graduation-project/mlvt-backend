@@ -80,7 +80,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
-	adminRepository := admin_repo.NewAminRepo(mongoConn)
+	adminRepository := admin_repo.NewAminRepo(mongoConn, db)
 	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
 	walletRepository := wallet_repo.NewWalletRepo(db)
