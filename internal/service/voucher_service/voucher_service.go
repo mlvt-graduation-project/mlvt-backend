@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo/voucher_repo"
+	"mlvt/internal/service/traffic_service"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -21,12 +23,17 @@ type VoucherService interface {
 }
 
 type voucherService struct {
-	repo voucher_repo.VoucherRepository
+	repo           voucher_repo.VoucherRepository
+	trafficService traffic_service.TrafficService
 }
 
-func NewVoucherService(repo voucher_repo.VoucherRepository) VoucherService {
+func NewVoucherService(
+	repo voucher_repo.VoucherRepository,
+	trafficService traffic_service.TrafficService,
+) VoucherService {
 	return &voucherService{
-		repo: repo,
+		repo:           repo,
+		trafficService: trafficService,
 	}
 }
 
@@ -53,6 +60,15 @@ func (s *voucherService) CreateVoucher(ctx context.Context, vc entity.VoucherCod
 	insertedID, insertErr := s.repo.Insert(ctx, vc)
 	if insertErr != nil {
 		return primitive.NilObjectID, fmt.Errorf("failed to insert voucher: %w", insertErr)
+	}
+
+	// log traffic
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.AdminVoucherAction,
+		Description: fmt.Sprintf("admin create new voucher, id: %s", insertedID),
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: deposit to user account, err: %s", err)
 	}
 
 	return insertedID, nil
@@ -88,6 +104,15 @@ func (s *voucherService) UseVoucher(ctx context.Context, code string) (*entity.V
 	updatedFields["updated_at"] = time.Now()
 	if err := s.repo.UpdateVoucher(ctx, filter, updatedFields); err != nil {
 		return nil, fmt.Errorf("failed to update voucher usage: %w", err)
+	}
+
+	// log traffic
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.RedeemVoucherAction,
+		Description: fmt.Sprintf("user redeem voucher, id: %s", voucher.Id),
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: create new voucher, err: %s", err)
 	}
 
 	return voucher, nil
@@ -129,11 +154,28 @@ func (s *voucherService) UpdateVoucher(ctx context.Context, voucher entity.Vouch
 		return fmt.Errorf("failed to update voucher: %w", err)
 	}
 
+	// log traffic
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.AdminVoucherAction,
+		Description: fmt.Sprintf("admin update voucher, id: %s", voucher.Id),
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: update voucher, err: %s", err)
+	}
+
 	return nil
 }
 
 // GetAllVouchers returns a list of all vouchers.
 func (s *voucherService) GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error) {
+	// log traffic
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.AdminVoucherAction,
+		Description: "admin get all vouchers, id",
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: get all vouchers, err: %s", err)
+	}
 	return s.repo.GetAll(ctx)
 }
 
@@ -141,6 +183,15 @@ func (s *voucherService) GetVoucherByID(ctx context.Context, id primitive.Object
 	voucher, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find voucher by ID: %w", err)
+	}
+
+	// log traffic
+	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
+		ActionType:  entity.AdminVoucherAction,
+		Description: fmt.Sprintf("admin get a voucher, id: %s", id),
+		Timestamp:   time.Now().Unix(),
+	}); err != nil {
+		log.Errorf("failed to log traffic: get voucher by id, err: %s", err)
 	}
 	return voucher, nil
 }
