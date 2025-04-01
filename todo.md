@@ -6,6 +6,11 @@
 -----
 
 - implement voucher feature [done]
+- implement monitor feature:
+    + `/monitor/users-activities` [priority 1]
+    + `/monitor/pipeline-analysis` [priority 1]
+    + `/monitor/progress-analysis` [priority 1]
+    + `/monitor/traffic-analysis` [priority 2]
 - only allow admin to create/update voucher
 - refactor update fields in admin package
 - refactor source code (combine feature to reduce number of folders in handler, service, repo)
