@@ -55,6 +55,11 @@ func (h *AdminController) GetMonitorPipeline(c *gin.Context) {
 	c.JSON(http.StatusOK, pipeline)
 }
 
+type MonitorTrafficRequest struct {
+	CurrentDay string `json:"current_day"`
+	Type       string `json:"type"`
+}
+
 func (h *AdminController) GetMonitorTraffic(c *gin.Context) {
 	ctx := context.Background()
 
@@ -65,24 +70,26 @@ func (h *AdminController) GetMonitorTraffic(c *gin.Context) {
 		return
 	}
 
-	currentDateStr := c.Query("current_day")
+	var req MonitorTrafficRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body"})
+		return
+	}
+
 	var baseTime time.Time
-	if currentDateStr != "" {
-		baseTime, err = time.Parse("2006-01-02", currentDateStr)
+	if req.CurrentDay != "" {
+		baseTime, err = time.Parse("2006-01-02", req.CurrentDay)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
 			return
 		}
 	} else {
-		// fallback to now
 		baseTime = time.Now()
 	}
 
-	periodStr := c.DefaultQuery("type", string(entity.TimePeriodWeek))
-
 	// convert string to typed constant
 	var periodType entity.TimePeriodType
-	switch periodStr {
+	switch req.Type {
 	case string(entity.TimePeriodDay):
 		periodType = entity.TimePeriodDay
 	case string(entity.TimePeriodWeek):
