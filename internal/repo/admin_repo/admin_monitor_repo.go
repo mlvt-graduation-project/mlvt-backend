@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/db/mongodb"
 )
 
 func (r *adminRepo) GetMonitorDataType(
@@ -159,4 +160,52 @@ func (r *adminRepo) GetMonitorDataTypeByUserID(
 	}
 
 	return result, nil
+}
+
+func (r *adminRepo) GetMonitorPipeline(ctx context.Context) (entity.MonitorPipeline, error) {
+	var pipeline entity.MonitorPipeline
+
+	// count TTS
+	ttsCount, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTS, "")
+	if err != nil {
+		return pipeline, err
+	}
+	ttsSucceeded, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTS, string(entity.StatusSucceeded))
+	if err != nil {
+		return pipeline, err
+	}
+	ttsFailed, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTS, string(entity.StatusFailed))
+	if err != nil {
+		return pipeline, err
+	}
+	pipeline.TTS = entity.MonitorMetric{
+		Count:     uint64(ttsCount),
+		Succeeded: uint64(ttsSucceeded),
+		Failed:    uint64(ttsFailed),
+	}
+	return pipeline, nil
+}
+
+func (r *adminRepo) countByTypeAndStatus(ctx context.Context, progressType entity.ProgressType, status string) (int, error) {
+	filters := []mongodb.FilterCondition{
+		{
+			Key:       "progress_type",
+			Operation: mongodb.OpEqual,
+			Value:     progressType,
+		},
+	}
+	if status != "" {
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "status",
+			Operation: mongodb.OpEqual,
+			Value:     status,
+		})
+	}
+
+	results, err := r.progressAdapter.FindWithQuery(filters)
+	if err != nil {
+		return 0, fmt.Errorf("FindWithQuery error: %w", err)
+	}
+
+	return len(results), nil
 }

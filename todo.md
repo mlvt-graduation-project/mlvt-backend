@@ -11,6 +11,7 @@
     + `/monitor/media-analysis` [priority 1] [done]
     + `/monitor/progress-analysis` [priority 1]
     + `/monitor/traffic-analysis` [priority 2]
+- return role when login
 - change monitor data type -> monitor media
 - combine 3 features: audios, transcriptions, videos into medias
 - only allow admin to create/update voucher
