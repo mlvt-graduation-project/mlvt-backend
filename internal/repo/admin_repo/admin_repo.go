@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -23,6 +24,7 @@ type AdminRepository interface {
 	// Monitor
 	GetMonitorDataType(ctx context.Context) (entity.MonitorDataType, error)
 	GetMonitorPipeline(ctx context.Context) (entity.MonitorPipeline, error)
+	GetMonitorTraffic(ctx context.Context, timeType entity.TimePeriodType, baseTime time.Time) (entity.MonitorTraffics, error)
 }
 
 type adminRepo struct {

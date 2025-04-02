@@ -306,7 +306,6 @@ func (r *adminRepo) countByTypeAndStatus(ctx context.Context, progressType entit
 
 func (r *adminRepo) GetMonitorTraffic(
 	ctx context.Context,
-	adminID uint64,
 	timeType entity.TimePeriodType,
 	baseTime time.Time,
 ) (entity.MonitorTraffics, error) {
