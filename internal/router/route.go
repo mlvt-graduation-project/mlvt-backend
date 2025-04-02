@@ -180,7 +180,8 @@ func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
 		protected.PUT("/:adminID/models/:modelOptionID", a.adminController.UpdateModelOption)
 
 		// Monitor
-		protected.POST("/:adminID/monitor/data-type-report", a.adminController.GetMonitorDataType)
+		protected.POST("/:adminID/monitor/media-report", a.adminController.GetMonitorDataType)
+		protected.POST("/:adminID/monitor/pipeline-report", a.adminController.GetMonitorPipeline)
 	}
 }
 
