@@ -38,6 +38,10 @@ const (
 	TimePeriodYear TimePeriodType = "year"
 )
 
+// #endregion
+
+// region Traffic
+
 type MonitorTraffic struct {
 	Cell  string `json:"cell" bson:"cell"`
 	Value uint64 `json:"value" bson:"value"`

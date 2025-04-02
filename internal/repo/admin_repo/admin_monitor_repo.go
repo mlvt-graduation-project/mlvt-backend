@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
+	"time"
 )
+
+// #region media
 
 func (r *adminRepo) GetMonitorDataType(
 	ctx context.Context,
@@ -162,6 +165,10 @@ func (r *adminRepo) GetMonitorDataTypeByUserID(
 	return result, nil
 }
 
+// #endregion
+
+// #region pipeline
+
 func (r *adminRepo) GetMonitorPipeline(ctx context.Context) (entity.MonitorPipeline, error) {
 	var pipeline entity.MonitorPipeline
 
@@ -292,3 +299,104 @@ func (r *adminRepo) countByTypeAndStatus(ctx context.Context, progressType entit
 
 	return len(results), nil
 }
+
+// #endregion
+
+// #region traffic
+
+func (r *adminRepo) GetMonitorTraffic(
+	ctx context.Context,
+	adminID uint64,
+	timeType entity.TimePeriodType,
+	baseTime time.Time,
+) (entity.MonitorTraffics, error) {
+	var (
+		response     entity.MonitorTraffics
+		segmentCount int
+		start        time.Time
+		end          time.Time
+		labels       []string
+		err          error
+	)
+
+	now := baseTime
+
+	switch timeType {
+	case entity.TimePeriodDay:
+		segmentCount = 24
+		start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		end = start.AddDate(0, 0, 1)   // add 1 day
+		labels = buildDayLabels(start) // ["00:00-01:00","01:00-02:00",...,"23:00-00:00"]
+	default:
+		return response, fmt.Errorf("invalid timeType: %s", timeType)
+	}
+
+	filters := []mongodb.FilterCondition{
+		{
+			Key:       "timestamp",
+			Operation: mongodb.OpGTE,
+			Value:     start.Unix(),
+		},
+		{
+			Key:       "timestamp",
+			Operation: mongodb.OpLTE,
+			Value:     end.Unix(),
+		},
+	}
+
+	trafficList, err := r.trafficAdapter.FindWithQuery(filters)
+	if err != nil {
+		return response, fmt.Errorf("failed to query traffic: %w", err)
+	}
+
+	// prepare usage counters
+	usageCounts := make([]uint64, segmentCount)
+	totalSeconds := end.Unix() - start.Unix()
+	if totalSeconds <= 0 {
+		return response, fmt.Errorf("data range is invalid")
+	}
+
+	// Tally each document into the appropriate segment
+	for _, trafficItem := range trafficList {
+		ts := trafficItem.Timestamp
+		if ts < start.Unix() || ts >= end.Unix() {
+			continue
+		}
+		offset := ts - start.Unix()
+		frac := float64(offset) / float64(totalSeconds)
+		index := int(frac * float64(totalSeconds))
+		if index >= segmentCount {
+			index = segmentCount - 1
+		}
+		usageCounts[index]++
+	}
+
+	// build final segments
+	segments := make([]entity.MonitorTraffic, segmentCount)
+	var totalUsage uint64
+	for i := 0; i < segmentCount; i++ {
+		segments[i] = entity.MonitorTraffic{
+			Cell:  labels[i],
+			Value: usageCounts[i],
+		}
+		totalUsage += usageCounts[i]
+	}
+
+	response = entity.MonitorTraffics{
+		Count:   totalUsage,
+		Traffic: segments,
+	}
+
+	return response, nil
+}
+
+func buildDayLabels(day time.Time) []string {
+	labels := make([]string, 24)
+	for hour := 0; hour < 24; hour++ {
+		next := hour + 1
+		labels[hour] = fmt.Sprintf("%02d:00-%02d:00", hour, next%24)
+	}
+	return labels
+}
+
+// #endregion
