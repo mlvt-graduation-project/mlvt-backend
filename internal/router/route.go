@@ -182,6 +182,7 @@ func (a *AppRouter) RegisterAdminRoutes(r *gin.RouterGroup) {
 		// Monitor
 		protected.POST("/:adminID/monitor/media-report", a.adminController.GetMonitorDataType)
 		protected.POST("/:adminID/monitor/pipeline-report", a.adminController.GetMonitorPipeline)
+		protected.POST("/:adminID/monitor/traffic-report", a.adminController.GetMonitorTraffic)
 	}
 }
 
