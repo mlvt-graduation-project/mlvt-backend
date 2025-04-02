@@ -11,6 +11,7 @@ type MonitorPipeline struct {
 	TTT MonitorMetric `json:"ttt" bson:"ttt"`
 	STT MonitorMetric `json:"stt" bson:"stt"`
 	LS  MonitorMetric `json:"ls" bson:"ls"`
+	FP  MonitorMetric `json:"fp" bson:"fp"`
 }
 
 type MonitorDataType struct {
