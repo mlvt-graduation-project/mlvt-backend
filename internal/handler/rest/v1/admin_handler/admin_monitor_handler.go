@@ -3,8 +3,10 @@ package admin_handler
 import (
 	"context"
 	"fmt"
+	"mlvt/internal/entity"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,4 +53,53 @@ func (h *AdminController) GetMonitorPipeline(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, pipeline)
+}
+
+func (h *AdminController) GetMonitorTraffic(c *gin.Context) {
+	ctx := context.Background()
+
+	adminIDStr := c.Param("adminID")
+	adminID, err := strconv.ParseUint(adminIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid admin ID"})
+		return
+	}
+
+	currentDateStr := c.Query("current_date")
+	var baseTime time.Time
+	if currentDateStr != "" {
+		baseTime, err = time.Parse("2006-01-02", currentDateStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format"})
+			return
+		}
+	} else {
+		// fallback to now
+		baseTime = time.Now()
+	}
+
+	periodStr := c.DefaultQuery("type", string(entity.TimePeriodWeek))
+
+	// convert string to typed constant
+	var periodType entity.TimePeriodType
+	switch periodStr {
+	case string(entity.TimePeriodDay):
+		periodType = entity.TimePeriodDay
+	case string(entity.TimePeriodWeek):
+		periodType = entity.TimePeriodWeek
+	case string(entity.TimePeriodYear):
+		periodType = entity.TimePeriodYear
+	default:
+		// invalid
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid time period"})
+		return
+	}
+
+	trafficData, err := h.adminService.GetMonitorTraffic(ctx, adminID, periodType, baseTime)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, trafficData)
 }
