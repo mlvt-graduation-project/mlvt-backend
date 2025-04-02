@@ -65,7 +65,7 @@ func (h *AdminController) GetMonitorTraffic(c *gin.Context) {
 		return
 	}
 
-	currentDateStr := c.Query("current_date")
+	currentDateStr := c.Query("current_day")
 	var baseTime time.Time
 	if currentDateStr != "" {
 		baseTime, err = time.Parse("2006-01-02", currentDateStr)
