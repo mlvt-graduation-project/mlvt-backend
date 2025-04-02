@@ -183,6 +183,64 @@ func (r *adminRepo) GetMonitorPipeline(ctx context.Context) (entity.MonitorPipel
 		Succeeded: uint64(ttsSucceeded),
 		Failed:    uint64(ttsFailed),
 	}
+
+	// Count TTT
+	tttCount, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTT, "")
+	if err != nil {
+		return pipeline, err
+	}
+	tttSucceeded, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTT, "succeeded")
+	if err != nil {
+		return pipeline, err
+	}
+	tttFailed, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeTTT, "failed")
+	if err != nil {
+		return pipeline, err
+	}
+	pipeline.TTT = entity.MonitorMetric{
+		Count:     uint64(tttCount),
+		Succeeded: uint64(tttSucceeded),
+		Failed:    uint64(tttFailed),
+	}
+
+	// Count STT
+	sttCount, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeSTT, "")
+	if err != nil {
+		return pipeline, err
+	}
+	sttSucceeded, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeSTT, "succeeded")
+	if err != nil {
+		return pipeline, err
+	}
+	sttFailed, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeSTT, "failed")
+	if err != nil {
+		return pipeline, err
+	}
+	pipeline.STT = entity.MonitorMetric{
+		Count:     uint64(sttCount),
+		Succeeded: uint64(sttSucceeded),
+		Failed:    uint64(sttFailed),
+	}
+
+	// Count LS
+	lsCount, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeLS, "")
+	if err != nil {
+		return pipeline, err
+	}
+	lsSucceeded, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeLS, "succeeded")
+	if err != nil {
+		return pipeline, err
+	}
+	lsFailed, err := r.countByTypeAndStatus(ctx, entity.ProgressTypeLS, "failed")
+	if err != nil {
+		return pipeline, err
+	}
+	pipeline.LS = entity.MonitorMetric{
+		Count:     uint64(lsCount),
+		Succeeded: uint64(lsSucceeded),
+		Failed:    uint64(lsFailed),
+	}
+
 	return pipeline, nil
 }
 
