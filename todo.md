@@ -9,7 +9,7 @@
 - implement monitor feature:
     + `/monitor/users-activities` [priority 1]
     + `/monitor/media-analysis` [priority 1] [done]
-    + `/monitor/progress-analysis` [priority 1]
+    + `/monitor/progress-analysis` [priority 1] [done]
     + `/monitor/traffic-analysis` [priority 2]
 - return role when login
 - replace gin.H in admin monitor with response package and add swagger

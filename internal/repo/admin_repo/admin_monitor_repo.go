@@ -260,6 +260,12 @@ func (r *adminRepo) GetMonitorPipeline(ctx context.Context) (entity.MonitorPipel
 		Failed:    uint64(fpFailed),
 	}
 
+	pipeline.All = entity.MonitorMetric{
+		Count:     uint64(sttCount + tttCount + ttsCount + lsSucceeded),
+		Succeeded: uint64(sttSucceeded + tttSucceeded + ttsSucceeded + lsSucceeded),
+		Failed:    uint64(sttFailed + tttFailed + ttsFailed + lsFailed),
+	}
+
 	return pipeline, nil
 }
 

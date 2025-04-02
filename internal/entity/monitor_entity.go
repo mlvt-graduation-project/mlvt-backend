@@ -7,6 +7,7 @@ type MonitorMetric struct {
 }
 
 type MonitorPipeline struct {
+	All MonitorMetric `json:"all" bson:"all"`
 	TTS MonitorMetric `json:"tts" bson:"tts"`
 	TTT MonitorMetric `json:"ttt" bson:"ttt"`
 	STT MonitorMetric `json:"stt" bson:"stt"`
