@@ -22,6 +22,7 @@ type AdminRepository interface {
 
 	// Monitor
 	GetMonitorDataType(ctx context.Context) (entity.MonitorDataType, error)
+	GetMonitorPipeline(ctx context.Context) (entity.MonitorPipeline, error)
 }
 
 type adminRepo struct {
