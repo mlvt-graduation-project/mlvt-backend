@@ -29,3 +29,26 @@ func (h *AdminController) GetMonitorDataType(c *gin.Context) {
 
 	c.JSON(http.StatusOK, monitorData)
 }
+
+func (h *AdminController) GetMonitorPipeline(c *gin.Context) {
+	ctx := context.Background()
+
+	// parse adminID from URL param
+	adminIDStr := c.Param("adminID")
+	adminID, err := strconv.ParseUint(adminIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid admin ID"})
+		return
+	}
+
+	// call service
+	pipeline, err := h.adminService.GetMonitorPipeline(ctx, adminID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": fmt.Sprintf("failed to get pipeline metrics: %v", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, pipeline)
+}
