@@ -23,6 +23,7 @@ type AdminService interface {
 
 	// Monitor
 	GetMonitorDataType(ctx context.Context, adminID uint64) (entity.MonitorDataType, error)
+	GetMonitorPipeline(ctx context.Context, adminID uint64) (entity.MonitorPipeline, error)
 }
 
 type adminService struct {
