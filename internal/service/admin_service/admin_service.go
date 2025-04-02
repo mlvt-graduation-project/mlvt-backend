@@ -7,6 +7,7 @@ import (
 	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/service/traffic_service"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -24,6 +25,7 @@ type AdminService interface {
 	// Monitor
 	GetMonitorDataType(ctx context.Context, adminID uint64) (entity.MonitorDataType, error)
 	GetMonitorPipeline(ctx context.Context, adminID uint64) (entity.MonitorPipeline, error)
+	GetMonitorTraffic(ctx context.Context, adminID uint64, periodType entity.TimePeriodType, baseTime time.Time) (entity.MonitorTraffics, error)
 }
 
 type adminService struct {

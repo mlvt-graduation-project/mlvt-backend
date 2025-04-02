@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"mlvt/internal/entity"
+	"time"
 )
 
 func (s *adminService) GetMonitorDataType(ctx context.Context, adminID uint64) (entity.MonitorDataType, error) {
@@ -21,4 +22,17 @@ func (s *adminService) GetMonitorPipeline(ctx context.Context, adminID uint64) (
 		return entity.MonitorPipeline{}, fmt.Errorf("only admin can retrieve pipeline metrics")
 	}
 	return s.adminRepo.GetMonitorPipeline(ctx)
+}
+
+func (s *adminService) GetMonitorTraffic(
+	ctx context.Context,
+	adminID uint64,
+	periodType entity.TimePeriodType,
+	baseTime time.Time,
+) (entity.MonitorTraffics, error) {
+	// check admin role
+	if !s.isAdmin(adminID) {
+		return entity.MonitorTraffics{}, fmt.Errorf("only admin can read traffic usage")
+	}
+	return s.adminRepo.GetMonitorTraffic(ctx, periodType, baseTime)
 }
