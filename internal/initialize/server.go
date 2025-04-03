@@ -26,9 +26,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	// Register routes
 	api := r.Group("/api")
 	appRouter.RegisterUserRoutes(api)
-	appRouter.RegisterVideoRoutes(api)
-	appRouter.RegisterAudioRoutes(api)
-	appRouter.RegisterTranscriptionRoutes(api)
+	appRouter.RegisterMediaRoutes(api)
 	appRouter.RegiserMlvtRoutes(api)
 	appRouter.RegisterProgressRoutes(api)
 	appRouter.RegisterPingStatusRoutes(api)

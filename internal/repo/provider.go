@@ -2,13 +2,11 @@ package repo
 
 import (
 	"mlvt/internal/repo/admin_repo"
-	"mlvt/internal/repo/audio_repo"
+	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/traffic_repo"
-	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
-	"mlvt/internal/repo/video_repo"
 	"mlvt/internal/repo/voucher_repo"
 	"mlvt/internal/repo/wallet_repo"
 
@@ -18,9 +16,7 @@ import (
 // ProviderSetRepository is providers.
 var ProviderSetRepository = wire.NewSet(
 	user_repo.NewUserRepo,
-	video_repo.NewVideoRepo,
-	audio_repo.NewAudioRepository,
-	transcription_repo.NewTranscriptionRepository,
+	media_repo.NewMediaRepo,
 	progress_repo.NewProgressRepo,
 	admin_repo.NewAminRepo,
 	traffic_repo.NewTrafficRepo,

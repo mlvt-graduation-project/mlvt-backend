@@ -2,13 +2,11 @@ package router
 
 import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
-	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
-	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
-	"mlvt/internal/handler/rest/v1/video_handler"
 	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
 	"mlvt/internal/pkg/middleware"
@@ -17,25 +15,21 @@ import (
 )
 
 type AppRouter struct {
-	userController          *user_handler.UserController
-	videoController         *video_handler.VideoController
-	audioController         *audio_handler.AudioController
-	transcriptionController *transcription_handler.TranscriptionController
-	mlvtController          *mlvt_handler.MlvtController
-	progressController      *progress_handler.ProgressController
-	pingController          *ping_handler.PingController
-	authMiddleware          *middleware.AuthUserMiddleware
-	adminController         *admin_handler.AdminController
-	walletController        *wallet_handler.WalletController
-	voucherController       *voucher_handler.VoucherController
-	swaggerRouter           *SwaggerRouter
+	userController     *user_handler.UserController
+	mediaController    *media_handler.MediaController
+	mlvtController     *mlvt_handler.MlvtController
+	progressController *progress_handler.ProgressController
+	pingController     *ping_handler.PingController
+	authMiddleware     *middleware.AuthUserMiddleware
+	adminController    *admin_handler.AdminController
+	walletController   *wallet_handler.WalletController
+	voucherController  *voucher_handler.VoucherController
+	swaggerRouter      *SwaggerRouter
 }
 
 func NewAppRouter(
 	userController *user_handler.UserController,
-	videoController *video_handler.VideoController,
-	audioController *audio_handler.AudioController,
-	transcriptionController *transcription_handler.TranscriptionController,
+	mediaController *media_handler.MediaController,
 	mlvtController *mlvt_handler.MlvtController,
 	progressController *progress_handler.ProgressController,
 	pingController *ping_handler.PingController,
@@ -45,18 +39,16 @@ func NewAppRouter(
 	voucherController *voucher_handler.VoucherController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
-		userController:          userController,
-		videoController:         videoController,
-		audioController:         audioController,
-		transcriptionController: transcriptionController,
-		mlvtController:          mlvtController,
-		progressController:      progressController,
-		pingController:          pingController,
-		authMiddleware:          authMiddleware,
-		adminController:         adminController,
-		walletController:        walletController,
-		voucherController:       voucherController,
-		swaggerRouter:           swaggerRouter,
+		userController:     userController,
+		mediaController:    mediaController,
+		mlvtController:     mlvtController,
+		progressController: progressController,
+		pingController:     pingController,
+		authMiddleware:     authMiddleware,
+		adminController:    adminController,
+		walletController:   walletController,
+		voucherController:  voucherController,
+		swaggerRouter:      swaggerRouter,
 	}
 }
 
@@ -81,56 +73,50 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	}
 }
 
-// RegisterVideoRoutes sets up the routes for video-related operations
-func (a *AppRouter) RegisterVideoRoutes(r *gin.RouterGroup) {
-	protected := r.Group("/videos")
-	protected.Use(a.authMiddleware.MustAuth())
+// RegisterMediaRoutes sets up the routes for media-related operations
+func (a *AppRouter) RegisterMediaRoutes(r *gin.RouterGroup) {
+	videoProtected := r.Group("/videos")
+	videoProtected.Use(a.authMiddleware.MustAuth())
 	{
-		protected.POST("/", a.videoController.AddVideo)                                               // Add a new video
-		protected.GET("/:video_id", a.videoController.GetVideoByID)                                   // Get video by ID
-		protected.GET("/user/:user_id", a.videoController.ListVideosByUserID)                         // List videos by user ID
-		protected.DELETE("/:video_id", a.videoController.DeleteVideo)                                 // Delete video by ID
-		protected.GET("/:video_id/status", a.videoController.GetVideoStatus)                          // Get video status
-		protected.PUT("/:video_id/status", a.videoController.UpdateVideoStatus)                       // Update video status
-		protected.POST("/generate-upload-url/video", a.videoController.GenerateUploadURLForVideo)     // Generate presigned upload URL for video
-		protected.POST("/generate-upload-url/image", a.videoController.GenerateUploadURLForImage)     // Generate presigned upload URL for image
-		protected.GET("/:video_id/download-url/video", a.videoController.GenerateDownloadURLForVideo) // Generate presigned download URL for video
-		protected.GET("/:video_id/download-url/image", a.videoController.GenerateDownloadURLForImage) // Generate presigned download URL for image
+		videoProtected.POST("/", a.mediaController.AddVideo)                                               // Add a new video
+		videoProtected.GET("/:video_id", a.mediaController.GetVideoByID)                                   // Get video by ID
+		videoProtected.GET("/user/:user_id", a.mediaController.ListVideosByUserID)                         // List videos by user ID
+		videoProtected.DELETE("/:video_id", a.mediaController.DeleteVideo)                                 // Delete video by ID
+		videoProtected.GET("/:video_id/status", a.mediaController.GetVideoStatus)                          // Get video status
+		videoProtected.PUT("/:video_id/status", a.mediaController.UpdateVideoStatus)                       // Update video status
+		videoProtected.POST("/generate-upload-url/video", a.mediaController.GenerateUploadURLForVideo)     // Generate presigned upload URL for video
+		videoProtected.POST("/generate-upload-url/image", a.mediaController.GenerateUploadURLForImage)     // Generate presigned upload URL for image
+		videoProtected.GET("/:video_id/download-url/video", a.mediaController.GenerateDownloadURLForVideo) // Generate presigned download URL for video
+		videoProtected.GET("/:video_id/download-url/image", a.mediaController.GenerateDownloadURLForImage) // Generate presigned download URL for image
 	}
-}
 
-// RegisterTranscriptionRoutes sets up the routes for transcription-related operations
-func (a *AppRouter) RegisterTranscriptionRoutes(r *gin.RouterGroup) {
-	protected := r.Group("/transcriptions")
-	protected.Use(a.authMiddleware.MustAuth()) // Require authentication
+	transcriptionProtected := r.Group("/transcriptions")
+	transcriptionProtected.Use(a.authMiddleware.MustAuth()) // Require authentication
 	{
-		protected.POST("/", a.transcriptionController.AddTranscription)                                         // Add a new transcription
-		protected.GET("/:transcription_id", a.transcriptionController.GetTranscriptionByID)                     // Get transcription by ID
-		protected.GET("/:transcription_id/user/:userID", a.transcriptionController.GetTranscriptionByUserID)    // Get transcription by transcription ID and user ID
-		protected.GET("/:transcription_id/video/:videoID", a.transcriptionController.GetTranscriptionByVideoID) // Get transcription by transcription ID and video ID
-		protected.GET("/user/:user_id", a.transcriptionController.ListTranscriptionsByUserID)                   // List transcriptions by user ID
-		protected.GET("/video/:video_id", a.transcriptionController.ListTranscriptionsByVideoID)                // List transcriptions by video ID
-		protected.DELETE("/:transcription_id", a.transcriptionController.DeleteTranscription)                   // Delete transcription by ID
-		protected.POST("/generate-upload-url", a.transcriptionController.GenerateUploadURL)                     // Generate presigned upload URL
-		protected.GET("/:transcription_id/download-url", a.transcriptionController.GenerateDownloadURL)         // Generate presigned download URL
-		protected.PUT("/:transcription_id/status", a.transcriptionController.UpdateTranscriptionStatus)
+		transcriptionProtected.POST("/", a.mediaController.AddTranscription)                                         // Add a new transcription
+		transcriptionProtected.GET("/:transcription_id", a.mediaController.GetTranscriptionByID)                     // Get transcription by ID
+		transcriptionProtected.GET("/:transcription_id/user/:userID", a.mediaController.GetTranscriptionByUserID)    // Get transcription by transcription ID and user ID
+		transcriptionProtected.GET("/:transcription_id/video/:videoID", a.mediaController.GetTranscriptionByVideoID) // Get transcription by transcription ID and video ID
+		transcriptionProtected.GET("/user/:user_id", a.mediaController.ListTranscriptionsByUserID)                   // List transcriptions by user ID
+		transcriptionProtected.GET("/video/:video_id", a.mediaController.ListTranscriptionsByVideoID)                // List transcriptions by video ID
+		transcriptionProtected.DELETE("/:transcription_id", a.mediaController.DeleteTranscription)                   // Delete transcription by ID
+		transcriptionProtected.POST("/generate-upload-url", a.mediaController.GenerateUploadURLForText)              // Generate presigned upload URL
+		transcriptionProtected.GET("/:transcription_id/download-url", a.mediaController.GenerateDownloadURLForText)  // Generate presigned download URL
+		transcriptionProtected.PUT("/:transcription_id/status", a.mediaController.UpdateTranscriptionStatus)
 	}
-}
 
-// RegisterAudioRoutes sets up the routes for audio-related operations
-func (a *AppRouter) RegisterAudioRoutes(r *gin.RouterGroup) {
-	protected := r.Group("/audios")
-	protected.Use(a.authMiddleware.MustAuth())
+	audioProtected := r.Group("/audios")
+	audioProtected.Use(a.authMiddleware.MustAuth())
 	{
-		protected.POST("/", a.audioController.AddAudio)                                  // Add a new audio
-		protected.GET("/:audio_id", a.audioController.GetAudio)                          // Get a specific audio by ID
-		protected.DELETE("/:audio_id", a.audioController.DeleteAudio)                    // Delete an audio
-		protected.GET("/user/:user_id", a.audioController.ListAudiosByUserID)            // Get all audios by user
-		protected.GET("/video/:video_id", a.audioController.ListAudiosByVideoID)         // Get all audios by video
-		protected.GET("/:audio_id/user/:user_id", a.audioController.GetAudioByUser)      // Get specific audio by audio ID and user ID
-		protected.GET("/:audio_id/video/:video_id", a.audioController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
-		protected.POST("/generate-presigned-url", a.audioController.GenerateUploadURL)   // Generate presigned URL for audio upload
-		protected.GET("/:audio_id/download-url", a.audioController.GenerateDownloadURL)  // Generate presigned URL for audio download
+		audioProtected.POST("/", a.mediaController.AddAudio)                                  // Add a new audio
+		audioProtected.GET("/:audio_id", a.mediaController.GetAudio)                          // Get a specific audio by ID
+		audioProtected.DELETE("/:audio_id", a.mediaController.DeleteAudio)                    // Delete an audio
+		audioProtected.GET("/user/:user_id", a.mediaController.ListAudiosByUserID)            // Get all audios by user
+		audioProtected.GET("/video/:video_id", a.mediaController.ListAudiosByVideoID)         // Get all audios by video
+		audioProtected.GET("/:audio_id/user/:user_id", a.mediaController.GetAudioByUser)      // Get specific audio by audio ID and user ID
+		audioProtected.GET("/:audio_id/video/:video_id", a.mediaController.GetAudioByVideoID) // Get specific audio by audio ID and video ID
+		audioProtected.POST("/generate-presigned-url", a.mediaController.GenerateUploadURL)   // Generate presigned URL for audio upload
+		audioProtected.GET("/:audio_id/download-url", a.mediaController.GenerateDownloadURL)  // Generate presigned URL for audio download
 	}
 }
 

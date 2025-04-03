@@ -6,11 +6,11 @@ import (
 )
 
 func (s *mediaService) CreateTranscription(transcription *entity.Transcription) (uint64, error) {
-	return s.transcriptionRepo.CreateTranscription(transcription)
+	return s.mediaRepo.CreateTranscription(transcription)
 }
 
 func (s *mediaService) GetTranscriptionByID(transcriptionID uint64) (*entity.Transcription, string, error) {
-	transcription, err := s.transcriptionRepo.GetTranscriptionByID(transcriptionID)
+	transcription, err := s.mediaRepo.GetTranscriptionByID(transcriptionID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -28,7 +28,7 @@ func (s *mediaService) GetTranscriptionByID(transcriptionID uint64) (*entity.Tra
 }
 
 func (s *mediaService) GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, string, error) {
-	transcription, err := s.transcriptionRepo.GetTranscriptionByIDAndUserID(transcriptionID, userID)
+	transcription, err := s.mediaRepo.GetTranscriptionByIDAndUserID(transcriptionID, userID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -46,7 +46,7 @@ func (s *mediaService) GetTranscriptionByIDAndUserID(transcriptionID, userID uin
 }
 
 func (s *mediaService) GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, string, error) {
-	transcription, err := s.transcriptionRepo.GetTranscriptionByIDAndVideoID(transcriptionID, videoID)
+	transcription, err := s.mediaRepo.GetTranscriptionByIDAndVideoID(transcriptionID, videoID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -64,15 +64,15 @@ func (s *mediaService) GetTranscriptionByIDAndVideoID(transcriptionID, videoID u
 }
 
 func (s *mediaService) ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
-	return s.transcriptionRepo.ListTranscriptionsByUserID(userID)
+	return s.mediaRepo.ListTranscriptionsByUserID(userID)
 }
 
 func (s *mediaService) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {
-	return s.transcriptionRepo.ListTranscriptionsByVideoID(videoID)
+	return s.mediaRepo.ListTranscriptionsByVideoID(videoID)
 }
 
 func (s *mediaService) DeleteTranscription(transcriptionID uint64) error {
-	return s.transcriptionRepo.DeleteTranscription(transcriptionID)
+	return s.mediaRepo.DeleteTranscription(transcriptionID)
 }
 
 func (s *mediaService) GeneratePresignedUploadURLForText(folder, fileName, fileType string) (string, error) {
@@ -80,7 +80,7 @@ func (s *mediaService) GeneratePresignedUploadURLForText(folder, fileName, fileT
 }
 
 func (s *mediaService) GeneratePresignedDownloadURLForText(transcriptionID uint64) (string, error) {
-	transcription, err := s.transcriptionRepo.GetTranscriptionByID(transcriptionID)
+	transcription, err := s.mediaRepo.GetTranscriptionByID(transcriptionID)
 	if err != nil {
 		return "", err
 	}
@@ -92,9 +92,9 @@ func (s *mediaService) GeneratePresignedDownloadURLForText(transcriptionID uint6
 }
 
 func (s *mediaService) UpdateTranscription(transcription *entity.Transcription) error {
-	return s.transcriptionRepo.UpdateTranscription(transcription)
+	return s.mediaRepo.UpdateTranscription(transcription)
 }
 
 func (s *mediaService) UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error {
-	return s.transcriptionRepo.UpdateTranscriptionStatus(transcriptionID, status)
+	return s.mediaRepo.UpdateTranscriptionStatus(transcriptionID, status)
 }

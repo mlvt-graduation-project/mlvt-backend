@@ -9,8 +9,8 @@ import (
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/progress_repo"
-	"mlvt/internal/repo/video_repo"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,18 +29,18 @@ type ProgressService interface {
 
 type progressService struct {
 	repo      progress_repo.ProgressRepository
-	videoRepo video_repo.VideoRepository
+	mediaRepo media_repo.MediaRepository
 	s3Client  aws.S3ClientInterface
 }
 
 func NewProgressService(
 	repo progress_repo.ProgressRepository,
-	videoRepo video_repo.VideoRepository,
+	mediaRepo media_repo.MediaRepository,
 	s3Client aws.S3ClientInterface,
 ) ProgressService {
 	return &progressService{
 		repo:      repo,
-		videoRepo: videoRepo,
+		mediaRepo: mediaRepo,
 		s3Client:  s3Client,
 	}
 }
@@ -122,7 +122,7 @@ func (s *progressService) GetProgressThumbnails(
 
 	for _, progress := range progresses {
 		if progress.ProgressType == "stt" || progress.ProgressType == "ls" || progress.ProgressType == "fp" {
-			video, err := s.videoRepo.GetVideoByID(progress.OriginalVideoID)
+			video, err := s.mediaRepo.GetVideoByID(progress.OriginalVideoID)
 			if err != nil {
 				log.Errorf("Failed to get video with ID %d: %v", progress.OriginalVideoID, err)
 				return nil, fmt.Errorf("failed to get video with ID %d: %w", progress.OriginalVideoID, err)

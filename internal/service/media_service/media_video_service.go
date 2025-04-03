@@ -8,12 +8,12 @@ import (
 )
 
 func (s *mediaService) CreateVideo(video *entity.Video) (uint64, error) {
-	id, err := s.videoRepo.CreateVideo(video)
+	id, err := s.mediaRepo.CreateVideo(video)
 	return id, err
 }
 
 func (s *mediaService) GetVideoByID(videoID uint64) (*entity.Video, string, string, error) {
-	video, err := s.videoRepo.GetVideoByID(videoID)
+	video, err := s.mediaRepo.GetVideoByID(videoID)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -36,7 +36,7 @@ func (s *mediaService) GetVideoByID(videoID uint64) (*entity.Video, string, stri
 
 func (s *mediaService) ListVideosByUserID(userID uint64) ([]response.ListVideosByUserIDResponse, error) {
 	// Fetch the videos for the user
-	videos, err := s.videoRepo.ListVideosByUserID(userID)
+	videos, err := s.mediaRepo.ListVideosByUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list videos for user %d: %v", userID, err)
 	}
@@ -71,7 +71,7 @@ func (s *mediaService) ListVideosByUserID(userID uint64) ([]response.ListVideosB
 
 func (s *mediaService) DeleteVideo(videoID uint64) error {
 	// Fetch the video record to get the file names
-	video, err := s.videoRepo.GetVideoByID(videoID)
+	video, err := s.mediaRepo.GetVideoByID(videoID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch video: %v", err)
 	}
@@ -92,7 +92,7 @@ func (s *mediaService) DeleteVideo(videoID uint64) error {
 	}
 
 	// 2. Delete the video record from the database
-	err = s.videoRepo.DeleteVideo(videoID)
+	err = s.mediaRepo.DeleteVideo(videoID)
 	if err != nil {
 		return fmt.Errorf("failed to delete video from database: %v", err)
 	}
@@ -101,14 +101,14 @@ func (s *mediaService) DeleteVideo(videoID uint64) error {
 }
 
 func (s *mediaService) UpdateVideo(video *entity.Video) error {
-	return s.videoRepo.UpdateVideo(video)
+	return s.mediaRepo.UpdateVideo(video)
 }
 
 func (s *mediaService) UpdateVideoStatus(videoID uint64, status entity.StatusEntity) error {
-	return s.videoRepo.UpdateVideoStatus(videoID, status)
+	return s.mediaRepo.UpdateVideoStatus(videoID, status)
 }
 func (s *mediaService) GetVideoStatus(videoID uint64) (entity.StatusEntity, error) {
-	return s.videoRepo.GetVideoStatus(videoID)
+	return s.mediaRepo.GetVideoStatus(videoID)
 }
 
 // GeneratePresignedUploadURLForVideo generates a presigned URL for uploading a video file
@@ -123,7 +123,7 @@ func (s *mediaService) GeneratePresignedUploadURLForImage(folder, fileName, file
 
 // GeneratePresignedDownloadURLForVideo generates a presigned URL for downloading a video file
 func (s *mediaService) GeneratePresignedDownloadURLForVideo(videoID uint64) (string, error) {
-	video, err := s.videoRepo.GetVideoByID(videoID)
+	video, err := s.mediaRepo.GetVideoByID(videoID)
 	if err != nil {
 		return "", err
 	}
@@ -136,7 +136,7 @@ func (s *mediaService) GeneratePresignedDownloadURLForVideo(videoID uint64) (str
 
 // GeneratePresignedDownloadURLForImage generates a presigned URL for downloading an image file
 func (s *mediaService) GeneratePresignedDownloadURLForImage(videoID uint64) (string, error) {
-	video, err := s.videoRepo.GetVideoByID(videoID)
+	video, err := s.mediaRepo.GetVideoByID(videoID)
 	if err != nil {
 		return "", err
 	}

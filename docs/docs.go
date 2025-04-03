@@ -1104,7 +1104,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/transcription_handler.UpdateTranscriptionStatusRequest"
+                            "$ref": "#/definitions/media_handler.UpdateTranscriptionStatusRequest"
                         }
                     }
                 ],
@@ -2032,7 +2032,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/video_handler.UpdateVideoStatusRequest"
+                            "$ref": "#/definitions/media_handler.UpdateVideoStatusRequest"
                         }
                     }
                 ],
@@ -2708,6 +2708,22 @@ const docTemplate = `{
                 }
             }
         },
+        "media_handler.UpdateTranscriptionStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
+                }
+            }
+        },
+        "media_handler.UpdateVideoStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/entity.StatusEntity"
+                }
+            }
+        },
         "response.AudioResponse": {
             "type": "object",
             "properties": {
@@ -2847,22 +2863,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/entity.User"
                     }
-                }
-            }
-        },
-        "transcription_handler.UpdateTranscriptionStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/entity.StatusEntity"
-                }
-            }
-        },
-        "video_handler.UpdateVideoStatusRequest": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "$ref": "#/definitions/entity.StatusEntity"
                 }
             }
         }

@@ -9,39 +9,33 @@ package initialize
 import (
 	"database/sql"
 	"mlvt/internal/handler/rest/v1/admin_handler"
-	"mlvt/internal/handler/rest/v1/audio_handler"
+	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
-	"mlvt/internal/handler/rest/v1/transcription_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
-	"mlvt/internal/handler/rest/v1/video_handler"
 	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo/admin_repo"
-	"mlvt/internal/repo/audio_repo"
+	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/traffic_repo"
-	"mlvt/internal/repo/transcription_repo"
 	"mlvt/internal/repo/user_repo"
-	"mlvt/internal/repo/video_repo"
 	"mlvt/internal/repo/voucher_repo"
 	"mlvt/internal/repo/wallet_repo"
 	"mlvt/internal/router"
 	"mlvt/internal/service"
 	"mlvt/internal/service/admin_service"
-	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
+	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
-	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
-	"mlvt/internal/service/video_service"
 	"mlvt/internal/service/voucher_service"
 	"mlvt/internal/service/wallet_service"
 )
@@ -60,18 +54,12 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
 	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService)
 	userController := user_handler.NewUserController(userService)
-	videoRepository := video_repo.NewVideoRepo(db)
-	videoService := video_service.NewVideoService(videoRepository, s3ClientInterface)
-	videoController := video_handler.NewVideoController(videoService)
-	audioRepository := audio_repo.NewAudioRepository(db)
-	audioService := audio_service.NewAudioService(audioRepository, s3ClientInterface)
-	transcriptionRepository := transcription_repo.NewTranscriptionRepository(db)
-	transcriptionService := transcription_service.NewTranscriptionService(transcriptionRepository, s3ClientInterface)
-	audioController := audio_handler.NewAudioController(audioService, transcriptionService)
-	transcriptionController := transcription_handler.NewTranscriptionController(transcriptionService, videoService)
+	mediaRepository := media_repo.NewMediaRepo(db)
+	mediaService := media_service.NewMediaService(mediaRepository, s3ClientInterface)
+	mediaController := media_handler.NewMediaController(mediaService)
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
-	progressService := progress_service.NewProgressService(progressRepository, videoRepository, s3ClientInterface)
-	mlvtController := mlvt_handler.NewMlvtController(audioService, transcriptionService, videoService, progressService, trafficService)
+	progressService := progress_service.NewProgressService(progressRepository, mediaRepository, s3ClientInterface)
+	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService)
 	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
@@ -87,7 +75,7 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService, walletService)
 	voucherController := voucher_handler.NewVoucherController(voucherService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, videoController, audioController, transcriptionController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, swaggerRouter)
 	return appRouter, nil
 }
 

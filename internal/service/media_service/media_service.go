@@ -4,9 +4,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/pkg/response"
-	"mlvt/internal/repo/audio_repo"
-	"mlvt/internal/repo/transcription_repo"
-	"mlvt/internal/repo/video_repo"
+	"mlvt/internal/repo/media_repo"
 )
 
 type MediaService interface {
@@ -51,22 +49,16 @@ type MediaService interface {
 }
 
 type mediaService struct {
-	audioRepo         audio_repo.AudioRepository
-	videoRepo         video_repo.VideoRepository
-	transcriptionRepo transcription_repo.TranscriptionRepository
-	s3Client          aws.S3ClientInterface
+	mediaRepo media_repo.MediaRepository
+	s3Client  aws.S3ClientInterface
 }
 
 func NewMediaService(
-	audioRepo audio_repo.AudioRepository,
-	videoRepo video_repo.VideoRepository,
-	transcriptionRepo transcription_repo.TranscriptionRepository,
+	mediaRepo media_repo.MediaRepository,
 	s3Client aws.S3ClientInterface,
 ) MediaService {
 	return &mediaService{
-		audioRepo:         audioRepo,
-		videoRepo:         videoRepo,
-		transcriptionRepo: transcriptionRepo,
-		s3Client:          s3Client,
+		mediaRepo: mediaRepo,
+		s3Client:  s3Client,
 	}
 }

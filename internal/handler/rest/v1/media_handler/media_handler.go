@@ -8,7 +8,7 @@ type MediaController struct {
 	mediaService media_service.MediaService
 }
 
-func NewVideoController(
+func NewMediaController(
 	mediaService media_service.MediaService,
 ) *MediaController {
 	return &MediaController{

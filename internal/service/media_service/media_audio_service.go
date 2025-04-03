@@ -11,7 +11,7 @@ func (s *mediaService) GeneratePresignedUploadURL(folder, fileName, fileType str
 
 func (s *mediaService) GeneratePresignedDownloadURL(audioID uint64) (string, error) {
 	// Fetch the audio from the repository using its ID
-	audio, err := s.audioRepo.GetAudioByID(audioID)
+	audio, err := s.mediaRepo.GetAudioByID(audioID)
 	if err != nil {
 		return "", fmt.Errorf("could not find audio with ID %d: %v", audioID, err)
 	}
@@ -27,11 +27,11 @@ func (s *mediaService) GeneratePresignedDownloadURL(audioID uint64) (string, err
 }
 
 func (s *mediaService) CreateAudio(audio *entity.Audio) (uint64, error) {
-	return s.audioRepo.CreateAudio(audio)
+	return s.mediaRepo.CreateAudio(audio)
 }
 
 func (s *mediaService) GetAudioByID(audioID uint64) (*entity.Audio, string, error) {
-	audio, err := s.audioRepo.GetAudioByID(audioID)
+	audio, err := s.mediaRepo.GetAudioByID(audioID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -45,7 +45,7 @@ func (s *mediaService) GetAudioByID(audioID uint64) (*entity.Audio, string, erro
 // GetAudioByIDAndUserID retrieves a single audio by its ID and User ID and generates a presigned URL
 func (s *mediaService) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio, string, error) {
 	// Fetch the audio from the repository
-	audio, err := s.audioRepo.GetAudioByIDAndUserID(audioID, userID)
+	audio, err := s.mediaRepo.GetAudioByIDAndUserID(audioID, userID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -62,11 +62,11 @@ func (s *mediaService) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Au
 	return audio, presignedURL, nil
 }
 func (s *mediaService) ListAudiosByUserID(userID uint64) ([]entity.Audio, error) {
-	return s.audioRepo.ListAudiosByUserID(userID)
+	return s.mediaRepo.ListAudiosByUserID(userID)
 }
 
 func (s *mediaService) GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, string, error) {
-	audio, err := s.audioRepo.GetAudioByVideoID(videoID, audioID)
+	audio, err := s.mediaRepo.GetAudioByVideoID(videoID, audioID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -78,17 +78,17 @@ func (s *mediaService) GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio
 }
 
 func (s *mediaService) ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error) {
-	return s.audioRepo.ListAudiosByVideoID(videoID)
+	return s.mediaRepo.ListAudiosByVideoID(videoID)
 }
 
 func (s *mediaService) DeleteAudio(audioID uint64) error {
-	return s.audioRepo.DeleteAudioByID(audioID)
+	return s.mediaRepo.DeleteAudioByID(audioID)
 }
 
 func (s *mediaService) UpdateAudio(audio *entity.Audio) error {
-	return s.audioRepo.UpdateAudio(audio)
+	return s.mediaRepo.UpdateAudio(audio)
 }
 
 func (s *mediaService) UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error {
-	return s.audioRepo.UpdateAudioStatus(audioID, status)
+	return s.mediaRepo.UpdateAudioStatus(audioID, status)
 }

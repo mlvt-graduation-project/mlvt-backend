@@ -3,14 +3,12 @@ package service
 import (
 	"mlvt/internal/infra/env"
 	"mlvt/internal/service/admin_service"
-	"mlvt/internal/service/audio_service"
 	"mlvt/internal/service/auth_service"
+	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
-	"mlvt/internal/service/transcription_service"
 	"mlvt/internal/service/user_service"
-	"mlvt/internal/service/video_service"
 	"mlvt/internal/service/voucher_service"
 	"mlvt/internal/service/wallet_service"
 
@@ -23,9 +21,7 @@ var SecretKey = env.EnvConfig.JWTSecret
 var ProviderSetService = wire.NewSet(
 	auth_service.NewAuthService,
 	user_service.NewUserService,
-	video_service.NewVideoService,
-	audio_service.NewAudioService,
-	transcription_service.NewTranscriptionService,
+	media_service.NewMediaService,
 	progress_service.NewProgressService,
 	traffic_service.NewTrafficService,
 	wallet_service.NewWalletService,

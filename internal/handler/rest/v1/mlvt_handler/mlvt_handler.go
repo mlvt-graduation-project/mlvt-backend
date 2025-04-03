@@ -11,11 +11,9 @@ import (
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
-	"mlvt/internal/service/audio_service"
+	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
-	"mlvt/internal/service/transcription_service"
-	"mlvt/internal/service/video_service"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,26 +22,20 @@ import (
 )
 
 type MlvtController struct {
-	audioService         audio_service.AudioService
-	transcriptionService transcription_service.TranscriptionService
-	videoService         video_service.VideoService
-	progressService      progress_service.ProgressService
-	trafficService       traffic_service.TrafficService
+	mediaService    media_service.MediaService
+	progressService progress_service.ProgressService
+	trafficService  traffic_service.TrafficService
 }
 
 func NewMlvtController(
-	audioService audio_service.AudioService,
-	transcriptionService transcription_service.TranscriptionService,
-	videoService video_service.VideoService,
+	mediaService media_service.MediaService,
 	progressService progress_service.ProgressService,
 	trafficService traffic_service.TrafficService,
 ) *MlvtController {
 	return &MlvtController{
-		audioService:         audioService,
-		transcriptionService: transcriptionService,
-		videoService:         videoService,
-		progressService:      progressService,
-		trafficService:       trafficService,
+		mediaService:    mediaService,
+		progressService: progressService,
+		trafficService:  trafficService,
 	}
 }
 
@@ -165,7 +157,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		return
 	}
 
-	video, _, _, err := h.videoService.GetVideoByID(videoID)
+	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
 		return
@@ -188,7 +180,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	transcriptionID, err := h.transcriptionService.CreateTranscription(transcription)
+	transcriptionID, err := h.mediaService.CreateTranscription(transcription)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
@@ -227,23 +219,23 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
-				h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+				h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
-		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		videoDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate video download URL: %v", err)
 			return
 		}
 
 		fileType := "text/plain"
-		transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, transcriptionFileName, fileType)
+		transcriptionUploadURL, err := h.mediaService.GeneratePresignedUploadURLForText(folder, transcriptionFileName, fileType)
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription upload URL: %v", err)
 			return
@@ -263,7 +255,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		log.Infof("ec2 response: %v\n\n", ec2Response)
 		if err != nil || ec2Response.Status != "succeeded" {
-			h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
@@ -275,12 +267,12 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 			UpdatedAt: time.Now(),
 		}
 
-		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
+		if err := h.mediaService.UpdateTranscription(updateTranscription); err != nil {
 			log.Errorf("Failed to update transcription data: %v", err)
 		}
 
 		// Update status to succeeded
-		if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
@@ -318,7 +310,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		return
 	}
 
-	originalTranscription, _, err := h.transcriptionService.GetTranscriptionByID(transcriptionID)
+	originalTranscription, _, err := h.mediaService.GetTranscriptionByID(transcriptionID)
 	if err != nil || originalTranscription == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Transcription not found"})
 		return
@@ -342,7 +334,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		UpdatedAt:               time.Now(),
 	}
 
-	translatedTranscriptionID, err := h.transcriptionService.CreateTranscription(newTranscription)
+	translatedTranscriptionID, err := h.mediaService.CreateTranscription(newTranscription)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store translated transcription data"})
 		return
@@ -381,23 +373,23 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
-				h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+				h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
-		originalDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
+		originalDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForText(transcriptionID)
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate original transcription download URL: %v", err)
 			return
 		}
 
 		fileType := "text/plain"
-		translationUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(folder, translatedFileName, fileType)
+		translationUploadURL, err := h.mediaService.GeneratePresignedUploadURLForText(folder, translatedFileName, fileType)
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate translation upload URL: %v", err)
 			return
@@ -420,7 +412,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/ttt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
@@ -432,12 +424,12 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 			UpdatedAt: time.Now(),
 		}
 
-		if err := h.transcriptionService.UpdateTranscription(updateTranscription); err != nil {
+		if err := h.mediaService.UpdateTranscription(updateTranscription); err != nil {
 			log.Errorf("Failed to update transcription data: %v", err)
 		}
 
 		// Update status to succeeded
-		if err := h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
@@ -465,7 +457,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
-	transcription, _, err := h.transcriptionService.GetTranscriptionByID(transcriptionID)
+	transcription, _, err := h.mediaService.GetTranscriptionByID(transcriptionID)
 	if err != nil || transcription == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Transcription not found"})
 		return
@@ -489,7 +481,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	audioID, err := h.audioService.CreateAudio(audio)
+	audioID, err := h.mediaService.CreateAudio(audio)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store audio data"})
 		return
@@ -528,23 +520,23 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
-				h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+				h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
-		transcriptionDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
+		transcriptionDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForText(transcriptionID)
 		if err != nil {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription download URL: %v", err)
 			return
 		}
 
 		fileType := "audio/mpeg"
-		audioUploadURL, err := h.audioService.GeneratePresignedUploadURL(folder, audioFileName, fileType)
+		audioUploadURL, err := h.mediaService.GeneratePresignedUploadURL(folder, audioFileName, fileType)
 		if err != nil {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate audio upload URL: %v", err)
 			return
@@ -564,7 +556,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/tts", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
@@ -575,11 +567,11 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 			UpdatedAt: time.Now(),
 		}
 
-		if err := h.audioService.UpdateAudio(updateAudio); err != nil {
+		if err := h.mediaService.UpdateAudio(updateAudio); err != nil {
 			log.Errorf("Failed to update audio data: %v", err)
 		}
 		// Update status to succeeded
-		if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update audio status: %v", err)
 		}
 
@@ -616,13 +608,13 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		return
 	}
 
-	video, _, _, err := h.videoService.GetVideoByID(videoID)
+	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
 		return
 	}
 
-	audio, _, err := h.audioService.GetAudioByID(audioID)
+	audio, _, err := h.mediaService.GetAudioByID(audioID)
 	if err != nil || audio == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Audio not found"})
 		return
@@ -645,7 +637,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	outputVideoID, err := h.videoService.CreateVideo(outputVideo)
+	outputVideoID, err := h.mediaService.CreateVideo(outputVideo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store output video data"})
 		return
@@ -653,7 +645,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 
 	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
 
-	translatedTranscription, _, err := h.transcriptionService.GetTranscriptionByID(audio.TranscriptionID)
+	translatedTranscription, _, err := h.mediaService.GetTranscriptionByID(audio.TranscriptionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get translated transcription by id"})
 	}
@@ -689,31 +681,31 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
-				h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+				h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			}
 		}()
 
-		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		videoDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate video download URL: %v", err)
 			return
 		}
 
-		audioDownloadURL, err := h.audioService.GeneratePresignedDownloadURL(audioID)
+		audioDownloadURL, err := h.mediaService.GeneratePresignedDownloadURL(audioID)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate audio download URL: %v", err)
 			return
 		}
 
 		fileType := "video/mp4"
-		outputVideoUploadURL, err := h.videoService.GeneratePresignedUploadURLForVideo(folder, outputVideoFileName, fileType)
+		outputVideoUploadURL, err := h.mediaService.GeneratePresignedUploadURLForVideo(folder, outputVideoFileName, fileType)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate output video upload URL: %v", err)
 			return
@@ -732,7 +724,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 15*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
 			return
@@ -743,12 +735,12 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 			UpdatedAt: time.Now(),
 		}
 
-		if err := h.videoService.UpdateVideo(updateVideo); err != nil {
+		if err := h.mediaService.UpdateVideo(updateVideo); err != nil {
 			log.Errorf("Failed to update video data: %v", err)
 		}
 
 		// Update status to succeeded
-		if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update video status: %v", err)
 		}
 
@@ -788,7 +780,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		return
 	}
 
-	video, _, _, err := h.videoService.GetVideoByID(videoID)
+	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
 		return
@@ -810,7 +802,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	transcriptionID, err := h.transcriptionService.CreateTranscription(transcription)
+	transcriptionID, err := h.mediaService.CreateTranscription(transcription)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
@@ -835,7 +827,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	outputVideoID, err := h.videoService.CreateVideo(outputVideo)
+	outputVideoID, err := h.mediaService.CreateVideo(outputVideo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store output video data"})
 		return
@@ -875,23 +867,23 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
-				h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+				h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			}
 		}()
 
 		// Step 1: Speech-to-Text
 		log.Infof("step 1: speech to text \n")
-		videoDownloadURL, err := h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		videoDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate video download URL: %v", err)
 			return
 		}
 
-		transcriptionUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(transcriptionFolder, transcriptionFileName, "text/plain")
+		transcriptionUploadURL, err := h.mediaService.GeneratePresignedUploadURLForText(transcriptionFolder, transcriptionFileName, "text/plain")
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription upload URL: %v", err)
 			return
@@ -910,20 +902,20 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ec2STTURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2STTResponse, err := sendRequestToEC2(sttPayload, ec2STTURL, 5*time.Minute)
 		if err != nil || ec2STTResponse.Status != "succeeded" {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 STT processing failed: %v", err)
 			return
 		}
 
-		h.transcriptionService.UpdateTranscription(&entity.Transcription{
+		h.mediaService.UpdateTranscription(&entity.Transcription{
 			ID:        transcriptionID,
 			Text:      ec2STTResponse.Result,
 			UpdatedAt: time.Now(),
 		})
 
 		// Update status to succeeded
-		if err := h.transcriptionService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
@@ -946,9 +938,9 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			UpdatedAt:               time.Now(),
 		}
 
-		translatedTranscriptionID, err := h.transcriptionService.CreateTranscription(translatedTranscription)
+		translatedTranscriptionID, err := h.mediaService.CreateTranscription(translatedTranscription)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to create translated transcription: %v", err)
 			return
@@ -959,17 +951,17 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		// Update translated transcription ID to mongodb progress
 		h.progressService.UpdateFieldId(context.Background(), documentId, "TranslatedTranscriptionID", translatedTranscriptionID)
 
-		originalDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(transcriptionID)
+		originalDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForText(transcriptionID)
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate original transcription download URL: %v", err)
 			return
 		}
 
-		translationUploadURL, err := h.transcriptionService.GeneratePresignedUploadURL(transcriptionFolder, translatedFileName, "text/plain")
+		translationUploadURL, err := h.mediaService.GeneratePresignedUploadURLForText(transcriptionFolder, translatedFileName, "text/plain")
 		if err != nil {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate translation upload URL: %v", err)
 			return
@@ -992,21 +984,21 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ec2TTTURL := fmt.Sprintf("http://%s:%s/ttt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2TTTResponse, err := sendRequestToEC2(tttPayload, ec2TTTURL, 5*time.Minute)
 		if err != nil || ec2TTTResponse.Status != "succeeded" {
-			h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 TTT processing failed: %v", err)
 			return
 		}
 
-		h.transcriptionService.UpdateTranscription(&entity.Transcription{
+		h.mediaService.UpdateTranscription(&entity.Transcription{
 			ID:        translatedTranscriptionID,
 			Text:      ec2TTTResponse.Result,
 			UpdatedAt: time.Now(),
 		})
 
 		// Update status to succeeded
-		if err := h.transcriptionService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update transcription status: %v", err)
 		}
 
@@ -1033,9 +1025,9 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			UpdatedAt:       time.Now(),
 		}
 
-		audioID, err := h.audioService.CreateAudio(audio)
+		audioID, err := h.mediaService.CreateAudio(audio)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to create audio: %v", err)
 			return
@@ -1046,17 +1038,17 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		// update audio ID to mongodb progress collection
 		h.progressService.UpdateFieldId(context.Background(), documentId, "AudioID", audioID)
 
-		transcriptionDownloadURL, err := h.transcriptionService.GeneratePresignedDownloadURL(translatedTranscriptionID)
+		transcriptionDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForText(translatedTranscriptionID)
 		if err != nil {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate transcription download URL: %v", err)
 			return
 		}
 
-		audioUploadURL, err := h.audioService.GeneratePresignedUploadURL(audioFolder, audioFileName, "audio/mpeg")
+		audioUploadURL, err := h.mediaService.GeneratePresignedUploadURL(audioFolder, audioFileName, "audio/mpeg")
 		if err != nil {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate audio upload URL: %v", err)
 			return
@@ -1076,19 +1068,19 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ec2TTSURL := fmt.Sprintf("http://%s:%s/tts", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2TTSResponse, err := sendRequestToEC2(ttsPayload, ec2TTSURL, 5*time.Minute)
 		if err != nil || ec2TTSResponse.Status != "succeeded" {
-			h.audioService.UpdateAudioStatus(audioID, entity.StatusFailed)
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			log.Errorf("EC2 TTS processing failed: %v", err)
 			return
 		}
 
-		h.audioService.UpdateAudio(&entity.Audio{
+		h.mediaService.UpdateAudio(&entity.Audio{
 			ID:        audioID,
 			UpdatedAt: time.Now(),
 		})
 
 		// Update status to succeeded
-		if err := h.audioService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateAudioStatus(audioID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update audio status: %v", err)
 		}
 
@@ -1101,32 +1093,32 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		outputVideo.AudioID = audioID
 		outputVideo.ID = outputVideoID
 		log.Warnf("error: %v \n", outputVideo)
-		if err := h.videoService.UpdateVideo(outputVideo); err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+		if err := h.mediaService.UpdateVideo(outputVideo); err != nil {
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to update output video: %v", err)
 			return
 		}
 
-		videoDownloadURL, err = h.videoService.GeneratePresignedDownloadURLForVideo(videoID)
+		videoDownloadURL, err = h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate video download URL: %v", err)
 			return
 		}
 
-		audioDownloadURL, err := h.audioService.GeneratePresignedDownloadURL(audioID)
+		audioDownloadURL, err := h.mediaService.GeneratePresignedDownloadURL(audioID)
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate audio download URL: %v", err)
 			return
 		}
 
-		outputVideoUploadURL, err := h.videoService.GeneratePresignedUploadURLForVideo(videoFolder, outputVideoFileName, "video/mp4")
+		outputVideoUploadURL, err := h.mediaService.GeneratePresignedUploadURLForVideo(videoFolder, outputVideoFileName, "video/mp4")
 		if err != nil {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("Failed to generate output video upload URL: %v", err)
 			return
@@ -1160,19 +1152,19 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ec2LSURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 15*time.Minute)
 		if err != nil || ec2LSResponse.Status != "succeeded" {
-			h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 Lip Sync processing failed: %v", err)
 			return
 		}
 
-		h.videoService.UpdateVideo(&entity.Video{
+		h.mediaService.UpdateVideo(&entity.Video{
 			ID:        outputVideoID,
 			UpdatedAt: time.Now(),
 		})
 
 		// Update status to succeeded
-		if err := h.videoService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
+		if err := h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusSucceeded); err != nil {
 			log.Errorf("Failed to update video status: %v", err)
 		}
 

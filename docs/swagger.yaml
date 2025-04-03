@@ -187,6 +187,16 @@ definitions:
       used_count:
         type: integer
     type: object
+  media_handler.UpdateTranscriptionStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
+    type: object
+  media_handler.UpdateVideoStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/entity.StatusEntity'
+    type: object
   response.AudioResponse:
     properties:
       audio:
@@ -276,16 +286,6 @@ definitions:
         items:
           $ref: '#/definitions/entity.User'
         type: array
-    type: object
-  transcription_handler.UpdateTranscriptionStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/entity.StatusEntity'
-    type: object
-  video_handler.UpdateVideoStatusRequest:
-    properties:
-      status:
-        $ref: '#/definitions/entity.StatusEntity'
     type: object
 info:
   contact: {}
@@ -805,7 +805,7 @@ paths:
         name: status
         required: true
         schema:
-          $ref: '#/definitions/transcription_handler.UpdateTranscriptionStatusRequest'
+          $ref: '#/definitions/media_handler.UpdateTranscriptionStatusRequest'
       produces:
       - application/json
       responses:
@@ -1552,7 +1552,7 @@ paths:
         name: status
         required: true
         schema:
-          $ref: '#/definitions/video_handler.UpdateVideoStatusRequest'
+          $ref: '#/definitions/media_handler.UpdateVideoStatusRequest'
       produces:
       - application/json
       responses:
