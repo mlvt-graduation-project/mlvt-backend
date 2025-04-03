@@ -7,10 +7,10 @@
 
 - implement voucher feature [done]
 - implement monitor feature:
-    + `/monitor/users-activities` [priority 1]
+    + `/monitor/users-activities` [priority 1] [pending]
     + `/monitor/media-analysis` [priority 1] [done]
     + `/monitor/progress-analysis` [priority 1] [done]
-    + `/monitor/traffic-analysis` [priority 2]
+    + `/monitor/traffic-analysis` [priority 2] [done]
 - return role when login
 - add traffic log to monitor service
 - replace gin.H in admin monitor with response package and add swagger

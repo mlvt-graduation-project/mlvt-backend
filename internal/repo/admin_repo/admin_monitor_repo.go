@@ -326,6 +326,24 @@ func (r *adminRepo) GetMonitorTraffic(
 		start = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		end = start.AddDate(0, 0, 1)   // add 1 day
 		labels = buildDayLabels(start) // ["00:00-01:00","01:00-02:00",...,"23:00-00:00"]
+
+	case entity.TimePeriodWeek:
+		segmentCount = 7
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		monday := now.AddDate(0, 0, -(weekday - 1))
+		start = time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, monday.Location())
+		end = start.AddDate(0, 0, 7)
+		labels = []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+
+	case entity.TimePeriodYear:
+		segmentCount = 12
+		start = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location())
+		end = start.AddDate(1, 0, 0)
+		labels = []string{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+
 	default:
 		return response, fmt.Errorf("invalid timeType: %s", timeType)
 	}
