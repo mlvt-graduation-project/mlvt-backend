@@ -390,17 +390,15 @@ func (r *adminRepo) GetMonitorTraffic(
 
 	// build final segments
 	segments := make([]entity.MonitorTraffic, segmentCount)
-	var totalUsage uint64
 	for i := 0; i < segmentCount; i++ {
 		segments[i] = entity.MonitorTraffic{
 			Cell:  labels[i],
 			Value: usageCounts[i],
 		}
-		totalUsage += usageCounts[i]
 	}
 
 	response = entity.MonitorTraffics{
-		Count:   totalUsage,
+		Count:   uint64(segmentCount),
 		Traffic: segments,
 	}
 
