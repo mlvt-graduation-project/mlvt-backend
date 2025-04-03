@@ -11,7 +11,7 @@
     + `/monitor/media-analysis` [priority 1] [done]
     + `/monitor/progress-analysis` [priority 1] [done]
     + `/monitor/traffic-analysis` [priority 2] [done]
-- return role when login
+- return role when login [done]
 - add traffic log to monitor service
 - replace gin.H in admin monitor with response package and add swagger
 - change monitor data type -> monitor media
