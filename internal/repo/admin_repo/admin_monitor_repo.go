@@ -381,10 +381,15 @@ func (r *adminRepo) GetMonitorTraffic(
 		}
 		offset := ts - start.Unix()
 		frac := float64(offset) / float64(totalSeconds)
-		index := int(frac * float64(totalSeconds))
-		if index >= segmentCount {
+		// Multiply by segmentCount, not totalSeconds
+		index := int(frac * float64(segmentCount))
+
+		if index < 0 {
+			index = 0
+		} else if index >= segmentCount {
 			index = segmentCount - 1
 		}
+
 		usageCounts[index]++
 	}
 
