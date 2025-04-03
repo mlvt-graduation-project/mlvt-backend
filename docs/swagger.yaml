@@ -239,6 +239,8 @@ definitions:
     type: object
   response.TokenResponse:
     properties:
+      role:
+        $ref: '#/definitions/entity.UserPermission'
       token:
         type: string
       user_id:

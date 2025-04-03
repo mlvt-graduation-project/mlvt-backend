@@ -30,8 +30,9 @@ type MessageCreateResponseWithID struct {
 
 // TokenResponse represents the response containing a token
 type TokenResponse struct {
-	Token  string `json:"token"`
-	UserID uint64 `json:"user_id"`
+	Token  string                `json:"token"`
+	UserID uint64                `json:"user_id"`
+	Role   entity.UserPermission `json:"role"`
 }
 
 // AvatarDownloadURLResponse represents the response containing avatar download URL

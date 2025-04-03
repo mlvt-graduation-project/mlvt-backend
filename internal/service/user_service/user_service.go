@@ -16,7 +16,7 @@ import (
 
 type UserService interface {
 	RegisterUser(user *entity.User) error
-	Login(email, password string) (string, uint64, error)
+	Login(email, password string) (string, uint64, entity.UserPermission, error)
 	ChangePassword(userID uint64, oldPassword, newPassword string) error
 	UpdateUser(user *entity.User) error
 	UpdateAvatar(userID uint64, avatarPath, avatarFolder string) error
@@ -72,9 +72,9 @@ func (s *userService) RegisterUser(user *entity.User) error {
 }
 
 // Login handles user login
-func (s *userService) Login(email, password string) (string, uint64, error) {
+func (s *userService) Login(email, password string) (string, uint64, entity.UserPermission, error) {
 	ctx := context.Background()
-	token, userID, err := s.auth.Login(email, password)
+	token, userID, role, err := s.auth.Login(email, password)
 
 	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
 		ActionType:  entity.LoginAction,
@@ -85,7 +85,7 @@ func (s *userService) Login(email, password string) (string, uint64, error) {
 		log.Errorf("failed to log traffic: login account")
 	}
 
-	return token, userID, err
+	return token, userID, role, err
 }
 
 // ChangePassword changes a user's password

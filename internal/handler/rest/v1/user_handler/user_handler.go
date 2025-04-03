@@ -96,7 +96,7 @@ func (h *UserController) LoginUser(c *gin.Context) {
 		return
 	}
 
-	token, userID, err := h.userService.Login(credentials.Email, credentials.Password)
+	token, userID, role, err := h.userService.Login(credentials.Email, credentials.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: err.Error()})
 		return
@@ -105,6 +105,7 @@ func (h *UserController) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response.TokenResponse{
 		Token:  token,
 		UserID: userID,
+		Role:   role,
 	})
 }
 

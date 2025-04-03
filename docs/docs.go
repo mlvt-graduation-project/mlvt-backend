@@ -2790,6 +2790,9 @@ const docTemplate = `{
         "response.TokenResponse": {
             "type": "object",
             "properties": {
+                "role": {
+                    "$ref": "#/definitions/entity.UserPermission"
+                },
                 "token": {
                     "type": "string"
                 },
