@@ -63,6 +63,7 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	protected := r.Group("/users")
 	protected.Use(a.authMiddleware.MustAuth())
 	{
+		protected.GET("", a.userController.GetAllUsers)
 		protected.GET("/:user_id", a.userController.GetUser)
 		protected.PUT("/:user_id", a.userController.UpdateUser)
 		protected.DELETE("/:user_id", a.userController.DeleteUser)
