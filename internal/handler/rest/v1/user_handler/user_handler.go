@@ -212,7 +212,7 @@ func (h *UserController) UpdateAvatar(c *gin.Context) {
 	}
 
 	// Update the avatar path and folder in the database after a successful upload
-	if err := h.userService.UpdateAvatar(userID, fileName, env.EnvConfig.AvatarFolder); err != nil {
+	if err := h.userService.UpdateAvatar(userID, url, env.EnvConfig.AvatarFolder); err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return
 	}
