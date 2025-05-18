@@ -32,7 +32,7 @@ func NewUserRepo(db *sql.DB) UserRepository {
 func (r *userRepo) CreateUser(user *entity.User) error {
 	query := `
 		INSERT INTO users (first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := r.db.Exec(query, user.FirstName, user.LastName, user.UserName, user.Email, user.Password, user.Status,
 		user.Role, user.Avatar, user.AvatarFolder, user.CreatedAt, user.UpdatedAt)
 	return err
