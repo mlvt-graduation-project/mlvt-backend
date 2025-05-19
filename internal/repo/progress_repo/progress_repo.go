@@ -94,5 +94,5 @@ func (r *progressRepo) CountByFilter(
 		return 0, fmt.Errorf("failed to count progress: %w", err)
 	}
 
-	return count, nil
+	return int(count), nil
 }

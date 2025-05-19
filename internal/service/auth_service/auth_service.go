@@ -41,6 +41,10 @@ func (s *AuthService) Login(email, password string) (string, uint64, entity.User
 		return "", 0, "", errors.New(reason.UserNotFound.Message())
 	}
 
+	if user == nil {
+		return "", 0, "", errors.New(reason.UserNotFound.Message())
+	}
+
 	// Compare the hashed password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {

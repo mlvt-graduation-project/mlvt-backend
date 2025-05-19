@@ -16,3 +16,18 @@ type VoucherCode struct {
 	CreatedAt   time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt   time.Time          `json:"updated_at" bson:"updated_at"`
 }
+
+type GetAllVoucherRequest struct {
+	Status         string `form:"status"`
+	SortBy         string `form:"sortBy"`
+	SearchKey      string `form:"searchKey"`
+	Sort           string `form:"sort"`
+	SearchCriteria string `form:"searchCriteria"`
+	Offset         int    `form:"from"`
+	Limit          int    `form:"to"`
+}
+
+type GetAllVoucherResponse struct {
+	Vouchers []VoucherCode `json:"vouchers"`
+	TotalCount int64 `json:"total_count"`
+}
