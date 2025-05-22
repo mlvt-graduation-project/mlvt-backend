@@ -7,7 +7,6 @@
 package initialize
 
 import (
-	"github.com/jmoiron/sqlx"
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
@@ -36,6 +35,7 @@ import (
 	"mlvt/internal/service"
 	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/auth_service"
+	"mlvt/internal/service/email_service"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/notify_service"
 	"mlvt/internal/service/payment_service"
@@ -46,12 +46,17 @@ import (
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/voucher_service"
 	"mlvt/internal/service/wallet_service"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // Injectors from wire.go:
 
 func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRouter, error) {
+	// base repository / service
 	userRepository := user_repo.NewUserRepo(db)
+	emailService := email_service.NewEmailService()
+
 	s3ClientInterface, err := aws.NewS3Client()
 	if err != nil {
 		return nil, err
@@ -64,7 +69,7 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
 
 	// User
-	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService)
+	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService, emailService)
 	userController := user_handler.NewUserController(userService)
 
 	// Media

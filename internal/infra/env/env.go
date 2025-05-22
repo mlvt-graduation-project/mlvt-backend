@@ -20,16 +20,16 @@ const defaultEnvFilePath = ".env"
 
 // Config holds all the environment variables used in the application.
 type Config struct {
-	AppName               string
-	AppEnv                string
-	AppDebug              bool
-	ServerPort            string
-	LogLevel              string
-	LogPath               string
+	AppName    string
+	AppEnv     string
+	AppDebug   bool
+	ServerPort string
+	LogLevel   string
+	LogPath    string
 
 	// db struct
-	DBDriver    	 string
-	DBConnection  string
+	DBDriver     string
+	DBConnection string
 
 	JWTSecret             string
 	SwaggerEnabled        bool
@@ -57,6 +57,10 @@ type Config struct {
 	VietinBankAccountNo   string
 	VietinBankAccountName string
 	VietinBankBinCode     string
+	SMTPEmail             string
+	SMTPPassword          string
+	SMTPHost              string
+	SMTPPort              string
 }
 
 // init loads the environment variables at startup
@@ -132,6 +136,10 @@ func initializeConfig() error {
 		Ec2Port:               viper.GetString("EC2_PORT"),
 		MigrationsPath:        viper.GetString("MIGRATIONS_PATH"),
 		MongoDBEndPoint:       viper.GetString("MONGODB_ENDPOINT"),
+		SMTPEmail:             viper.GetString("SENDER_EMAIL"),
+		SMTPPassword:          viper.GetString("SMTP_PASSWORD"),
+		SMTPHost:              viper.GetString("SMTP_HOST"),
+		SMTPPort:              viper.GetString("SMTP_PORT"),
 		I18NPath:              i18nPath,
 		RootDir:               rootDir,
 		TelegramBotToken:      viper.GetString("TELEGRAM_BOT_TOKEN"),

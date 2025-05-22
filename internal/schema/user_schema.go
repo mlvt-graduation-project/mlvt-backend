@@ -37,3 +37,9 @@ type LoginResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// Use for tokenize username and expire date when register user
+type TokenPayload struct {
+	Username   string    `json:"username"`
+	ExpireDate time.Time `json:"expire_date"`
+}

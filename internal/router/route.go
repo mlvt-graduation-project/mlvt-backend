@@ -71,6 +71,8 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	{
 		public.POST("/register", a.userController.RegisterUser)
 		public.POST("/login", a.userController.LoginUser)
+		public.POST("/verify-account", a.userController.VerifyAccountSignUp)
+		public.POST("/resend-verification", a.userController.ResendValidationEmail)
 	}
 
 	protected := r.Group("/users")

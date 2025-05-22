@@ -1,9 +1,18 @@
 package utility
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
 	"mlvt/internal/entity"
+	"mlvt/internal/schema"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 )
@@ -59,4 +68,91 @@ func GetMediaTitle(mediaType entity.MediaType, isFullPipeline bool, isOriginalTe
 		result += " (Full pipeline)"
 	}
 	return result
+}
+
+var secretKey = []byte("my32byteSuperSecretKey1234567890")
+
+func SetExpireTime(minutes int) time.Time {
+	now := time.Now()
+	expire := now.Add(time.Duration(minutes) * time.Minute)
+	return expire
+}
+
+// EncryptToken encrypts username + expire_date to a base64 string
+func EncryptToken(username string, expireDate time.Time) (string, error) {
+	payload := schema.TokenPayload{
+		Username:   username,
+		ExpireDate: expireDate,
+	}
+
+	// Chuyển về JSON
+	plainData, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(secretKey)
+	if err != nil {
+		return "", err
+	}
+
+	// GCM mode
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, aesGCM.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	cipherText := aesGCM.Seal(nonce, nonce, plainData, nil)
+	return base64.StdEncoding.EncodeToString(cipherText), nil
+}
+
+// DecryptToken reverses the encrypted token to get username + expire_date
+func DecryptToken(token string) (string, time.Time, error) {
+	cipherData, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	block, err := aes.NewCipher(secretKey)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	nonceSize := aesGCM.NonceSize()
+	if len(cipherData) < nonceSize {
+		return "", time.Time{}, fmt.Errorf("invalid token")
+	}
+
+	nonce, ciphertext := cipherData[:nonceSize], cipherData[nonceSize:]
+
+	plainData, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	var payload schema.TokenPayload
+	if err := json.Unmarshal(plainData, &payload); err != nil {
+		return "", time.Time{}, err
+	}
+
+	return payload.Username, payload.ExpireDate, nil
+}
+
+func IsInListString(value string, list []string) bool {
+	for _, item := range list {
+		if strings.EqualFold(item, value) {
+			return true
+		}
+	}
+	return false
 }

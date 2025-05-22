@@ -13,6 +13,7 @@ type UserRepository interface {
 	CreateUser(user *entity.User) error
 	GetUserByEmail(email string) (*entity.User, error)
 	GetUserByID(userID uint64) (*entity.User, error)
+	GetUserByCondition(user *entity.User) (*entity.User, error)
 	UpdateUser(user *entity.User) error
 	SoftDeleteUser(userID uint64) error
 	DeleteUser(userID uint64) error
@@ -53,6 +54,48 @@ func (r *userRepo) GetUserByEmail(email string) (*entity.User, error) {
 		return nil, nil
 	}
 	return user, err
+}
+
+// GetUserByUserName retrieves a user by their username
+func (r *userRepo) GetUserByCondition(user *entity.User) (*entity.User, error) {
+	if user == nil {
+		return nil, fmt.Errorf("user condition is nil")
+	}
+
+	var args []interface{}
+	query := `SELECT id, first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at
+	          FROM users WHERE 1=1`
+
+	if user.UserName != "" {
+		query += " AND username = ?"
+		args = append(args, user.UserName)
+	}
+	if user.Role != "" {
+		query += " AND role = ?"
+		args = append(args, user.Role)
+	}
+	if user.Email != "" {
+		query += " AND email = ?"
+		args = append(args, user.Email)
+	}
+	if user.Status != "" {
+		query += " AND status = ?"
+		args = append(args, user.Status)
+	}
+
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+
+	row := r.db.QueryRow(query, args...)
+	result := &entity.User{}
+	err := row.Scan(&result.ID, &result.FirstName, &result.LastName, &result.UserName, &result.Email, &result.Password,
+		&result.Status, &result.Role, &result.Avatar, &result.AvatarFolder, &result.CreatedAt, &result.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+	return result, nil
 }
 
 // GetUserByID retrieves a user by their ID

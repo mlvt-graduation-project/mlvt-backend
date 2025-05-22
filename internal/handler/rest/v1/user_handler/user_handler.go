@@ -6,6 +6,7 @@ import (
 
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/user_service"
 
@@ -34,12 +35,13 @@ func NewUserController(userService user_service.UserService) *UserController {
 func (h *UserController) RegisterUser(c *gin.Context) {
 	var user entity.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid request"})
 		return
 	}
 
 	if err := h.userService.RegisterUser(&user); err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
+		log.Errorf("error register user: %v", err)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to register user"})
 		return
 	}
 
@@ -107,6 +109,75 @@ func (h *UserController) LoginUser(c *gin.Context) {
 		UserID: userID,
 		Role:   role,
 	})
+}
+
+// VerifyAccountSignUp godoc
+// @Summary Verify account sign-up
+// @Description Verify user account using a verification token. Accepts either email or username along with token.
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body struct{email string; username string; token string} true "Email or Username and Verification Token"
+// @Success 200 {string} string "User verified successfully"
+// @Failure 400 {object} response.ErrorResponse "Bad request: missing or invalid input"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized: invalid token or credentials"
+// @Router /users/verify-account [post]
+func (h *UserController) VerifyAccountSignUp(c *gin.Context) {
+	var credentials struct {
+		Email string `json:"email"`
+		Token string `json:"token"`
+	}
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	err := h.userService.VerifyAccountSignUp(credentials.Email, credentials.Token)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, "User verified successfully")
+}
+
+// ResendValidationEmail godoc
+// @Summary Resend verification email
+// @Description Resend verification email using both username and email
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param credentials body struct{email string; username string} true "Email and Username"
+// @Success 200 {string} string "User verified successfully"
+// @Failure 400 {object} response.ErrorResponse "Bad request: missing email or username"
+// @Failure 401 {object} response.ErrorResponse "Unauthorized: resend failed"
+// @Router /users/resend-validation [post]
+func (h *UserController) ResendValidationEmail(c *gin.Context) {
+	var credentials struct {
+		Email    string `json:"email"`
+		Username string `json:"username"`
+	}
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	if credentials.Email == "" && credentials.Username == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{
+			Error: "Either email or username must be provided",
+		})
+		return
+	}
+
+	err := h.userService.ResendValidationEmail(credentials.Username, credentials.Email)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, "Email resent")
 }
 
 // ChangePassword godoc
