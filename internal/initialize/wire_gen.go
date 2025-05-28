@@ -13,6 +13,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
+	"mlvt/internal/handler/rest/v1/token_claim_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
@@ -23,6 +24,7 @@ import (
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
+	"mlvt/internal/repo/token_claim_repo"
 	"mlvt/internal/repo/traffic_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/voucher_repo"
@@ -34,6 +36,7 @@ import (
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
+	"mlvt/internal/service/token_claim_service"
 	"mlvt/internal/service/traffic_service"
 	"mlvt/internal/service/user_service"
 	"mlvt/internal/service/voucher_service"
@@ -74,8 +77,11 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	voucherRepository := voucher_repo.NewVoucherRepo(mongoConn)
 	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService, walletService)
 	voucherController := voucher_handler.NewVoucherController(voucherService)
+	tokenRepository := token_claim_repo.New(db)
+	tokenService := token_claim_service.New(tokenRepository)
+	tokenController := token_claim_handler.New(tokenService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, swaggerRouter)
 	return appRouter, nil
 }
 

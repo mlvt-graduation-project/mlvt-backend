@@ -32,6 +32,13 @@ definitions:
         description: ID of the related video
         type: integer
     type: object
+  entity.PremiumUser:
+    properties:
+      expired_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
   entity.StatusEntity:
     enum:
     - raw
@@ -44,6 +51,19 @@ definitions:
     - StatusProcessing
     - StatusSucceeded
     - StatusFailed
+  entity.TokenClaim:
+    properties:
+      claimed_date:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      tokens:
+        type: integer
+      user_id:
+        type: integer
+    type: object
   entity.Transcription:
     properties:
       created_at:
@@ -221,6 +241,13 @@ definitions:
       avatar_upload_url:
         type: string
     type: object
+  response.DailyTokenClaimsResponse:
+    properties:
+      claims:
+        items:
+          $ref: '#/definitions/entity.TokenClaim'
+        type: array
+    type: object
   response.DownloadURLResponse:
     properties:
       download_url:
@@ -241,6 +268,13 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  response.PremiumUsersResponse:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/entity.PremiumUser'
+        type: array
     type: object
   response.StatusResponse:
     properties:
@@ -657,6 +691,79 @@ paths:
       summary: Process full pipeline asynchronously
       tags:
       - pipeline
+  /premium/{user_id}:
+    get:
+      description: Returns whether the user is premium and their expiry time
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'example: {\"premium\": true}'
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: invalid user_id
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Check premium status of a user
+      tags:
+      - tokens
+  /premium/add:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: invalid or missing user_id
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Grant 30-day premium to a user
+      tags:
+      - tokens
+  /premium/list:
+    get:
+      description: Returns users with premium expiry time in the future
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: users
+          schema:
+            $ref: '#/definitions/response.PremiumUsersResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List all active premium users
+      tags:
+      - tokens
   /progress/{user_id}:
     get:
       consumes:
@@ -687,6 +794,82 @@ paths:
       summary: Get user progress
       tags:
       - Progress
+  /token/claims:
+    get:
+      description: Retrieves all claim logs, ordered by newest first
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: claims
+          schema:
+            $ref: '#/definitions/response.DailyTokenClaimsResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: List all daily token claim records
+      tags:
+      - tokens
+  /token/daily:
+    post:
+      consumes:
+      - application/json
+      description: Adds 5 tokens to the user's wallet if not yet claimed today
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: invalid or already claimed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Claim daily free tokens
+      tags:
+      - tokens
+  /token/premium:
+    post:
+      consumes:
+      - application/json
+      description: Adds 20 tokens to the user's wallet if premium and not yet claimed
+        today
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: message
+          schema:
+            $ref: '#/definitions/response.MessageResponse'
+        "400":
+          description: not premium or already claimed
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Claim daily premium tokens
+      tags:
+      - tokens
   /transcriptions:
     post:
       consumes:

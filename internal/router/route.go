@@ -6,6 +6,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
+	"mlvt/internal/handler/rest/v1/token_claim_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
@@ -24,7 +25,9 @@ type AppRouter struct {
 	adminController    *admin_handler.AdminController
 	walletController   *wallet_handler.WalletController
 	voucherController  *voucher_handler.VoucherController
-	swaggerRouter      *SwaggerRouter
+	tokenController    *token_claim_handler.TokenController
+
+	swaggerRouter *SwaggerRouter
 }
 
 func NewAppRouter(
@@ -37,6 +40,7 @@ func NewAppRouter(
 	adminController *admin_handler.AdminController,
 	walletController *wallet_handler.WalletController,
 	voucherController *voucher_handler.VoucherController,
+	tokenController *token_claim_handler.TokenController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:     userController,
@@ -48,6 +52,7 @@ func NewAppRouter(
 		adminController:    adminController,
 		walletController:   walletController,
 		voucherController:  voucherController,
+		tokenController:    tokenController,
 		swaggerRouter:      swaggerRouter,
 	}
 }
@@ -192,6 +197,22 @@ func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
 		protected.PATCH("/:voucherID", a.voucherController.UpdateVoucher)
 		protected.GET("/get-all", a.voucherController.GetAllVouchers)
 		protected.GET("/:voucherID", a.voucherController.GetVoucherByID)
+	}
+}
+
+func (a *AppRouter) RegisterTokenRoutes(r *gin.RouterGroup) {
+	token := r.Group("/token")
+	{
+		token.POST("/daily", a.tokenController.ClaimDaily)
+		token.POST("/premium", a.tokenController.ClaimPremium)
+		token.GET("/claims", a.tokenController.ListClaims)
+	}
+
+	premium := r.Group("/premium")
+	{
+		premium.POST("/add", a.tokenController.AddPremium)
+		premium.GET("/list", a.tokenController.ListPremium)
+		premium.GET("/:user_id", a.tokenController.CheckPremium)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
+	"mlvt/internal/handler/rest/v1/token_claim_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
 	"mlvt/internal/handler/rest/v1/voucher_handler"
 	"mlvt/internal/handler/rest/v1/wallet_handler"
@@ -23,4 +24,5 @@ var ProviderSetHandler = wire.NewSet(
 	admin_handler.NewAdminController,
 	wallet_handler.NewWalletController,
 	voucher_handler.NewVoucherController,
+	token_claim_handler.New,
 )

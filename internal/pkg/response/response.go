@@ -116,3 +116,13 @@ type ProgressResponse struct {
 func (p *PingStatusResponse) ValidateStatus() {
 	// ToDo: validate string StatusEntity
 }
+
+// DailyTokenClaimsResponse represents a list of token claim logs
+type DailyTokenClaimsResponse struct {
+	Claims []entity.TokenClaim `json:"claims"`
+}
+
+// PremiumUsersResponse represents a list of active premium users
+type PremiumUsersResponse struct {
+	Users []entity.PremiumUser `json:"users"`
+}

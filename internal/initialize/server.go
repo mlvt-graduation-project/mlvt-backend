@@ -16,7 +16,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173"}, // base, admin
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true, // Allow credentials like cookies
@@ -33,6 +33,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	appRouter.RegisterAdminRoutes(api)
 	appRouter.RegisterWalletRoutes(api)
 	appRouter.RegisteVoucherRoutes(api)
+	appRouter.RegisterTokenRoutes(api)
 	appRouter.RegisterSwaggerRoutes(r.Group("/"))
 
 	// Create the HTTP server

@@ -5,6 +5,7 @@ import (
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
+	"mlvt/internal/repo/token_claim_repo"
 	"mlvt/internal/repo/traffic_repo"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/repo/voucher_repo"
@@ -22,6 +23,7 @@ var ProviderSetRepository = wire.NewSet(
 	traffic_repo.NewTrafficRepo,
 	wallet_repo.NewWalletRepo,
 	voucher_repo.NewVoucherRepo,
+	token_claim_repo.New,
 	ping_repo.NewPingRepo,
 	// wire.Bind(new(UserRepository), new(*userRepo)),
 	// wire.Bind(new(VideoRepository), new(*videoRepo)),
