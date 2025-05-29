@@ -83,7 +83,7 @@ func (r *tokenRepo) purgeExpired(ctx context.Context) error {
 }
 
 func (r *tokenRepo) AddPremium(ctx context.Context, userID uint64) error {
-	// get current expiry (if any)
+	// 1) fetch the old expiry (if any)
 	var old sql.NullTime
 	err := r.db.QueryRowContext(ctx,
 		`SELECT expired_at FROM premium_users WHERE user_id = ?`, userID,
@@ -92,20 +92,36 @@ func (r *tokenRepo) AddPremium(ctx context.Context, userID uint64) error {
 		return err
 	}
 
-	base := time.Now()
-	if old.Valid && old.Time.After(base) {
+	now := time.Now()
+	// if they had a valid future expiry, this is just an extension
+	isExtension := old.Valid && old.Time.After(now)
+
+	// 2) compute the new expiry
+	base := now
+	if isExtension {
 		base = old.Time
 	}
 	newExp := base.AddDate(0, 0, 30)
 
-	// upsert
-	_, err = r.db.ExecContext(ctx, `
+	// 3) upsert the premium_users row
+	if _, err := r.db.ExecContext(ctx, `
         INSERT INTO premium_users (user_id, expired_at)
         VALUES (?, ?)
         ON CONFLICT(user_id) DO UPDATE
           SET expired_at = excluded.expired_at
-    `, userID, newExp)
-	return err
+    `, userID, newExp); err != nil {
+		return err
+	}
+
+	// 4) if it wasn’t an extension, they just became premium → grant them 20 tokens
+	if !isExtension {
+		// reuse your Claim method (which INSERTs a premium claim + credits wallet + logs tx)
+		if err := r.Claim(ctx, userID, 20, entity.ClaimPremium); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *tokenRepo) IsPremium(ctx context.Context, userID uint64) (bool, error) {
