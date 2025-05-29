@@ -22,7 +22,7 @@ type svc struct {
 func New(r token_claim_repo.TokenRepository) TokenService { return &svc{r} }
 
 func (s *svc) ClaimDaily(ctx context.Context, userID uint64) error {
-	return s.repo.Claim(ctx, userID, 5)
+	return s.repo.Claim(ctx, userID, 5, entity.ClaimDaily)
 }
 
 func (s *svc) ClaimPremium(ctx context.Context, userID uint64) error {
@@ -33,7 +33,7 @@ func (s *svc) ClaimPremium(ctx context.Context, userID uint64) error {
 	if !ok {
 		return token_claim_repo.ErrNotPremium
 	}
-	return s.repo.Claim(ctx, userID, 20)
+	return s.repo.Claim(ctx, userID, 20, entity.ClaimPremium)
 }
 
 func (s *svc) AddPremium(ctx context.Context, userID uint64) error {

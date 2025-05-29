@@ -21,5 +21,5 @@
 - refactor update fields in admin package
 - refactor source code (combine feature to reduce number of folders in handler, service, repo)
 
-- premium user can get both free daily token and premium token [processing]
+- premium user can get both free daily token and premium token [done]
 - premium user will receive token even not login in this day [processing]

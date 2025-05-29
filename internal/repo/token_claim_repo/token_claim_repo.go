@@ -14,7 +14,7 @@ var (
 )
 
 type TokenRepository interface {
-	Claim(ctx context.Context, userID uint64, amount int64) error
+	Claim(ctx context.Context, userID uint64, amount int64, ctype entity.ClaimType) error
 	IsPremium(ctx context.Context, userID uint64) (bool, error)
 	AddPremium(ctx context.Context, userID uint64) error
 	ListClaims(ctx context.Context) ([]entity.TokenClaim, error)
@@ -26,20 +26,21 @@ type tokenRepo struct{ db *sql.DB }
 func New(db *sql.DB) TokenRepository { return &tokenRepo{db} }
 
 // atomic: insert claim → credit wallet → write wallet_tx
-func (r *tokenRepo) Claim(ctx context.Context, userID uint64, amount int64) error {
+func (r *tokenRepo) Claim(ctx context.Context, userID uint64, amount int64, ctype entity.ClaimType) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	// 1. record today’s claim (needs UNIQUE(user_id, claimed_date) on token_claims)
+	// 1. record claim by type
 	res, err := tx.ExecContext(ctx,
-		`INSERT OR IGNORE INTO token_claims
-           (user_id, claimed_date, tokens)
-         VALUES
-           (?, date('now'), ?)`,
-		userID, amount,
+		`INSERT INTO token_claims
+       (user_id, claimed_date, claim_type, tokens)
+     VALUES
+       (?, date('now'), ?, ?)
+     ON CONFLICT(user_id, claimed_date, claim_type) DO NOTHING`,
+		userID, ctype, amount,
 	)
 	if err != nil {
 		return err
@@ -51,8 +52,8 @@ func (r *tokenRepo) Claim(ctx context.Context, userID uint64, amount int64) erro
 	// 2. credit wallet
 	if _, err := tx.ExecContext(ctx,
 		`UPDATE users 
-            SET wallet_balance = wallet_balance + ? 
-          WHERE id = ?`,
+        SET wallet_balance = wallet_balance + ? 
+      WHERE id = ?`,
 		amount, userID,
 	); err != nil {
 		return err
@@ -61,9 +62,9 @@ func (r *tokenRepo) Claim(ctx context.Context, userID uint64, amount int64) erro
 	// 3. log transaction
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO wallet_transactions
-           (user_id, type, amount, created_at)
-         VALUES
-           (?, ?, ?, datetime('now'))`,
+       (user_id, type, amount, created_at)
+     VALUES
+       (?, ?, ?, datetime('now'))`,
 		userID, entity.TransactionTypeDeposit, amount,
 	); err != nil {
 		return err
