@@ -19,6 +19,8 @@ type TokenRepository interface {
 	AddPremium(ctx context.Context, userID uint64) error
 	ListClaims(ctx context.Context) ([]entity.TokenClaim, error)
 	ListPremium(ctx context.Context) ([]entity.PremiumUser, error)
+	GetLastClaimDate(ctx context.Context, userID uint64, ctype entity.ClaimType) (time.Time, error)
+	ClaimAtDate(ctx context.Context, userID uint64, amount int64, ctype entity.ClaimType, date time.Time) error
 }
 
 type tokenRepo struct{ db *sql.DB }
@@ -168,4 +170,33 @@ func (r *tokenRepo) ListPremium(ctx context.Context) ([]entity.PremiumUser, erro
 		res = append(res, p)
 	}
 	return res, rows.Err()
+}
+
+func (r *tokenRepo) GetLastClaimDate(ctx context.Context, userID uint64, ctype entity.ClaimType) (time.Time, error) {
+	var dt sql.NullString
+	err := r.db.QueryRowContext(ctx,
+		`SELECT MAX(claimed_date) FROM token_claims 
+           WHERE user_id = ? AND claim_type = ?`,
+		userID, ctype,
+	).Scan(&dt)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if !dt.Valid {
+		return time.Time{}, nil // zero→never claimed
+	}
+	// parse “YYYY-MM-DD” into time.Time (midnight UTC)
+	t, _ := time.Parse("2006-01-02", dt.String)
+	return t, nil
+}
+
+// 2) Backfill a specific date
+func (r *tokenRepo) ClaimAtDate(ctx context.Context, userID uint64, amount int64, ctype entity.ClaimType, date time.Time) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO token_claims (user_id, claimed_date, claim_type, tokens)
+           VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id, claimed_date, claim_type) DO NOTHING`,
+		userID, date.Format("2006-01-02"), ctype, amount,
+	)
+	return err
 }

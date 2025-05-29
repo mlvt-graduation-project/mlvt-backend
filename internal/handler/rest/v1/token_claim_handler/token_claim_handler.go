@@ -2,10 +2,12 @@ package token_claim_handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/repo/token_claim_repo"
 	"mlvt/internal/service/token_claim_service"
 
 	"github.com/gin-gonic/gin"
@@ -62,18 +64,25 @@ func (h *TokenController) ClaimDaily(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "server error"
 // @Router /token/premium [post]
 func (h *TokenController) ClaimPremium(c *gin.Context) {
-	userIDStr := c.Query("user_id")
-	userID, err := parseUID(userIDStr)
+	uid, err := parseUID(c.Query("user_id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid user_id"})
+		c.JSON(400, response.ErrorResponse{Error: "invalid user_id"})
 		return
 	}
 
-	if err := h.svc.ClaimPremium(context.Background(), userID); err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
-		return
+	days, err := h.svc.ClaimPremium(c.Request.Context(), uid)
+	switch err {
+	case nil:
+		total := days * 20
+		msg := fmt.Sprintf("+%d premium tokens credited for %d days", total, days)
+		c.JSON(200, response.MessageResponse{Message: msg})
+	case token_claim_repo.ErrNotPremium:
+		c.JSON(400, response.ErrorResponse{Error: "not premium or expired"})
+	case token_claim_repo.ErrAlreadyClaimed:
+		c.JSON(400, response.ErrorResponse{Error: "already claimed today"})
+	default:
+		c.JSON(500, response.ErrorResponse{Error: err.Error()})
 	}
-	c.JSON(http.StatusOK, response.MessageResponse{Message: "+20 premium tokens credited"})
 }
 
 /* ---------- LIST / CHECK ENDPOINTS ---------- */
