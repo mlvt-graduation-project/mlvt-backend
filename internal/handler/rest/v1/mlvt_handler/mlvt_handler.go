@@ -631,6 +631,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		AudioID:         audioID,
 		UserID:          video.UserID,
 		Folder:          folder,
+		Image: video.Image,
 		FileName:        outputVideoFileName,
 		Status:          entity.StatusProcessing,
 		CreatedAt:       time.Now(),
@@ -645,23 +646,28 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 
 	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
 
-	translatedTranscription, _, err := h.mediaService.GetTranscriptionByID(audio.TranscriptionID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get translated transcription by id"})
-	}
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
 		UserID:                    video.UserID,
 		ProgressType:              entity.ProgressTypeLS,
 		OriginalVideoID:           videoID,
-		OriginalTranscriptionID:   translatedTranscription.OriginalTranscriptionID,
 		TranslatedTranscriptionID: audio.TranscriptionID,
 		AudioID:                   audioID,
 		ProgressedVideoID:         outputVideoID,
 		Status:                    entity.StatusProcessing,
 		CreatedAt:                 time.Now(),
 		UpdatedAt:                 time.Now(),
+	}
+
+	if audio.TranscriptionID != 0 {
+		translatedTranscription, _, err := h.mediaService.GetTranscriptionByID(audio.TranscriptionID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get translated transcription by id"})
+		}
+		if translatedTranscription != nil {
+			sttDocument.OriginalTranscriptionID = translatedTranscription.OriginalTranscriptionID
+		}
 	}
 
 	documentId, err := h.progressService.Create(context.Background(), *sttDocument)
