@@ -1,21 +1,35 @@
 #!/bin/bash
 
+set -e
+
 APP_NAME=mlvt
 SERVICE_NAME=mlvt
 CMD_DIR=cmd/server
+LOG_FILE=/root/code/mlvt-backend/log-deploys/deploy.log
 
-echo "🔄 Pulling latest code..."
-git pull origin dev 
+mkdir -p "$(dirname "$LOG_FILE")"
 
-echo "🛠️ Building binary..."
-make build
+{
+  echo ""
+  echo "======================"
+  echo "🚀 Deploy started at $(date)"
+  echo "======================"
+  
+  cd /root/code/mlvt-backend || exit 1
 
-if [ ! -f $CMD_DIR/$APP_NAME ]; then
-    echo "❌ Build failed: Binary not found!"
-    exit 1
-fi
+  echo "🔄 Pulling latest code..."
+  git pull origin release/dev 
 
-echo "🚀 Restarting service..."
-sudo systemctl restart $SERVICE_NAME
+  echo "🛠️ Building binary..."
+  make build
 
-echo "✅ Deployed successfully!"
+  if [ ! -f "$CMD_DIR/$APP_NAME" ]; then
+      echo "❌ Build failed: Binary not found!"
+      exit 1
+  fi
+
+  echo "🚀 Restarting service..."
+  systemctl restart "$SERVICE_NAME"
+
+  echo "✅ Deployed successfully!"
+} >> "$LOG_FILE" 2>&1
