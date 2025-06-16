@@ -54,7 +54,7 @@ set -e
 APP_NAME=mlvt
 SERVICE_NAME=mlvt
 CMD_DIR=cmd/server
-LOG_FILE=/root/code/mlvt-backend/logs/deploy.log
+LOG_FILE=/root/code/mlvt-backend/log-deploys/deploy.log
 
 mkdir -p "$(dirname "$LOG_FILE")"
 
@@ -101,7 +101,7 @@ mkdir -p "$(dirname "$LOG_FILE")"
 
 ```bash
 curl -X POST http://localhost:8001
-tail -n 50 /root/code/mlvt-backend/logs/deploy.log
+tail -n 50 /root/code/mlvt-backend/log-deploys/deploy.log
 ```
 
 ---
