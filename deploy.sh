@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "PATH: $PATH"
+which go
+go version
+
 set -e
 
 APP_NAME=mlvt
