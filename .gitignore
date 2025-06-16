@@ -17,3 +17,4 @@ tmp.env
 myapp.db
 .env
 mlvt.db
+cmd/server/mlvt
