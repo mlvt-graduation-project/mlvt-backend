@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export PATH=$PATH:/usr/local/go/bin
 echo "PATH: $PATH"
 which go
 go version
