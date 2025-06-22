@@ -34,6 +34,7 @@ import (
 	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/media_service"
+	"mlvt/internal/service/notify_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/token_claim_service"
@@ -62,7 +63,8 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	mediaController := media_handler.NewMediaController(mediaService)
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository, mediaRepository, s3ClientInterface)
-	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService)
+	notifyService := notify_service.NewNotifyService()
+	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService, notifyService)
 	progressController := progress_handler.NewProgressService(progressService)
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)

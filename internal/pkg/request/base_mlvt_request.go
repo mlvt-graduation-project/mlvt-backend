@@ -6,6 +6,7 @@ type BaseRequest struct {
 	OutputFileName string `json:"output_file_name" binding:"required"`
 	OutputLink     string `json:"output_link" binding:"required"`
 	Model          string `json:"model"`
+	CallbackURL    string `json:"callback_url,omitempty"`
 }
 
 type BaseLang struct {

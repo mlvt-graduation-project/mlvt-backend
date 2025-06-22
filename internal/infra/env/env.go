@@ -46,6 +46,8 @@ type Config struct {
 	MongoDBEndPoint      string
 	I18NPath             string
 	RootDir              string
+	TelegramBotToken     string
+	TelegramChatID       string
 }
 
 // init loads the environment variables at startup
@@ -123,6 +125,8 @@ func initializeConfig() error {
 		MongoDBEndPoint:      viper.GetString("MONGODB_ENDPOINT"),
 		I18NPath:             i18nPath,
 		RootDir:              rootDir,
+		TelegramBotToken:     viper.GetString("TELEGRAM_BOT_TOKEN"),
+		TelegramChatID:       viper.GetString("TELEGRAM_CHAT_ID"),
 	}
 
 	if EnvConfig.JWTSecret == "" {

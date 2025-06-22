@@ -12,10 +12,12 @@ import (
 	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/media_service"
+	"mlvt/internal/service/notify_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,17 +27,20 @@ type MlvtController struct {
 	mediaService    media_service.MediaService
 	progressService progress_service.ProgressService
 	trafficService  traffic_service.TrafficService
+	notifyService   notify_service.NotifyService
 }
 
 func NewMlvtController(
 	mediaService media_service.MediaService,
 	progressService progress_service.ProgressService,
 	trafficService traffic_service.TrafficService,
+	notifyService notify_service.NotifyService,
 ) *MlvtController {
 	return &MlvtController{
 		mediaService:    mediaService,
 		progressService: progressService,
 		trafficService:  trafficService,
+		notifyService:   notifyService,
 	}
 }
 
@@ -132,6 +137,34 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 	}
 }
 
+// Helper function to send notifications with MLVT header
+func (h *MlvtController) sendNotification(message string) {
+	go func() {
+		// Add MLVT Backend header to all messages
+		formattedMessage := h.formatNotificationMessage(message)
+		if err := h.notifyService.SendNotification(formattedMessage); err != nil {
+			log.Errorf("Failed to send notification: %v", err)
+		}
+	}()
+}
+
+// Helper function to format notification message with header
+func (h *MlvtController) formatNotificationMessage(message string) string {
+	appEnv := env.EnvConfig.AppEnv
+	if appEnv == "" {
+		appEnv = "unknown"
+	}
+
+	header := fmt.Sprintf("🤖 <b>MLVT Backend [%s]</b>\n"+
+		"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n",
+		strings.ToUpper(appEnv))
+
+	footer := "\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+		fmt.Sprintf("⏰ <i>%s</i>", time.Now().Format("2006-01-02 15:04:05"))
+
+	return header + message + footer
+}
+
 // ProcessSpeechToText godoc
 // @Summary Convert video to transcription asynchronously
 // @Description Converts a video to text using speech-to-text processing asynchronously
@@ -187,6 +220,14 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	}
 
 	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID)
+
+	// Send notification about STT processing start
+	h.sendNotification(fmt.Sprintf("🎤 <b>Speech-to-Text Processing Started</b>\n\n"+
+		"📹 Video ID: %d\n"+
+		"👤 User ID: %d\n"+
+		"📝 Transcription ID: %d\n"+
+		"🗣️ Language: %s\n\n"+
+		"⏳ Processing in progress...", videoID, video.UserID, transcriptionID, sourceLang))
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -251,13 +292,32 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 			},
 		}
 
+		// Marshal the payload to JSON for curl logging
+		payloadBytes, err := json.Marshal(requestPayload)
+		if err != nil {
+			log.Warnf("Error marshaling STT payload: %v", err)
+		}
+
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
+		fmt.Println("STT Curl Command:", curlCmd)
+
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		log.Infof("ec2 response: %v\n\n", ec2Response)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
+
+			// Send failure notification
+			h.sendNotification(fmt.Sprintf("❌ <b>Speech-to-Text Processing Failed</b>\n\n"+
+				"📹 Video ID: %d\n"+
+				"👤 User ID: %d\n"+
+				"📝 Transcription ID: %d\n"+
+				"🗣️ Language: %s\n\n"+
+				"💥 Error: %v", videoID, video.UserID, transcriptionID, sourceLang, err))
 			return
 		}
 
@@ -277,6 +337,20 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		}
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
+
+		// Send success notification
+		h.sendNotification(fmt.Sprintf("✅ <b>Speech-to-Text Processing Completed</b>\n\n"+
+			"📹 Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"📝 Transcription ID: %d\n"+
+			"🗣️ Language: %s\n\n"+
+			"📄 Result: %s", videoID, video.UserID, transcriptionID, sourceLang,
+			func() string {
+				if len(ec2Response.Result) > 100 {
+					return ec2Response.Result[:100] + "..."
+				}
+				return ec2Response.Result
+			}()))
 	}()
 }
 
@@ -341,6 +415,14 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 	}
 
 	h.quickLogTraffic(entity.ProcessTTTModelAction, originalTranscription.UserID, translatedTranscriptionID)
+
+	// Send notification about TTT processing start
+	h.sendNotification(fmt.Sprintf("🔄 <b>Text-to-Text Translation Started</b>\n\n"+
+		"📝 Original Transcription ID: %d\n"+
+		"📝 New Transcription ID: %d\n"+
+		"👤 User ID: %d\n"+
+		"🗣️ From: %s → %s\n\n"+
+		"⏳ Translating...", transcriptionID, translatedTranscriptionID, originalTranscription.UserID, sourceLang, targetLang))
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -409,12 +491,31 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 			},
 		}
 
+		// Marshal the payload to JSON for curl logging
+		payloadBytes, err := json.Marshal(requestPayload)
+		if err != nil {
+			log.Warnf("Error marshaling TTT payload: %v", err)
+		}
+
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/ttt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
+		fmt.Println("TTT Curl Command:", curlCmd)
+
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
+
+			// Send failure notification
+			h.sendNotification(fmt.Sprintf("❌ <b>Text-to-Text Translation Failed</b>\n\n"+
+				"📝 Original Transcription ID: %d\n"+
+				"📝 New Transcription ID: %d\n"+
+				"👤 User ID: %d\n"+
+				"🗣️ From: %s → %s\n\n"+
+				"💥 Error: %v", transcriptionID, translatedTranscriptionID, originalTranscription.UserID, sourceLang, targetLang, err))
 			return
 		}
 
@@ -434,6 +535,20 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		}
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
+
+		// Send success notification
+		h.sendNotification(fmt.Sprintf("✅ <b>Text-to-Text Translation Completed</b>\n\n"+
+			"📝 Original Transcription ID: %d\n"+
+			"📝 New Transcription ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ From: %s → %s\n\n"+
+			"📄 Translated Text: %s", transcriptionID, translatedTranscriptionID, originalTranscription.UserID, sourceLang, targetLang,
+			func() string {
+				if len(ec2Response.Result) > 100 {
+					return ec2Response.Result[:100] + "..."
+				}
+				return ec2Response.Result
+			}()))
 	}()
 }
 
@@ -488,6 +603,14 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 	}
 
 	h.quickLogTraffic(entity.ProcessTTSModelAction, transcription.UserID, audioID)
+
+	// Send notification about TTS processing start
+	h.sendNotification(fmt.Sprintf("🎵 <b>Text-to-Speech Processing Started</b>\n\n"+
+		"📝 Transcription ID: %d\n"+
+		"🎧 Audio ID: %d\n"+
+		"👤 User ID: %d\n"+
+		"🗣️ Language: %s\n\n"+
+		"⏳ Converting text to audio...", transcriptionID, audioID, transcription.UserID, transcription.Lang))
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -553,12 +676,31 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 			Lang: transcription.Lang,
 		}
 
+		// Marshal the payload to JSON for curl logging
+		payloadBytes, err := json.Marshal(requestPayload)
+		if err != nil {
+			log.Warnf("Error marshaling TTS payload: %v", err)
+		}
+
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/tts", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
+		fmt.Println("TTS Curl Command:", curlCmd)
+
 		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
+
+			// Send failure notification
+			h.sendNotification(fmt.Sprintf("❌ <b>Text-to-Speech Processing Failed</b>\n\n"+
+				"📝 Transcription ID: %d\n"+
+				"🎧 Audio ID: %d\n"+
+				"👤 User ID: %d\n"+
+				"🗣️ Language: %s\n\n"+
+				"💥 Error: %v", transcriptionID, audioID, transcription.UserID, transcription.Lang, err))
 			return
 		}
 
@@ -576,6 +718,15 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		}
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
+
+		// Send success notification
+		h.sendNotification(fmt.Sprintf("✅ <b>Text-to-Speech Processing Completed</b>\n\n"+
+			"📝 Transcription ID: %d\n"+
+			"🎧 Audio ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ Language: %s\n"+
+			"📄 File: %s\n\n"+
+			"🎉 Audio file generated successfully!", transcriptionID, audioID, transcription.UserID, transcription.Lang, audioFileName))
 	}()
 }
 
@@ -631,7 +782,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		AudioID:         audioID,
 		UserID:          video.UserID,
 		Folder:          folder,
-		Image: video.Image,
+		Image:           video.Image,
 		FileName:        outputVideoFileName,
 		Status:          entity.StatusProcessing,
 		CreatedAt:       time.Now(),
@@ -646,6 +797,13 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 
 	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
 
+	// Send notification about LipSync processing start
+	h.sendNotification(fmt.Sprintf("👄 <b>Lip Sync Processing Started</b>\n\n"+
+		"📹 Input Video ID: %d\n"+
+		"🎧 Audio ID: %d\n"+
+		"📹 Output Video ID: %d\n"+
+		"👤 User ID: %d\n\n"+
+		"⏳ Synchronizing lip movements...", videoID, audioID, outputVideoID, video.UserID))
 
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
@@ -727,12 +885,31 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 			Model:               "",
 		}
 
+		// Marshal the payload to JSON for curl logging
+		payloadBytes, err := json.Marshal(requestPayload)
+		if err != nil {
+			log.Warnf("Error marshaling LS payload: %v", err)
+		}
+
 		ec2ServerURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 15*time.Minute)
+
+		// Build and print the curl command for debugging
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
+		fmt.Println("LS Curl Command:", curlCmd)
+
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 25*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
 			log.Errorf("EC2 processing failed: %v", err)
+
+			// Send failure notification
+			h.sendNotification(fmt.Sprintf("❌ <b>Lip Sync Processing Failed</b>\n\n"+
+				"📹 Input Video ID: %d\n"+
+				"🎧 Audio ID: %d\n"+
+				"📹 Output Video ID: %d\n"+
+				"👤 User ID: %d\n\n"+
+				"💥 Error: %v", videoID, audioID, outputVideoID, video.UserID, err))
 			return
 		}
 
@@ -751,6 +928,15 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		}
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
+
+		// Send success notification
+		h.sendNotification(fmt.Sprintf("✅ <b>Lip Sync Processing Completed</b>\n\n"+
+			"📹 Input Video ID: %d\n"+
+			"🎧 Audio ID: %d\n"+
+			"📹 Output Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"📄 Output File: %s\n\n"+
+			"🎉 Lip sync video generated successfully!", videoID, audioID, outputVideoID, video.UserID, outputVideoFileName))
 	}()
 }
 
@@ -842,6 +1028,19 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
 	h.quickLogTraffic(entity.ProcessFullPipelineModelAction, video.UserID, outputVideoID)
 
+	// Send notification about Full Pipeline processing start
+	h.sendNotification(fmt.Sprintf("🚀 <b>Full Pipeline Processing Started</b>\n\n"+
+		"📹 Input Video ID: %d\n"+
+		"📹 Output Video ID: %d\n"+
+		"👤 User ID: %d\n"+
+		"🗣️ From: %s → %s\n\n"+
+		"📋 Pipeline Steps:\n"+
+		"1️⃣ Speech-to-Text\n"+
+		"2️⃣ Text Translation\n"+
+		"3️⃣ Text-to-Speech\n"+
+		"4️⃣ Lip Sync\n\n"+
+		"⏳ Processing started...", videoID, outputVideoID, video.UserID, sourceLang, targetLang))
+
 	// Insert to mongodb
 	sttDocument := &entity.Progress{
 		UserID:                    video.UserID,
@@ -874,11 +1073,26 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			if r := recover(); r != nil {
 				log.Warnf("Recovered in goroutine: %v", r)
 				h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
+				h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
+
+				// Send failure notification
+				h.sendNotification(fmt.Sprintf("❌ <b>Full Pipeline Processing Failed</b>\n\n"+
+					"📹 Input Video ID: %d\n"+
+					"📹 Output Video ID: %d\n"+
+					"👤 User ID: %d\n"+
+					"🗣️ Language: %s → %s\n\n"+
+					"💥 Error: %v\n\n"+
+					"Pipeline failed during processing.", videoID, outputVideoID, video.UserID, sourceLang, targetLang, r))
 			}
 		}()
 
 		// Step 1: Speech-to-Text
 		log.Infof("step 1: speech to text \n")
+		h.sendNotification(fmt.Sprintf("1️⃣ <b>Full Pipeline - Step 1: Speech-to-Text</b>\n\n"+
+			"📹 Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ Language: %s\n\n"+
+			"⏳ Converting speech to text...", videoID, video.UserID, sourceLang))
 		videoDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
 		if err != nil {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
@@ -905,7 +1119,18 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			},
 		}
 
+		// Marshal the payload to JSON for curl logging
+		sttPayloadBytes, err := json.Marshal(sttPayload)
+		if err != nil {
+			log.Warnf("Error marshaling Full Pipeline STT payload: %v", err)
+		}
+
 		ec2STTURL := fmt.Sprintf("http://%s:%s/stt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2STTURL, string(sttPayloadBytes))
+		fmt.Println("Full Pipeline STT Curl Command:", curlCmd)
+
 		ec2STTResponse, err := sendRequestToEC2(sttPayload, ec2STTURL, 5*time.Minute)
 		if err != nil || ec2STTResponse.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
@@ -931,6 +1156,11 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 
 		// Step 2: Text-to-Text
 		log.Infof("step 2: text to text \n")
+		h.sendNotification(fmt.Sprintf("2️⃣ <b>Full Pipeline - Step 2: Text Translation</b>\n\n"+
+			"📹 Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ From: %s → %s\n\n"+
+			"⏳ Translating text...", videoID, video.UserID, sourceLang, targetLang))
 		translatedFileName := fmt.Sprintf("transcription_%d_%s.txt", transcriptionID, targetLang)
 		translatedTranscription := &entity.Transcription{
 			VideoID:                 videoID,
@@ -987,7 +1217,18 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			},
 		}
 
+		// Marshal the payload to JSON for curl logging
+		tttPayloadBytes, err := json.Marshal(tttPayload)
+		if err != nil {
+			log.Warnf("Error marshaling Full Pipeline TTT payload: %v", err)
+		}
+
 		ec2TTTURL := fmt.Sprintf("http://%s:%s/ttt", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		tttCurlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2TTTURL, string(tttPayloadBytes))
+		fmt.Println("Full Pipeline TTT Curl Command:", tttCurlCmd)
+
 		ec2TTTResponse, err := sendRequestToEC2(tttPayload, ec2TTTURL, 5*time.Minute)
 		if err != nil || ec2TTTResponse.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
@@ -1014,6 +1255,11 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 
 		// Step 3: Text-to-Speech
 		log.Infof("step 3: text to speech \n")
+		h.sendNotification(fmt.Sprintf("3️⃣ <b>Full Pipeline - Step 3: Text-to-Speech</b>\n\n"+
+			"📹 Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ Language: %s\n\n"+
+			"⏳ Converting text to speech...", videoID, video.UserID, targetLang))
 		audioFolder := env.EnvConfig.AudioFolder
 		if audioFolder == "" {
 			audioFolder = "audios"
@@ -1071,7 +1317,18 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			Lang: targetLang,
 		}
 
+		// Marshal the payload to JSON for curl logging
+		ttsPayloadBytes, _ := json.Marshal(ttsPayload)
+		if err != nil {
+			log.Warnf("Error marshaling Full Pipeline TTS payload: %v", err)
+		}
+
 		ec2TTSURL := fmt.Sprintf("http://%s:%s/tts", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
+
+		// Build and print the curl command for debugging
+		ttsCurlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2TTSURL, string(ttsPayloadBytes))
+		fmt.Println("Full Pipeline TTS Curl Command:", ttsCurlCmd)
+
 		ec2TTSResponse, err := sendRequestToEC2(ttsPayload, ec2TTSURL, 5*time.Minute)
 		if err != nil || ec2TTSResponse.Status != "succeeded" {
 			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
@@ -1096,6 +1353,11 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 
 		// Step 4: Lip Sync
 		log.Infof("step 4: lipsync \n")
+		h.sendNotification(fmt.Sprintf("4️⃣ <b>Full Pipeline - Step 4: Lip Sync</b>\n\n"+
+			"📹 Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🎧 Audio ID: %d\n\n"+
+			"⏳ Synchronizing lip movements...", videoID, video.UserID, audioID))
 		outputVideo.AudioID = audioID
 		outputVideo.ID = outputVideoID
 		log.Warnf("error: %v \n", outputVideo)
@@ -1150,13 +1412,13 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ec2URL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
 
 		// Build the curl command string
-		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2URL, string(payloadBytes))
+		curlCmd = fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2URL, string(payloadBytes))
 
 		// Print the curl command to the console
 		fmt.Println(curlCmd)
 
 		ec2LSURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 15*time.Minute)
+		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 25*time.Minute)
 		if err != nil || ec2LSResponse.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -1177,6 +1439,20 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		// #endregion
 
 		h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusSucceeded)
+
+		// Send final success notification
+		h.sendNotification(fmt.Sprintf("🎉 <b>Full Pipeline Processing Completed Successfully!</b>\n\n"+
+			"📹 Input Video ID: %d\n"+
+			"📹 Output Video ID: %d\n"+
+			"👤 User ID: %d\n"+
+			"🗣️ Language: %s → %s\n"+
+			"📄 Output File: %s\n\n"+
+			"✅ All steps completed:\n"+
+			"✓ Speech-to-Text\n"+
+			"✓ Text Translation\n"+
+			"✓ Text-to-Speech\n"+
+			"✓ Lip Sync\n\n"+
+			"🚀 Your multilingual video is ready!", videoID, outputVideoID, video.UserID, sourceLang, targetLang, outputVideoFileName))
 
 		log.Infof("Finish: fullpipeline \n")
 	}()

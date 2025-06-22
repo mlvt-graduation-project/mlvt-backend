@@ -12,6 +12,31 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+// JobResponse represents the immediate response for async processing
+type JobResponse struct {
+	Message string `json:"message"`
+	JobID   string `json:"job_id"`
+	Status  string `json:"status"`
+}
+
+// CallbackRequest represents the callback payload from EC2
+type CallbackRequest struct {
+	JobID  string      `json:"job_id"`
+	Status string      `json:"status"`
+	Result interface{} `json:"result,omitempty"`
+	Error  string      `json:"error,omitempty"`
+}
+
+// GlobalCallbackURLRequest represents request to set global callback URL
+type GlobalCallbackURLRequest struct {
+	CallbackURL string `json:"callback_url" binding:"required"`
+}
+
+// GlobalCallbackURLResponse represents response with current global callback URL
+type GlobalCallbackURLResponse struct {
+	CallbackURL string `json:"callback_url"`
+}
+
 // StatusResponse represents the response for GetVideoStatus
 type StatusResponse struct {
 	Status entity.StatusEntity `json:"status"`
