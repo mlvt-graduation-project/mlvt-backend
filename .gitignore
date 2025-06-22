@@ -19,4 +19,3 @@ myapp.db
 mlvt.db
 cmd/server/mlvt
 log-deploys/*.log
-log-deploys/*
