@@ -30,6 +30,13 @@ build:
 wire:
 	cd $(INITIALIZE_DIR) && go run github.com/google/wire/cmd/wire@latest
 
+deploy:
+	@echo "🚀 Building project..."
+	cd $(CMD_DIR) && go build -o $(APP_NAME)
+	@echo "🔄 Restarting mlvt service..."
+	sudo systemctl restart mlvt
+	@echo "✅ Done."
+
 # Clean the generated binaries
 clean:
 	rm -f $(CMD_DIR)/$(APP_NAME)
