@@ -28,8 +28,7 @@ build:
 
 # Generate wire dependencies
 wire:
-	go install github.com/google/wire/cmd/wire@latest
-	cd $(INITIALIZE_DIR) && wire
+	cd $(INITIALIZE_DIR) && go run github.com/google/wire/cmd/wire@latest
 
 # Clean the generated binaries
 clean:
