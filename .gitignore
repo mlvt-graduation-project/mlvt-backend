@@ -18,4 +18,4 @@ myapp.db
 .env
 mlvt.db
 cmd/server/mlvt
-log-deploys/*
+log-deploys/*.log
