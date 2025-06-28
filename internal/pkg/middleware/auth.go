@@ -63,6 +63,7 @@ func (am *AuthUserMiddleware) MustAuth() gin.HandlerFunc {
 		}
 
 		ctx.Set("userInfo", userInfo)
+		ctx.Set("userID", userInfo.ID)
 		ctx.Next()
 	}
 }

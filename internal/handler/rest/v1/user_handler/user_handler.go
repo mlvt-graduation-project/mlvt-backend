@@ -277,6 +277,28 @@ func (h *UserController) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, response.UserResponse{User: *user})
 }
 
+func (h *UserController) GetUserDetails(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if userID == nil || !exists {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "user ID not found"})
+		return
+	}
+
+	userIDUint64, ok := userID.(uint64)
+	if !ok {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid user ID type"})
+		return
+	}
+
+	user, err := h.userService.GetUserByID(userIDUint64)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.UserResponse{User: *user})
+}
+
 // GetAllUsers godoc
 // @Summary Get all users
 // @Description Retrieves a list of all users in the system
