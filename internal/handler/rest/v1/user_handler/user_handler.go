@@ -279,7 +279,7 @@ func (h *UserController) GetUser(c *gin.Context) {
 
 func (h *UserController) GetUserDetails(c *gin.Context) {
 	userID, exists := c.Get("userID")
-	if userID == nil || !exists {
+	if !exists {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "user ID not found"})
 		return
 	}
