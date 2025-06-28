@@ -70,6 +70,7 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	{
 		protected.GET("", a.userController.GetAllUsers)
 		protected.GET("/:user_id", a.userController.GetUser)
+		protected.GET("/user-details", a.userController.GetUserDetails)
 		protected.PUT("/:user_id", a.userController.UpdateUser)
 		protected.DELETE("/:user_id", a.userController.DeleteUser)
 		protected.PUT("/:user_id/change-password", a.userController.ChangePassword)
