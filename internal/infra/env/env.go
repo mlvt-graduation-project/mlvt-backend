@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"mlvt/internal/infra/zap-logging/log"
+	"mlvt/internal/utility"
 
 	"github.com/spf13/viper"
 )
@@ -25,8 +26,11 @@ type Config struct {
 	ServerPort           string
 	LogLevel             string
 	LogPath              string
-	DBDriver             string
-	DBConnection         string
+
+	// db struct
+	DBDriver   	 string
+	DBConnection string
+
 	JWTSecret            string
 	SwaggerEnabled       bool
 	SwaggerURL           string
@@ -95,7 +99,7 @@ func initializeConfig() error {
 	// Adjust relative paths
 	logPath := resolvePath(rootDir, viper.GetString("LOG_PATH"))
 	i18nPath := resolvePath(rootDir, viper.GetString("I18N_PATH"))
-	dbPath := resolvePath(rootDir, viper.GetString("DB_CONNECTION"))
+	dbPath := utility.GetPostgresConnection()
 
 	EnvConfig = &Config{
 		AppName:              viper.GetString("APP_NAME"),

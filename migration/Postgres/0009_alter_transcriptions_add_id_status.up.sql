@@ -1,0 +1,1 @@
+ALTER TABLE transcriptions ALTER COLUMN status SET DEFAULT 'raw';

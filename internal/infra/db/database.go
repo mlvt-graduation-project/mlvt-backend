@@ -5,23 +5,20 @@ import (
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-// InitializeDB initializes the SQLite3 database and returns a database connection.
 func InitializeDB() (*sql.DB, error) {
-	dbPath := env.EnvConfig.DBConnection
-	dbDriver := env.EnvConfig.DBDriver
+	driver := env.EnvConfig.DBDriver
 
-	log.Infof("DBConnection: %s, DBDriver: %s", dbPath, dbDriver)
+	// Format the PostgreSQL connection string
+	dsn := env.EnvConfig.DBConnection
 
-	// Open a connection to the database file (creates the file if it doesn't exist)
-	db, err := sql.Open(dbDriver, dbPath)
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	// Check if the connection is successful
 	if err = db.Ping(); err != nil {
 		db.Close()
 		return nil, err
