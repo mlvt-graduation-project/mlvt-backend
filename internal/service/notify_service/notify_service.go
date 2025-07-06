@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -125,45 +124,45 @@ func (s *notifyServiceImpl) SendTelegram(message string) error {
 	log.Debugf("Sending Telegram notification with bot token: %s", maskToken(cfg.TelegramBotToken))
 	log.Debugf("Sending to chat ID: %s", cfg.TelegramChatID)
 
-	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.TelegramBotToken)
+	// apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", cfg.TelegramBotToken)
 
-	data := url.Values{}
-	data.Set("chat_id", cfg.TelegramChatID)
-	data.Set("text", message)
-	data.Set("parse_mode", "HTML") // Enable HTML formatting
+	// data := url.Values{}
+	// data.Set("chat_id", cfg.TelegramChatID)
+	// data.Set("text", message)
+	// data.Set("parse_mode", "HTML") // Enable HTML formatting
 
-	resp, err := http.PostForm(apiURL, data)
-	if err != nil {
-		log.Errorf("Failed to send HTTP request to Telegram: %v", err)
-		return fmt.Errorf("failed to send HTTP request: %v", err)
-	}
-	defer resp.Body.Close()
+	// resp, err := http.PostForm(apiURL, data)
+	// if err != nil {
+	// 	log.Errorf("Failed to send HTTP request to Telegram: %v", err)
+	// 	return fmt.Errorf("failed to send HTTP request: %v", err)
+	// }
+	// defer resp.Body.Close()
 
-	// Read response body for better error handling
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Errorf("Error reading Telegram API response: %v", err)
-		return fmt.Errorf("error reading response: %v", err)
-	}
+	// // Read response body for better error handling
+	// body, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Errorf("Error reading Telegram API response: %v", err)
+	// 	return fmt.Errorf("error reading response: %v", err)
+	// }
 
-	if resp.StatusCode != 200 {
-		log.Errorf("Telegram API returned non-200 status: %s, body: %s", resp.Status, string(body))
-		return fmt.Errorf("telegram API returned non-200 status: %s", resp.Status)
-	}
+	// if resp.StatusCode != 200 {
+	// 	log.Errorf("Telegram API returned non-200 status: %s, body: %s", resp.Status, string(body))
+	// 	return fmt.Errorf("telegram API returned non-200 status: %s", resp.Status)
+	// }
 
-	// Parse response to check if message was sent successfully
-	var telegramResp TelegramResponse
-	if err := json.Unmarshal(body, &telegramResp); err != nil {
-		log.Errorf("Error parsing Telegram API response: %v", err)
-		return fmt.Errorf("error parsing response: %v", err)
-	}
+	// // Parse response to check if message was sent successfully
+	// var telegramResp TelegramResponse
+	// if err := json.Unmarshal(body, &telegramResp); err != nil {
+	// 	log.Errorf("Error parsing Telegram API response: %v", err)
+	// 	return fmt.Errorf("error parsing response: %v", err)
+	// }
 
-	if !telegramResp.OK {
-		log.Errorf("Telegram API returned error: %s", string(body))
-		return fmt.Errorf("telegram API returned error")
-	}
+	// if !telegramResp.OK {
+	// 	log.Errorf("Telegram API returned error: %s", string(body))
+	// 	return fmt.Errorf("telegram API returned error")
+	// }
 
-	log.Infof("Telegram message sent successfully with message ID: %d", telegramResp.Result.MessageID)
+	// log.Infof("Telegram message sent successfully with message ID: %d", telegramResp.Result.MessageID)
 	return nil
 }
 

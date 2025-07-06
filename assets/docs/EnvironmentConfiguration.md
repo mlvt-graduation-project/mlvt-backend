@@ -59,6 +59,18 @@ LANGUAGE=en                        # Set the language for localization (e.g., en
 I18N_PATH=./i18n/                  # Path to the directory containing localization files
 ```
 
+### VietQR Payment Configuration
+```plaintext
+# VietQR API credentials (get from https://my.vietqr.io)
+VIETQR_CLIENT_ID=your_client_id_here      # VietQR Client ID
+VIETQR_API_KEY=your_api_key_here          # VietQR API Key
+
+# VietinBank account information for receiving payments
+VIETINBANK_ACCOUNT_NO=your_account_number    # Your VietinBank account number (6-19 digits)
+VIETINBANK_ACCOUNT_NAME=YOUR ACCOUNT NAME    # Account holder name (uppercase, no special chars)
+VIETINBANK_BIN_CODE=970415                   # VietinBank BIN code (always 970415)
+```
+
 You can change the language of the application by setting the `LANGUAGE` variable
 
 ```env
@@ -74,7 +86,21 @@ LANGUAGE="pt"  # For Portuguese
 LANGUAGE="ru"  # For Russian
 ```
 
+## Payment Options
+
+The QR payment feature supports the following payment packages:
+
+| Option | Tokens | VND Price | Description |
+|--------|--------|-----------|-------------|
+| 5k   | 500    | 5,000   | 500 tokens - 5,000 VND |
+| 10k     | 1,000  | 10,000 | 1,000 tokens - 10,000 VND |
+| 20k     | 2,000  | 20,000 | 2,000 tokens - 20,000 VND |
+| 50k     | 5,000  | 50,000 | 5,000 tokens - 50,000 VND |
+| 100k    | 10,000 | 100,000| 10,000 tokens - 100,000 VND |
+
 ## Note
 
 - Ensure you do not commit the `.env` file to version control to keep sensitive information like passwords and API keys secure.
 - Variables can be adjusted based on specific requirements of different environments (development, staging, production).
+- For VietQR API access, register at [My VietQR](https://my.vietqr.io) to obtain your Client ID and API Key.
+- The VietinBank BIN code is always `970415` for VietinBank.
