@@ -4,6 +4,7 @@ import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
+	"mlvt/internal/handler/rest/v1/payment_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/token_claim_handler"
@@ -26,6 +27,7 @@ type AppRouter struct {
 	walletController   *wallet_handler.WalletController
 	voucherController  *voucher_handler.VoucherController
 	tokenController    *token_claim_handler.TokenController
+	paymentController  *payment_handler.PaymentController
 
 	swaggerRouter *SwaggerRouter
 }
@@ -41,6 +43,7 @@ func NewAppRouter(
 	walletController *wallet_handler.WalletController,
 	voucherController *voucher_handler.VoucherController,
 	tokenController *token_claim_handler.TokenController,
+	paymentController *payment_handler.PaymentController,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
 		userController:     userController,
@@ -53,6 +56,7 @@ func NewAppRouter(
 		walletController:   walletController,
 		voucherController:  voucherController,
 		tokenController:    tokenController,
+		paymentController:  paymentController,
 		swaggerRouter:      swaggerRouter,
 	}
 }
@@ -186,6 +190,29 @@ func (a *AppRouter) RegisterWalletRoutes(r *gin.RouterGroup) {
 		protected.GET("/deposit", a.walletController.Deposit)
 		protected.POST("/use-token", a.walletController.UseToken)
 		protected.GET("/balance", a.walletController.GetBalance)
+	}
+}
+
+func (a *AppRouter) RegisterPaymentRoutes(r *gin.RouterGroup) {
+	// Public endpoints (no auth required)
+	public := r.Group("/payment")
+	{
+		public.GET("/options", a.paymentController.GetPaymentOptions)
+	}
+
+	protected := r.Group("/payment")
+	protected.Use(a.authMiddleware.MustAuth())
+	{
+		// User payment endpoints
+		protected.POST("/create", a.paymentController.CreatePayment)
+		protected.GET("/:payment_id", a.paymentController.GetPayment)
+		protected.GET("/transaction/:transaction_id", a.paymentController.GetPaymentByTransactionID)
+		protected.GET("/user-payments", a.paymentController.GetUserPayments)
+		protected.POST("/confirm/:transaction_id", a.paymentController.ConfirmPayment)
+		protected.POST("/cancel/:payment_id", a.paymentController.CancelPayment)
+
+		// Admin endpoints (for monitoring pending payments)
+		protected.GET("/pending", a.paymentController.GetPendingPayments)
 	}
 }
 

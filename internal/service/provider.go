@@ -6,6 +6,7 @@ import (
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/notify_service"
+	"mlvt/internal/service/payment_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/token_claim_service"
@@ -25,6 +26,7 @@ var ProviderSetService = wire.NewSet(
 	user_service.NewUserService,
 	media_service.NewMediaService,
 	notify_service.NewNotifyService,
+	payment_service.NewPaymentService,
 	progress_service.NewProgressService,
 	traffic_service.NewTrafficService,
 	wallet_service.NewWalletService,
