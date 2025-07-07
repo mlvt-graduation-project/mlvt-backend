@@ -84,7 +84,7 @@ func (h *MediaController) AddTranscription(c *gin.Context) {
 		return
 	}
 
-	id, err := h.mediaService.CreateTranscription(&transcription)
+	id, err := h.mediaService.CreateTranscription(&transcription, false, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return

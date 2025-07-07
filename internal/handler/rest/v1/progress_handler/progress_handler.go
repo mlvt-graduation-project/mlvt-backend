@@ -2,6 +2,7 @@ package progress_handler
 
 import (
 	"context"
+	"mlvt/internal/entity"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/progress_service"
@@ -42,7 +43,20 @@ func (h *ProgressController) GetUserProgress(c *gin.Context) {
 		return
 	}
 
-	progresses, err := h.progressService.GetProgressByUserID(context.Background(), userId)
+	listProgress := []entity.ProgressType {
+		entity.ProgressTypeFP,
+		entity.ProgressTypeTTS,
+		entity.ProgressTypeSTT,
+		entity.ProgressTypeLS,
+		entity.ProgressTypeTTT,
+	}
+	listStatus := []entity.StatusEntity {
+		entity.StatusFailed,
+		entity.StatusProcessing,
+		entity.StatusRaw,
+		entity.StatusSucceeded,
+	}
+	progresses, err := h.progressService.GetProgressByUserID(context.Background(), userId, 0, 15, "", listProgress, listStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to get user progress"})
 		log.Errorf("failed to get user progress, err: ", err)

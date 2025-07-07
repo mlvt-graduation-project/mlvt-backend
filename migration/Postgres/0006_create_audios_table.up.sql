@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS audios (
     id SERIAL PRIMARY KEY,
-    video_id INTEGER NOT NULL,
+    video_id INTEGER NULL,
     user_id INTEGER NOT NULL,
     duration INTEGER NOT NULL,
     lang TEXT NOT NULL,

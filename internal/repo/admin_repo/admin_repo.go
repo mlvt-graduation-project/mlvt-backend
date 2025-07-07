@@ -2,11 +2,11 @@ package admin_repo
 
 import (
 	"context"
-	"database/sql"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -35,10 +35,10 @@ type adminRepo struct {
 	// admin monitor
 	progressAdapter *mongodb.MongoDBAdapter[entity.Progress]
 	trafficAdapter  *mongodb.MongoDBAdapter[entity.Traffic]
-	dbSqlite        *sql.DB
+	DBPostgres      *sqlx.DB
 }
 
-func NewAminRepo(dbMongo *mongodb.MongoDBClient, dbSqlite *sql.DB) AdminRepository {
+func NewAminRepo(dbMongo *mongodb.MongoDBClient, DBPostgres *sqlx.DB) AdminRepository {
 	return &adminRepo{
 		adminConfigAdapter: mongodb.NewMongoDBAdapter[entity.AdminConfig](
 			dbMongo.GetClient(),
@@ -50,7 +50,7 @@ func NewAminRepo(dbMongo *mongodb.MongoDBClient, dbSqlite *sql.DB) AdminReposito
 			"mlvt",
 			"model_option",
 		),
-		dbSqlite: dbSqlite,
+		DBPostgres: DBPostgres,
 		progressAdapter: mongodb.NewMongoDBAdapter[entity.Progress](
 			dbMongo.GetClient(),
 			"mlvt",

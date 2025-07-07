@@ -3,6 +3,7 @@ package media_service
 import (
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/utility"
 )
 
 func (s *mediaService) GeneratePresignedUploadURL(folder, fileName, fileType string) (string, error) {
@@ -26,7 +27,13 @@ func (s *mediaService) GeneratePresignedDownloadURL(audioID uint64) (string, err
 	return presignedURL, nil
 }
 
-func (s *mediaService) CreateAudio(audio *entity.Audio) (uint64, error) {
+func (s *mediaService) CreateAudio(audio *entity.Audio, isFullPipeline bool) (uint64, error) {
+	count, err := s.mediaRepo.GetCountAudiosByUserId(audio.UserID)
+	if err != nil {
+		return 0, fmt.Errorf("error querying total audios of user id")
+	}
+	audio.Title = utility.GetMediaTitle(entity.MediaTypeAudio, isFullPipeline, false, count+1)
+
 	return s.mediaRepo.CreateAudio(audio)
 }
 
@@ -63,6 +70,10 @@ func (s *mediaService) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Au
 }
 func (s *mediaService) ListAudiosByUserID(userID uint64) ([]entity.Audio, error) {
 	return s.mediaRepo.ListAudiosByUserID(userID)
+}
+
+func (s *mediaService) ListAudiosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Audio, error) {
+	return s.mediaRepo.ListAudiosByUserIDAdvance(userID, searchKey, limit, offset, status)
 }
 
 func (s *mediaService) GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, string, error) {

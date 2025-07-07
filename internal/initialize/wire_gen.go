@@ -7,11 +7,12 @@
 package initialize
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/process_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/token_claim_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
@@ -46,7 +47,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRouter, error) {
+func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRouter, error) {
 	userRepository := user_repo.NewUserRepo(db)
 	s3ClientInterface, err := aws.NewS3Client()
 	if err != nil {
@@ -54,36 +55,62 @@ func InitializeApp(db *sql.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRou
 	}
 	string2 := _wireStringValue
 	authServiceInterface := auth_service.NewAuthService(userRepository, string2)
+
+	// Traffic
 	trafficRepository := traffic_repo.NewTrafficRepo(mongoConn)
 	trafficService := traffic_service.NewTrafficService(trafficRepository, s3ClientInterface)
+
+	// User
 	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService)
 	userController := user_handler.NewUserController(userService)
+
+	// Media
 	mediaRepository := media_repo.NewMediaRepo(db)
 	mediaService := media_service.NewMediaService(mediaRepository, s3ClientInterface)
 	mediaController := media_handler.NewMediaController(mediaService)
+
+	// Progress
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository, mediaRepository, s3ClientInterface)
+	progressController := progress_handler.NewProgressService(progressService)
+
+	// Process (media + progress)
+	processController := process_handler.NewProcessService(progressService, mediaService)
+
+	// MLVT + Nofiy
 	notifyService := notify_service.NewNotifyService()
 	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService, notifyService)
-	progressController := progress_handler.NewProgressService(progressService)
+
+	// Ping 
 	pingRepository := ping_repo.NewPingRepo(db)
 	pingService := ping_service.NewPingService(pingRepository)
 	pingController := ping_handler.NewPingController(pingService)
-	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
+
+	// Admin
 	adminRepository := admin_repo.NewAminRepo(mongoConn, db)
 	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
+
+	// Wallet
 	walletRepository := wallet_repo.NewWalletRepo(db)
 	walletService := wallet_service.NewWalletService(walletRepository, trafficService)
 	walletController := wallet_handler.NewWalletController(walletService)
+
+	// Voucher 
 	voucherRepository := voucher_repo.NewVoucherRepo(mongoConn)
 	voucherService := voucher_service.NewVoucherService(voucherRepository, trafficService, walletService)
 	voucherController := voucher_handler.NewVoucherController(voucherService)
+
+	// Token
 	tokenRepository := token_claim_repo.New(db)
 	tokenService := token_claim_service.New(tokenRepository)
 	tokenController := token_claim_handler.New(tokenService)
+
+	// Middleware
+	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
+
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, processController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, swaggerRouter)
 	return appRouter, nil
 }
 

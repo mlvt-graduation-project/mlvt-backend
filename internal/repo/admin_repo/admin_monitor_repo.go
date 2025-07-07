@@ -6,6 +6,8 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // #region media
@@ -15,71 +17,33 @@ func (r *adminRepo) GetMonitorDataType(
 ) (entity.MonitorDataType, error) {
 	var result entity.MonitorDataType
 
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos",
-	).Scan(&result.Videos.Count); err != nil {
-		return result, fmt.Errorf("count videos: %w", err)
+	db := r.DBPostgres
+
+	queries := []struct {
+		sql  string
+		dest *uint64
+		desc string
+	}{
+		{"SELECT COUNT(*) FROM videos", &result.Videos.Count, "count videos"},
+		{"SELECT COUNT(*) FROM videos WHERE status = 'succeeded'", &result.Videos.Succeeded, "count videos succeeded"},
+		{"SELECT COUNT(*) FROM videos WHERE status = 'failed'", &result.Videos.Failed, "count videos failed"},
+		{"SELECT COUNT(*) FROM audios", &result.Audios.Count, "count audios"},
+		{"SELECT COUNT(*) FROM audios WHERE status = 'succeeded'", &result.Audios.Succeeded, "count audios succeeded"},
+		{"SELECT COUNT(*) FROM audios WHERE status = 'failed'", &result.Audios.Failed, "count audios failed"},
+		{"SELECT COUNT(*) FROM transcriptions", &result.Texts.Count, "count transcriptions"},
+		{"SELECT COUNT(*) FROM transcriptions WHERE status = 'succeeded'", &result.Texts.Succeeded, "count transcriptions succeeded"},
+		{"SELECT COUNT(*) FROM transcriptions WHERE status = 'failed'", &result.Texts.Failed, "count transcriptions failed"},
 	}
 
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos WHERE status = 'succeeded'",
-	).Scan(&result.Videos.Succeeded); err != nil {
-		return result, fmt.Errorf("count videos succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos WHERE status = 'failed'",
-	).Scan(&result.Videos.Failed); err != nil {
-		return result, fmt.Errorf("count videos failed: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios",
-	).Scan(&result.Audios.Count); err != nil {
-		return result, fmt.Errorf("count audios: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios WHERE status = 'succeeded'",
-	).Scan(&result.Audios.Succeeded); err != nil {
-		return result, fmt.Errorf("count audios succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios WHERE status = 'failed'",
-	).Scan(&result.Audios.Failed); err != nil {
-		return result, fmt.Errorf("count audios failed: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions",
-	).Scan(&result.Texts.Count); err != nil {
-		return result, fmt.Errorf("count transcriptions: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions WHERE status = 'succeeded'",
-	).Scan(&result.Texts.Succeeded); err != nil {
-		return result, fmt.Errorf("count transcriptions succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions WHERE status = 'failed'",
-	).Scan(&result.Texts.Failed); err != nil {
-		return result, fmt.Errorf("count transcriptions failed: %w", err)
+	for _, q := range queries {
+		if err := db.QueryRowContext(ctx, q.sql).Scan(q.dest); err != nil {
+			return result, fmt.Errorf("%s: %w", q.desc, err)
+		}
 	}
 
 	return result, nil
 }
+
 
 // for user usage, will move to public_monitor in future
 func (r *adminRepo) GetMonitorDataTypeByUserID(
@@ -87,83 +51,35 @@ func (r *adminRepo) GetMonitorDataTypeByUserID(
 	userID uint64,
 ) (entity.MonitorDataType, error) {
 	var result entity.MonitorDataType
+	db := r.DBPostgres 
 
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos WHERE user_id = ?",
-		userID,
-	).Scan(&result.Videos.Count); err != nil {
-		return result, fmt.Errorf("count videos: %w", err)
+	queries := []struct {
+		sqlTemplate string
+		args        []interface{}
+		dest        *uint64
+		desc        string
+	}{
+		{"SELECT COUNT(*) FROM videos WHERE user_id = ?", []interface{}{userID}, &result.Videos.Count, "count videos"},
+		{"SELECT COUNT(*) FROM videos WHERE user_id = ? AND status = 'succeeded'", []interface{}{userID}, &result.Videos.Succeeded, "count videos succeeded"},
+		{"SELECT COUNT(*) FROM videos WHERE user_id = ? AND status = 'failed'", []interface{}{userID}, &result.Videos.Failed, "count videos failed"},
+		{"SELECT COUNT(*) FROM audios WHERE user_id = ?", []interface{}{userID}, &result.Audios.Count, "count audios"},
+		{"SELECT COUNT(*) FROM audios WHERE user_id = ? AND status = 'succeeded'", []interface{}{userID}, &result.Audios.Succeeded, "count audios succeeded"},
+		{"SELECT COUNT(*) FROM audios WHERE user_id = ? AND status = 'failed'", []interface{}{userID}, &result.Audios.Failed, "count audios failed"},
+		{"SELECT COUNT(*) FROM transcriptions WHERE user_id = ?", []interface{}{userID}, &result.Texts.Count, "count transcriptions"},
+		{"SELECT COUNT(*) FROM transcriptions WHERE user_id = ? AND status = 'succeeded'", []interface{}{userID}, &result.Texts.Succeeded, "count transcriptions succeeded"},
+		{"SELECT COUNT(*) FROM transcriptions WHERE user_id = ? AND status = 'failed'", []interface{}{userID}, &result.Texts.Failed, "count transcriptions failed"},
 	}
 
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos WHERE user_id = ? AND status = 'succeeded'",
-		userID,
-	).Scan(&result.Videos.Succeeded); err != nil {
-		return result, fmt.Errorf("count videos succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM videos WHERE user_id = ? AND status = 'failed'",
-		userID,
-	).Scan(&result.Videos.Failed); err != nil {
-		return result, fmt.Errorf("count videos failed: %w", err)
-	}
-
-	// Audios
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios WHERE user_id = ?",
-		userID,
-	).Scan(&result.Audios.Count); err != nil {
-		return result, fmt.Errorf("count audios: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios WHERE user_id = ? AND status = 'succeeded'",
-		userID,
-	).Scan(&result.Audios.Succeeded); err != nil {
-		return result, fmt.Errorf("count audios succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM audios WHERE user_id = ? AND status = 'failed'",
-		userID,
-	).Scan(&result.Audios.Failed); err != nil {
-		return result, fmt.Errorf("count audios failed: %w", err)
-	}
-
-	// Transcriptions (text)
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions WHERE user_id = ?",
-		userID,
-	).Scan(&result.Texts.Count); err != nil {
-		return result, fmt.Errorf("count transcriptions: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions WHERE user_id = ? AND status = 'succeeded'",
-		userID,
-	).Scan(&result.Texts.Succeeded); err != nil {
-		return result, fmt.Errorf("count transcriptions succeeded: %w", err)
-	}
-
-	if err := r.dbSqlite.QueryRowContext(
-		ctx,
-		"SELECT COUNT(*) FROM transcriptions WHERE user_id = ? AND status = 'failed'",
-		userID,
-	).Scan(&result.Texts.Failed); err != nil {
-		return result, fmt.Errorf("count transcriptions failed: %w", err)
+	for _, q := range queries {
+		query := sqlx.Rebind(sqlx.DOLLAR, q.sqlTemplate)
+		if err := db.QueryRowContext(ctx, query, q.args...).Scan(q.dest); err != nil {
+			return result, fmt.Errorf("%s: %w", q.desc, err)
+		}
 	}
 
 	return result, nil
 }
+
 
 // #endregion
 

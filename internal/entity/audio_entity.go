@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type Audio struct {
 	ID              uint64       `json:"id"`
@@ -14,4 +16,5 @@ type Audio struct {
 	Status          StatusEntity `json:"status" `
 	CreatedAt       time.Time    `json:"created_at"` // Timestamp of when the audio was uploaded
 	UpdatedAt       time.Time    `json:"updated_at"` // Timestamp of the last update to the audio
+	Title			string		 `json:"title"`
 }

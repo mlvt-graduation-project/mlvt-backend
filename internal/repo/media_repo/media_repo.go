@@ -1,8 +1,9 @@
 package media_repo
 
 import (
-	"database/sql"
 	"mlvt/internal/entity"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type MediaRepository interface {
@@ -11,6 +12,8 @@ type MediaRepository interface {
 	GetAudioByID(audioID uint64) (*entity.Audio, error)
 	GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio, error)
 	ListAudiosByUserID(userID uint64) ([]entity.Audio, error)
+	ListAudiosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Audio, error)
+	GetCountAudiosByUserId (userID uint64) (int, error)
 	GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, error)
 	ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error)
 	DeleteAudioByID(audioID uint64) error
@@ -21,6 +24,8 @@ type MediaRepository interface {
 	CreateVideo(video *entity.Video) (uint64, error)
 	GetVideoByID(videoID uint64) (*entity.Video, error)
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
+	ListVideosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Video, error)
+	GetCountVideosByUserId (userID uint64) (int, error)
 	DeleteVideo(videoID uint64) error
 	UpdateVideo(video *entity.Video) error
 	GetVideoStatus(videoID uint64) (entity.StatusEntity, error)
@@ -32,6 +37,8 @@ type MediaRepository interface {
 	GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, error)
 	GetTranscriptionByIDAndVideoID(transcriptionID, videoID uint64) (*entity.Transcription, error)
 	ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error)
+	ListTranscriptionsByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Transcription, error)
+	GetCountTranscriptionsByUserId (userID uint64) (int, error)
 	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
 	DeleteTranscription(transcriptionID uint64) error
 	UpdateTranscription(transcription *entity.Transcription) error
@@ -39,9 +46,9 @@ type MediaRepository interface {
 }
 
 type mediaRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewMediaRepo(db *sql.DB) MediaRepository {
+func NewMediaRepo(db *sqlx.DB) MediaRepository {
 	return &mediaRepo{db: db}
 }

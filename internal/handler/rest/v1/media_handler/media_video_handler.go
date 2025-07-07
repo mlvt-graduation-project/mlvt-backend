@@ -107,7 +107,7 @@ func (h *MediaController) AddVideo(c *gin.Context) {
 		return
 	}
 
-	id, err := h.mediaService.CreateVideo(&video)
+	id, err := h.mediaService.CreateVideo(&video, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return

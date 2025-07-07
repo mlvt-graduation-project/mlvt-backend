@@ -3,9 +3,16 @@ package media_service
 import (
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/utility"
 )
 
-func (s *mediaService) CreateTranscription(transcription *entity.Transcription) (uint64, error) {
+func (s *mediaService) CreateTranscription(transcription *entity.Transcription, isFullPipeline bool, originalText bool) (uint64, error) {
+	count, err := s.mediaRepo.GetCountTranscriptionsByUserId(transcription.UserID)
+	if err != nil {
+		return 0, fmt.Errorf("error querying total transcription of user id")
+	}
+	transcription.Title = utility.GetMediaTitle(entity.MediaTypeText, isFullPipeline, originalText, count+1)
+
 	return s.mediaRepo.CreateTranscription(transcription)
 }
 
@@ -65,6 +72,10 @@ func (s *mediaService) GetTranscriptionByIDAndVideoID(transcriptionID, videoID u
 
 func (s *mediaService) ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error) {
 	return s.mediaRepo.ListTranscriptionsByUserID(userID)
+}
+
+func (s *mediaService) ListTranscriptionsByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Transcription, error) {
+	return s.mediaRepo.ListTranscriptionsByUserIDAdvance(userID, searchKey, limit, offset, status)
 }
 
 func (s *mediaService) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error) {

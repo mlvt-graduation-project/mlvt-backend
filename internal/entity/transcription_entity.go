@@ -1,6 +1,8 @@
 package entity
 
-import "time"
+import (
+	"time"
+)
 
 type Transcription struct {
 	ID                      uint64       `json:"id"`
@@ -14,4 +16,5 @@ type Transcription struct {
 	Status                  StatusEntity `json:"status"`
 	CreatedAt               time.Time    `json:"created_at"` // Timestamp of when the transcription was created
 	UpdatedAt               time.Time    `json:"updated_at"` // Timestamp of the last update to the transcription
+	Title 					string		 `json:"title"`
 }

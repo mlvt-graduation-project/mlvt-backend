@@ -1,20 +1,20 @@
 package db
 
 import (
-	"database/sql"
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-func InitializeDB() (*sql.DB, error) {
+func InitializeDB() (*sqlx.DB, error) {
 	driver := env.EnvConfig.DBDriver
 
 	// Format the PostgreSQL connection string
 	dsn := env.EnvConfig.DBConnection
 
-	db, err := sql.Open(driver, dsn)
+	db, err := sqlx.Open(driver, dsn)
 	if err != nil {
 		return nil, err
 	}

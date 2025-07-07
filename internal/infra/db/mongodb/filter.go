@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // OperationType defines the type for filter operations.
@@ -20,6 +21,7 @@ const (
 	OpLike        OperationType = "LIKE"
 	OpIn          OperationType = "IN"
 	OpNotIn       OperationType = "NOT IN"
+	OpRegex		  OperationType = "regex"
 )
 
 // FilterCondition represents a single filter condition for querying MongoDB.
@@ -36,7 +38,7 @@ func (fc *FilterCondition) Validate() error {
 	}
 
 	switch fc.Operation {
-	case OpEqual, OpNotEqual, OpGreaterThan, OpLessThan, OpGTE, OpLTE, OpLike, OpIn, OpNotIn:
+	case OpEqual, OpNotEqual, OpGreaterThan, OpLessThan, OpGTE, OpLTE, OpLike, OpIn, OpNotIn, OpRegex:
 		// Supported operations
 		return nil
 	default:
@@ -94,8 +96,15 @@ func BuildBsonFilter(filters []FilterCondition) (bson.M, error) {
 				return nil, fmt.Errorf("NOT IN operation requires a slice of values")
 			}
 			condition = bson.M{cond.Key: bson.M{"$nin": values}}
+		case OpRegex:
+			if regex, ok := cond.Value.(primitive.Regex); ok {
+				condition = bson.M{cond.Key: bson.M{"$regex": regex.Pattern, "$options": regex.Options}}
+			} else {
+				return nil, fmt.Errorf("OpRegex requires primitive.Regex value")
+			}
+		default:
+			return nil, fmt.Errorf("unsupported operation: %s, operationType: (%T)", cond.Operation, cond.Operation)
 		}
-
 		andConditions = append(andConditions, condition)
 	}
 

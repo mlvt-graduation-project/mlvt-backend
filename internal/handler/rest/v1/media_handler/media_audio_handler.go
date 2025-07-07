@@ -89,7 +89,7 @@ func (h *MediaController) AddAudio(c *gin.Context) {
 	}
 
 	// Create the audio and retrieve its ID
-	audioID, err := h.mediaService.CreateAudio(&audio)
+	audioID, err := h.mediaService.CreateAudio(&audio, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return

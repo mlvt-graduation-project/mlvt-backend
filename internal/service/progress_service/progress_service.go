@@ -3,14 +3,13 @@ package progress_service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
 	"mlvt/internal/infra/db/mongodb"
-	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/progress_repo"
+	"regexp"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,7 +20,7 @@ type ProgressService interface {
 	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
 	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
-	GetProgressByUserID(ctx context.Context, userID uint64) ([]entity.Progress, error)
+	GetProgressByUserID(ctx context.Context, userID uint64, offset int, limit int, searchKey string, progressType []entity.ProgressType, progressStatus []entity.StatusEntity) ([]entity.Progress, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
 	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
 	GetProgressThumbnails(progresses []entity.Progress) ([]response.ProgressResponse, error)
@@ -87,29 +86,74 @@ func (s *progressService) UpdateFieldId(ctx context.Context, id primitive.Object
 func (s *progressService) GetProgressByUserID(
 	ctx context.Context,
 	userID uint64,
+	offset int,
+	limit int,
+	searchKey string,
+	progressType []entity.ProgressType,
+	progressStatus []entity.StatusEntity,
 ) (
 	[]entity.Progress,
 	error,
 ) {
-	qo := mongodb.QueryOptions{
-		Filters: []mongodb.FilterCondition{
-			{
-				Key:       "user_id",
-				Operation: mongodb.OpEqual,
-				Value:     userID,
-			},
+	filters := []mongodb.FilterCondition{
+		{
+			Key:       "user_id",
+			Operation: mongodb.OpEqual,
+			Value:     userID,
 		},
+	}
+
+	if searchKey != "" {
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "title",
+			Operation: mongodb.OpRegex,
+			Value:     primitive.Regex{
+				Pattern: ".*" + regexp.QuoteMeta(searchKey) + ".*",
+				Options: "i",
+			}, 
+		})
+	}
+
+	// Nếu có lọc theo progressType thì thêm điều kiện
+	if len(progressType) > 0 {
+		values := make([]interface{}, len(progressType))
+		for i, pt := range progressType {
+			values[i] = pt
+		}
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "progress_type",
+			Operation: mongodb.OpIn,
+			Value:     values,
+		})
+	}
+
+	if len(progressStatus) > 0 {
+		values := make([]interface{}, len(progressStatus))
+		for i, pt := range progressStatus {
+			values[i] = pt
+		}
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "status",
+			Operation: mongodb.OpIn,
+			Value:     values,
+		})
+	}
+
+	qo := mongodb.QueryOptions{
+		Filters: filters,
 		Sorts: []mongodb.SortCondition{
 			{
 				Field:     "created_at",
 				Direction: mongodb.SortDesc,
 			},
 		},
-		// Not set the Field to return all columns
+		Limit:  &limit,
+		Offset: &offset,
 	}
 
 	return s.repo.GetByFilter(ctx, qo)
 }
+
 
 func (s *progressService) GetProgressThumbnails(
 	progresses []entity.Progress,
@@ -121,28 +165,6 @@ func (s *progressService) GetProgressThumbnails(
 	thumbnailURL := ""
 
 	for _, progress := range progresses {
-		if progress.ProgressType == "stt" || progress.ProgressType == "ls" || progress.ProgressType == "fp" {
-			video, err := s.mediaRepo.GetVideoByID(progress.OriginalVideoID)
-			if err != nil {
-				log.Errorf("Failed to get video with ID %d: %v", progress.OriginalVideoID, err)
-				return nil, fmt.Errorf("failed to get video with ID %d: %w", progress.OriginalVideoID, err)
-			}
-
-			// Prevent nil pointer dereference
-			if video == nil {
-				log.Errorf("Video with ID %d is nil", progress.OriginalVideoID)
-				return nil, fmt.Errorf("video with ID %d not found", progress.OriginalVideoID)
-			}
-
-			log.Infof("Video found: Folder=%s, Image=%s", video.Folder, video.Image)
-
-			thumbnailURL, err = s.s3Client.GeneratePresignedDownloadURL("video_frames", video.Image, "image/jpeg")
-			if err != nil {
-				log.Errorf("Failed to generate presigned download URL for video ID %d: %v", progress.OriginalVideoID, err)
-				thumbnailURL = "" // Ensure the response still contains valid data even if thumbnail generation fails
-			}
-		}
-
 		resp := response.ProgressResponse{
 			ID:                        progress.ID,
 			UserID:                    progress.UserID,
@@ -156,10 +178,51 @@ func (s *progressService) GetProgressThumbnails(
 			CreatedAt:                 progress.CreatedAt,
 			UpdatedAt:                 progress.UpdatedAt,
 			ThumbnailUrl:              thumbnailURL,
+			Title: 					   progress.Title,
 		}
-
 		result = append(result, resp)
 	}
+
+	// for _, progress := range progresses {
+	// 	if progress.ProgressType == "stt" || progress.ProgressType == "ls" || progress.ProgressType == "fp" {
+	// 		video, err := s.mediaRepo.GetVideoByID(progress.OriginalVideoID)
+	// 		if err != nil {
+	// 			log.Errorf("Failed to get video with ID %d: %v", progress.OriginalVideoID, err)
+	// 			return nil, fmt.Errorf("failed to get video with ID %d: %w", progress.OriginalVideoID, err)
+	// 		}
+
+	// 		// Prevent nil pointer dereference
+	// 		if video == nil {
+	// 			log.Errorf("Video with ID %d is nil", progress.OriginalVideoID)
+	// 			return nil, fmt.Errorf("video with ID %d not found", progress.OriginalVideoID)
+	// 		}
+
+	// 		log.Infof("Video found: Folder=%s, Image=%s", video.Folder, video.Image)
+
+	// 		thumbnailURL, err = s.s3Client.GeneratePresignedDownloadURL("video_frames", video.Image, "image/jpeg")
+	// 		if err != nil {
+	// 			log.Errorf("Failed to generate presigned download URL for video ID %d: %v", progress.OriginalVideoID, err)
+	// 			thumbnailURL = "" // Ensure the response still contains valid data even if thumbnail generation fails
+	// 		}
+	// 	}
+
+	// 	resp := response.ProgressResponse{
+	// 		ID:                        progress.ID,
+	// 		UserID:                    progress.UserID,
+	// 		ProgressType:              progress.ProgressType,
+	// 		OriginalVideoID:           progress.OriginalVideoID,
+	// 		OriginalTranscriptionID:   progress.OriginalTranscriptionID,
+	// 		TranslatedTranscriptionID: progress.TranslatedTranscriptionID,
+	// 		AudioID:                   progress.AudioID,
+	// 		ProgressedVideoID:         progress.ProgressedVideoID,
+	// 		Status:                    progress.Status,
+	// 		CreatedAt:                 progress.CreatedAt,
+	// 		UpdatedAt:                 progress.UpdatedAt,
+	// 		ThumbnailUrl:              thumbnailURL,
+	// 	}
+
+	// 	result = append(result, resp)
+	// }
 
 	return result, nil
 }
