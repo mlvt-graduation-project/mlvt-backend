@@ -72,7 +72,7 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	// Progress
 	progressRepository := progress_repo.NewProgressRepo(mongoConn)
 	progressService := progress_service.NewProgressService(progressRepository, mediaRepository, s3ClientInterface)
-	progressController := progress_handler.NewProgressService(progressService)
+	progressController := progress_handler.NewProgressService(progressService, mediaService)
 
 	// Process (media + progress)
 	processController := process_handler.NewProcessService(progressService, mediaService)

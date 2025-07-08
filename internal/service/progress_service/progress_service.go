@@ -18,10 +18,12 @@ import (
 
 type ProgressService interface {
 	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
-	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
+	GetByID(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
 	GetProgressByUserID(ctx context.Context, userID uint64, offset int, limit int, searchKey string, progressType []entity.ProgressType, progressStatus []entity.StatusEntity) ([]entity.Progress, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
+	UpdateTitle(ctx context.Context, id primitive.ObjectID, newTitle string) error
+	DeleteProgress(ctx context.Context, id primitive.ObjectID) error
 	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
 	GetProgressThumbnails(progresses []entity.Progress) ([]response.ProgressResponse, error)
 }
@@ -48,7 +50,7 @@ func (s *progressService) Create(ctx context.Context, p entity.Progress) (primit
 	return s.repo.Insert(ctx, p)
 }
 
-func (s *progressService) GetByID(ctx context.Context, id uint64) (*entity.Progress, error) {
+func (s *progressService) GetByID(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error) {
 	return s.repo.Get(ctx, id)
 }
 
@@ -61,6 +63,28 @@ func (s *progressService) UpdateStatus(ctx context.Context, id primitive.ObjectI
 
 	updateData := bson.M{
 		"status":     newStatus,
+		"updated_at": time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) UpdateTitle(ctx context.Context, id primitive.ObjectID, newTitle string) error {
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		"title":     newTitle,
+		"updated_at": time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) DeleteProgress(ctx context.Context, id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		"is_deleted": true,
 		"updated_at": time.Now(),
 	}
 
@@ -138,6 +162,12 @@ func (s *progressService) GetProgressByUserID(
 			Value:     values,
 		})
 	}
+
+	filters = append(filters, mongodb.FilterCondition{
+		Key:       "is_deleted",
+		Operation: mongodb.OpNotEqual,
+		Value:     true,
+	})
 
 	qo := mongodb.QueryOptions{
 		Filters: filters,

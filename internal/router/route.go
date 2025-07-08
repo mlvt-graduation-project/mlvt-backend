@@ -159,6 +159,8 @@ func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
 	public := r.Group("/progress")
 	{
 		public.GET("/:user_id", a.progressController.GetUserProgress)
+		public.POST("update-title/:progress_id", a.progressController.UpdateProgressTitle)
+		public.POST("delete-progress/:progress_id", a.progressController.DeleteProgress)
 	}
 }
 

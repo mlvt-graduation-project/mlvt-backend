@@ -5,22 +5,27 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/progress_service"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProgressController struct {
 	progressService progress_service.ProgressService
+	mediaService media_service.MediaService
 }
 
 func NewProgressService(
 	progressService progress_service.ProgressService,
+	mediaService media_service.MediaService,
 ) *ProgressController {
 	return &ProgressController{
 		progressService: progressService,
+		mediaService: mediaService,
 	}
 }
 
@@ -74,3 +79,90 @@ func (h *ProgressController) GetUserProgress(c *gin.Context) {
 		"progresses": progressWithThumbnail,
 	})
 }
+
+func (h *ProgressController) UpdateProgressTitle(c *gin.Context) {
+	progressID := c.Param("progress_id")
+	id, err := primitive.ObjectIDFromHex(progressID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid progress id"})
+		return
+	}
+
+	var body map[string]string
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	title, ok := body["title"]
+	if !ok || title == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing title"})
+		return
+	}
+
+	if err := h.progressService.UpdateTitle(context.Background(), id, title); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update title"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Title updated"})
+}
+
+func (h *ProgressController) DeleteProgress (c *gin.Context) {
+	progressID := c.Param("progress_id")
+	id, err := primitive.ObjectIDFromHex(progressID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid progress id"})
+		return
+	}
+
+	progressInfo, err := h.progressService.GetByID(context.Background(), id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Progress not found"})
+		return
+	}
+
+	if err := h.progressService.DeleteProgress(context.Background(), id); err != nil {
+		log.Errorf("failed to delete progress: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete progress"})
+		return
+	}
+
+	if progressInfo.ProgressType == entity.ProgressTypeTTS {
+		// delete audio
+		err := h.mediaService.DeleteAudio(progressInfo.AudioID)
+		if err != nil {
+			log.Errorf("failed to delete result audio: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result audio"})
+			return
+		}	
+	} else {
+		if progressInfo.ProgressedVideoID != 0{
+			err := h.mediaService.DeleteVideo(progressInfo.ProgressedVideoID)
+			if err != nil {
+				log.Errorf("failed to delete result video: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result video"})
+				return
+			}	
+		}
+		if progressInfo.TranslatedTranscriptionID != 0 {
+			err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID)
+			if err != nil {
+				log.Errorf("failed to delete result transcription: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result transcription"})
+				return
+			}
+		}
+		if progressInfo.ProgressType == entity.ProgressTypeFP && progressInfo.OriginalTranscriptionID != 0 {
+			err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID)
+			if err != nil {
+				log.Errorf("failed to delete extracted transcription: %v", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete extracted transcription"})
+				return
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Progress deleted"})
+}
+

@@ -176,7 +176,7 @@ type ProcessResponse struct {
 
 func (p *ProgressResponse) ToProcessResponse () *ProcessResponse {
 	return &ProcessResponse{
-		ID: p.ID.String(),
+		ID: p.ID.Hex(),
 		UserID: p.UserID,
 		ProgressType: p.ProgressType,
 		OriginalVideoID: p.OriginalVideoID,

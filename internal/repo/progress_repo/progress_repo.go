@@ -12,7 +12,7 @@ import (
 
 type ProgressRepository interface {
 	Insert(ctx context.Context, progress entity.Progress) (primitive.ObjectID, error)
-	Get(ctx context.Context, id uint64) (*entity.Progress, error)
+	Get(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, queryOpts mongodb.QueryOptions) ([]entity.Progress, error)
 	UpdateFields(ctx context.Context, filter interface{}, updateFields interface{}) error
 }
@@ -39,7 +39,7 @@ func (r *progressRepo) Insert(ctx context.Context, progress entity.Progress) (pr
 	return insertedID, nil
 }
 
-func (r *progressRepo) Get(ctx context.Context, id uint64) (*entity.Progress, error) {
+func (r *progressRepo) Get(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error) {
 	filter := bson.M{"_id": id}
 
 	result, err := r.adapter.FindOne(filter)
