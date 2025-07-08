@@ -80,6 +80,18 @@ func (h *ProgressController) GetUserProgress(c *gin.Context) {
 	})
 }
 
+// UpdateProgressTitle godoc
+// @Summary Update progress title
+// @Description Updates the title of a specific progress by progress ID
+// @Tags Progress
+// @Accept  json
+// @Produce  json
+// @Param   progress_id path     string true "Progress ID"
+// @Param   request body map[string]string true "Request body containing title"
+// @Success 200 {object} map[string]interface{} "Title updated successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid progress ID or missing title"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /progress/{progress_id}/title [put]
 func (h *ProgressController) UpdateProgressTitle(c *gin.Context) {
 	progressID := c.Param("progress_id")
 	id, err := primitive.ObjectIDFromHex(progressID)
@@ -108,6 +120,17 @@ func (h *ProgressController) UpdateProgressTitle(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Title updated"})
 }
 
+// DeleteProgress godoc
+// @Summary Delete progress
+// @Description Deletes a specific progress and its associated media files by progress ID
+// @Tags Progress
+// @Accept  json
+// @Produce  json
+// @Param   progress_id path     string true "Progress ID"
+// @Success 200 {object} map[string]interface{} "Progress deleted successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid progress ID or progress not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /progress/{progress_id} [delete]
 func (h *ProgressController) DeleteProgress (c *gin.Context) {
 	progressID := c.Param("progress_id")
 	id, err := primitive.ObjectIDFromHex(progressID)
