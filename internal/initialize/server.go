@@ -15,7 +15,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	// Create a new Gin router
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173", "http://216.198.79.129", "https://216.198.79.129"}, // base, admin
+		AllowOrigins:     []string{"*"}, // Allow all origins during development
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -33,6 +33,7 @@ func InitServer(appRouter *router.AppRouter) *http.Server {
 	appRouter.RegisterPingStatusRoutes(api)
 	appRouter.RegisterAdminRoutes(api)
 	appRouter.RegisterWalletRoutes(api)
+	appRouter.RegisterPaymentRoutes(api)
 	appRouter.RegisteVoucherRoutes(api)
 	appRouter.RegisterTokenRoutes(api)
 	appRouter.RegisterSwaggerRoutes(r.Group("/"))

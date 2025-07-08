@@ -11,6 +11,7 @@ import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
+	"mlvt/internal/handler/rest/v1/payment_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
 	"mlvt/internal/handler/rest/v1/process_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
@@ -23,6 +24,7 @@ import (
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo/admin_repo"
 	"mlvt/internal/repo/media_repo"
+	"mlvt/internal/repo/payment_repo"
 	"mlvt/internal/repo/ping_repo"
 	"mlvt/internal/repo/progress_repo"
 	"mlvt/internal/repo/token_claim_repo"
@@ -36,6 +38,7 @@ import (
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/notify_service"
+	"mlvt/internal/service/payment_service"
 	"mlvt/internal/service/ping_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/token_claim_service"
@@ -109,8 +112,11 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	// Middleware
 	authUserMiddleware := middleware.NewAuthUserMiddleware(authServiceInterface)
 
+	paymentRepository := payment_repo.NewPaymentRepo(mongoConn)
+	paymentService := payment_service.NewPaymentService(paymentRepository, walletService, trafficService)
+	paymentController := payment_handler.NewPaymentController(paymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, processController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, processController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, paymentController, swaggerRouter)
 	return appRouter, nil
 }
 

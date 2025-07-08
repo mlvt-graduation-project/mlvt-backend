@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MLVT - QR Payment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #718096;
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .payment-option {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-option:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .payment-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .payment-option h3 {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .payment-option p {
+            opacity: 0.8;
+        }
+
+        .qr-display {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .qr-code {
+            max-width: 300px;
+            height: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .transaction-info {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .transaction-info h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .transaction-info p {
+            margin: 5px 0;
+            word-break: break-all;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status.pending {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .status.completed {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .status.failed {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .payment-history {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .payment-item {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert.success {
+            background: #c6f6d5;
+            color: #2f855a;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert.info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        .config-section {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .config-section h3 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .config-item {
+            margin-bottom: 10px;
+        }
+
+        .config-item label {
+            display: inline-block;
+            width: 120px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .config-item input {
+            width: calc(100% - 130px);
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 MLVT Payment System</h1>
+            <p>Purchase tokens with Vietnamese QR Banking</p>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="card">
+            <h2>⚙️ Configuration</h2>
+            <div class="config-section">
+                <h3>Backend API Settings</h3>
+                <div class="config-item">
+                    <label>API Base URL:</label>
+                    <input type="text" id="apiBaseUrl" value="https://capiarys.com/api">
+                </div>
+                <div class="config-item">
+                    <label>User ID:</label>
+                    <input type="number" id="defaultUserId" value="3">
+                </div>
+                <div class="config-item">
+                    <label>Environment:</label>
+                    <select id="environment" onchange="updateApiUrl()">
+                        <option value="local">Local Development</option>
+                        <option value="production" selected>Production</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="saveConfig()">Save Configuration</button>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alertContainer"></div>
+
+        <!-- Login Section -->
+        <div class="card" id="loginSection">
+            <h2>🔐 Authentication</h2>
+            <div class="form-group">
+                <label for="userToken">JWT Token:</label>
+                <input type="password" id="userToken" placeholder="Enter your JWT token">
+            </div>
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="number" id="userId" placeholder="Enter your user ID">
+            </div>
+            <button class="btn" onclick="setAuthentication()">Login</button>
+        </div>
+
+        <div class="grid">
+            <!-- Payment Creation -->
+            <div class="card" id="paymentSection" style="display: none;">
+                <h2>💳 Create Payment</h2>
+
+                <div class="payment-options" id="paymentOptions">
+                    <!-- Options will be loaded here -->
+                </div>
+
+                <button class="btn" onclick="createPayment()" id="createPaymentBtn">
+                    Generate QR Code
+                </button>
+            </div>
+
+            <!-- QR Code Display -->
+            <div class="card" id="qrSection" style="display: none;">
+                <h2>📱 Scan QR Code</h2>
+                <div class="qr-display">
+                    <img id="qrCodeImage" class="qr-code" style="display: none;">
+                    <div class="transaction-info" id="transactionInfo" style="display: none;">
+                        <h4>Payment Details</h4>
+                        <p><strong>Transaction ID:</strong> <span id="transactionId"></span></p>
+                        <p><strong>Amount:</strong> <span id="paymentAmount"></span></p>
+                        <p><strong>Status:</strong> <span id="paymentStatus" class="status pending">Pending</span></p>
+                    </div>
+                    <button class="btn" onclick="checkPaymentStatus()" id="checkStatusBtn" style="display: none;">
+                        Check Status
+                    </button>
+                    <button class="btn btn-secondary" onclick="confirmPayment()" id="confirmBtn" style="display: none;">
+                        Confirm Payment (Admin)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Status Check -->
+        <div class="card" id="statusSection" style="display: none;">
+            <h2>🔍 Check Payment Status</h2>
+            <div class="form-group">
+                <label for="transactionIdInput">Transaction ID:</label>
+                <input type="text" id="transactionIdInput" placeholder="Enter transaction ID">
+            </div>
+            <button class="btn" onclick="checkSpecificPayment()">Check Payment</button>
+            <div id="paymentResult" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="card" id="historySection" style="display: none;">
+            <h2>📜 Payment History</h2>
+            <button class="btn" onclick="loadPaymentHistory()">Load History</button>
+            <div class="payment-history" id="paymentHistory" style="margin-top: 20px;">
+                <!-- History will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Pending Payments Section -->
+        <div class="card" id="pendingSection" style="display: none;">
+            <h2>⏳ Pending Payments</h2>
+            <button class="btn" onclick="loadPendingPayments()">Load Pending Payments</button>
+            <div class="payment-history" id="pendingPayments" style="margin-top: 20px;">
+                <!-- Pending payments will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - can be customized
+        let API_BASE = 'http://localhost:8080/api';
+        let authToken = '';
+        let currentUserId = '3';
+        let selectedPaymentOption = null;
+        let currentTransaction = null;
+
+        // Save configuration
+        function saveConfig() {
+            API_BASE = document.getElementById('apiBaseUrl').value;
+            const defaultUserId = document.getElementById('defaultUserId').value;
+            document.getElementById('userId').value = defaultUserId;
+            currentUserId = defaultUserId;
+
+            showAlert('Configuration saved successfully!', 'success');
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.innerHTML = message;
+            alertContainer.appendChild(alert);
+
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Set authentication
+        function setAuthentication() {
+            const token = document.getElementById('userToken').value;
+            const userId = document.getElementById('userId').value;
+
+            if (!token || !userId) {
+                showAlert('Please enter both token and user ID', 'error');
+                return;
+            }
+
+            authToken = token;
+            currentUserId = userId;
+
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('paymentSection').style.display = 'block';
+            document.getElementById('statusSection').style.display = 'block';
+            document.getElementById('historySection').style.display = 'block';
+            document.getElementById('pendingSection').style.display = 'block';
+
+            loadPaymentOptions();
+            showAlert('Authentication successful!', 'success');
+        }
+
+        // Make API request
+        async function apiRequest(url, options = {}) {
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`,
+                    ...options.headers
+                },
+                ...options
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}${url}`, config);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Load payment options
+        async function loadPaymentOptions() {
+            try {
+                // No auth needed for payment options
+                const response = await fetch(`${API_BASE}/payment/options`);
+                const data = await response.json();
+                const options = data.data || data; // Handle both response formats
+
+                const container = document.getElementById('paymentOptions');
+                container.innerHTML = '';
+
+                if (!Array.isArray(options) || options.length === 0) {
+                    container.innerHTML = '<p>No payment options available</p>';
+                    showAlert('No payment options found', 'error');
+                    return;
+                }
+
+                options.forEach(option => {
+                    const div = document.createElement('div');
+                    div.className = 'payment-option';
+                    div.onclick = () => selectPaymentOption(option.option);
+                    div.innerHTML = `
+                        <h3>${option.option.toUpperCase()}</h3>
+                        <p>${option.token_amount.toLocaleString()} tokens</p>
+                        <p>${option.vnd_amount.toLocaleString()} VND</p>
+                        <p class="description">${option.description}</p>
+                    `;
+                    container.appendChild(div);
+                });
+
+                showAlert('Payment options loaded successfully!', 'success');
+            } catch (error) {
+                console.error('Error loading payment options:', error);
+                showAlert(`Failed to load payment options: ${error.message}`, 'error');
+                document.getElementById('paymentOptions').innerHTML = '<p>Failed to load payment options</p>';
+            }
+        }
+
+        // Select payment option
+        function selectPaymentOption(option) {
+            selectedPaymentOption = option;
+
+            // Update UI
+            document.querySelectorAll('.payment-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            event.target.closest('.payment-option').classList.add('selected');
+
+            showAlert(`Selected ${option.toUpperCase()} package`, 'info');
+        }
+
+        // Create payment
+        async function createPayment() {
+            if (!selectedPaymentOption) {
+                showAlert('Please select a payment option first', 'error');
+                return;
+            }
+
+            try {
+                const btn = document.getElementById('createPaymentBtn');
+                btn.disabled = true;
+                btn.innerHTML = '<div class="spinner"></div> Creating...';
+
+                const payment = await apiRequest(`/payment/create?user_id=${currentUserId}&option=${selectedPaymentOption}`, {
+                    method: 'POST'
+                });
+
+                currentTransaction = payment;
+                displayQRCode(payment);
+                showAlert('QR Code generated successfully!', 'success');
+
+            } catch (error) {
+                showAlert(`Failed to create payment: ${error.message}`, 'error');
+            } finally {
+                const btn = document.getElementById('createPaymentBtn');
+                btn.disabled = false;
+                btn.innerHTML = 'Generate QR Code';
+            }
+        }
+
+        // Display QR code
+        function displayQRCode(payment) {
+            document.getElementById('qrSection').style.display = 'block';
+            document.getElementById('qrCodeImage').src = payment.qr_data_url;
+            document.getElementById('qrCodeImage').style.display = 'block';
+            document.getElementById('transactionInfo').style.display = 'block';
+            document.getElementById('checkStatusBtn').style.display = 'inline-block';
+            document.getElementById('confirmBtn').style.display = 'inline-block';
+
+            document.getElementById('transactionId').textContent = payment.transaction_id;
+            document.getElementById('paymentAmount').textContent = `${payment.vnd_amount.toLocaleString()} VND (${payment.token_amount} tokens)`;
+            updatePaymentStatus(payment.status);
+        }
+
+        // Update payment status display
+        function updatePaymentStatus(status) {
+            const statusEl = document.getElementById('paymentStatus');
+            statusEl.textContent = status;
+            statusEl.className = `status ${status}`;
+        }
+
+        // Check payment status
+        async function checkPaymentStatus() {
+            if (!currentTransaction) {
+                showAlert('No active transaction', 'error');
+                return;
+            }
+
+            try {
+                const payment = await apiRequest(`/payment/transaction/${currentTransaction.transaction_id}`);
+                updatePaymentStatus(payment.status);
+
+                if (payment.status === 'completed') {
+                    showAlert('Payment completed successfully!', 'success');
+                } else if (payment.status === 'failed') {
+                    showAlert('Payment failed', 'error');
+                } else {
+                    showAlert('Payment is still pending', 'info');
+                }
+
+            } catch (error) {
+                showAlert(`Failed to check status: ${error.message}`, 'error');
+            }
+        }
+
+        // Confirm payment (Admin function)
+        async function confirmPayment() {
+            if (!currentTransaction) {
+                showAlert('No active transaction', 'error');
+                return;
+            }
+
+            try {
+                await apiRequest(`/payment/confirm/${currentTransaction.transaction_id}`, {
+                    method: 'POST'
+                });
+
+                updatePaymentStatus('completed');
+                showAlert('Payment confirmed! Tokens have been added to wallet.', 'success');
+
+            } catch (error) {
+                showAlert(`Failed to confirm payment: ${error.message}`, 'error');
+            }
+        }
+
+        // Check specific payment
+        async function checkSpecificPayment() {
+            const transactionId = document.getElementById('transactionIdInput').value;
+
+            if (!transactionId) {
+                showAlert('Please enter a transaction ID', 'error');
+                return;
+            }
+
+            try {
+                const payment = await apiRequest(`/payment/transaction/${transactionId}`);
+
+                const resultDiv = document.getElementById('paymentResult');
+                resultDiv.innerHTML = `
+                    <div class="transaction-info">
+                        <h4>Payment Details</h4>
+                        <p><strong>Transaction ID:</strong> ${payment.transaction_id}</p>
+                        <p><strong>Amount:</strong> ${payment.vnd_amount.toLocaleString()} VND</p>
+                        <p><strong>Tokens:</strong> ${payment.token_amount}</p>
+                        <p><strong>Status:</strong> <span class="status ${payment.status}">${payment.status}</span></p>
+                        <p><strong>Created:</strong> ${new Date(payment.created_at).toLocaleString()}</p>
+                        ${payment.completed_at ? `<p><strong>Completed:</strong> ${new Date(payment.completed_at).toLocaleString()}</p>` : ''}
+                    </div>
+                `;
+
+            } catch (error) {
+                showAlert(`Payment not found: ${error.message}`, 'error');
+                document.getElementById('paymentResult').innerHTML = '';
+            }
+        }
+
+        // Load payment history
+        async function loadPaymentHistory() {
+            try {
+                const payments = await apiRequest(`/payment/user-payments?user_id=${currentUserId}`);
+
+                const historyDiv = document.getElementById('paymentHistory');
+
+                if (payments.length === 0) {
+                    historyDiv.innerHTML = '<p>No payments found.</p>';
+                    return;
+                }
+
+                historyDiv.innerHTML = payments.map(payment => `
+                    <div class="payment-item">
+                        <p><strong>ID:</strong> ${payment.transaction_id}</p>
+                        <p><strong>Amount:</strong> ${payment.vnd_amount.toLocaleString()} VND (${payment.token_amount} tokens)</p>
+                        <p><strong>Status:</strong> <span class="status ${payment.status}">${payment.status}</span></p>
+                        <p><strong>Date:</strong> ${new Date(payment.created_at).toLocaleString()}</p>
+                    </div>
+                `).join('');
+
+                showAlert(`Loaded ${payments.length} payment records`, 'success');
+
+            } catch (error) {
+                showAlert(`Failed to load history: ${error.message}`, 'error');
+            }
+        }
+
+        // Load pending payments
+        async function loadPendingPayments() {
+            try {
+                const payments = await apiRequest('/payment/pending');
+                const pendingDiv = document.getElementById('pendingPayments');
+
+                if (!Array.isArray(payments) || payments.length === 0) {
+                    pendingDiv.innerHTML = '<p>No pending payments found.</p>';
+                    return;
+                }
+
+                pendingDiv.innerHTML = payments.map(payment => `
+                    <div class="payment-item">
+                        <p><strong>Transaction ID:</strong> ${payment.transaction_id}</p>
+                        <p><strong>User ID:</strong> ${payment.user_id}</p>
+                        <p><strong>Amount:</strong> ${payment.vnd_amount.toLocaleString()} VND (${payment.token_amount} tokens)</p>
+                        <p><strong>Created:</strong> ${new Date(payment.created_at).toLocaleString()}</p>
+                        <button class="btn" onclick="confirmSpecificPayment('${payment.transaction_id}')">
+                            Confirm Payment
+                        </button>
+                    </div>
+                `).join('');
+
+                showAlert(`Found ${payments.length} pending payments`, 'info');
+            } catch (error) {
+                showAlert(`Failed to load pending payments: ${error.message}`, 'error');
+                document.getElementById('pendingPayments').innerHTML = '<p>Failed to load pending payments.</p>';
+            }
+        }
+
+        // Confirm a specific payment
+        async function confirmSpecificPayment(transactionId) {
+            try {
+                await apiRequest(`/payment/confirm/${transactionId}`, {
+                    method: 'POST'
+                });
+
+                showAlert('Payment confirmed successfully!', 'success');
+                // Reload the pending payments list
+                loadPendingPayments();
+            } catch (error) {
+                showAlert(`Failed to confirm payment: ${error.message}`, 'error');
+            }
+        }
+
+        // Update API URL based on environment
+        function updateApiUrl() {
+            const env = document.getElementById('environment').value;
+            const apiUrlInput = document.getElementById('apiBaseUrl');
+
+            if (env === 'local') {
+                apiUrlInput.value = 'http://localhost:8080/api';
+            } else if (env === 'production') {
+                apiUrlInput.value = 'https://capiarys.com/api';
+            }
+        }
+
+        // Initialize page
+        window.onload = function () {
+            // Check if we're running on production by checking the hostname
+            const isProduction = window.location.hostname === 'capiarys.com';
+
+            // Update environment selector
+            const envSelect = document.getElementById('environment');
+            envSelect.value = isProduction ? 'production' : 'local';
+
+            // Update API URL based on environment
+            if (isProduction) {
+                document.getElementById('apiBaseUrl').value = 'https://capiarys.com/api';
+            }
+
+            // Load saved configuration
+            document.getElementById('defaultUserId').value = currentUserId;
+            document.getElementById('userId').value = currentUserId;
+
+            showAlert('Welcome to MLVT Payment System! Configure your settings and login to continue.', 'info');
+        };
+    </script>
+</body>
+
+</html>
