@@ -213,7 +213,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	transcriptionID, err := h.mediaService.CreateTranscription(transcription)
+	transcriptionID, err := h.mediaService.CreateTranscription(transcription, false, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
@@ -408,7 +408,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		UpdatedAt:               time.Now(),
 	}
 
-	translatedTranscriptionID, err := h.mediaService.CreateTranscription(newTranscription)
+	translatedTranscriptionID, err := h.mediaService.CreateTranscription(newTranscription, false, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store translated transcription data"})
 		return
@@ -596,7 +596,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	audioID, err := h.mediaService.CreateAudio(audio)
+	audioID, err := h.mediaService.CreateAudio(audio, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store audio data"})
 		return
@@ -789,7 +789,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	outputVideoID, err := h.mediaService.CreateVideo(outputVideo)
+	outputVideoID, err := h.mediaService.CreateVideo(outputVideo, false)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store output video data"})
 		return
@@ -994,7 +994,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		UpdatedAt: time.Now(),
 	}
 
-	transcriptionID, err := h.mediaService.CreateTranscription(transcription)
+	transcriptionID, err := h.mediaService.CreateTranscription(transcription, true, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store transcription data"})
 		return
@@ -1019,7 +1019,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		UpdatedAt:       time.Now(),
 	}
 
-	outputVideoID, err := h.mediaService.CreateVideo(outputVideo)
+	outputVideoID, err := h.mediaService.CreateVideo(outputVideo, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to store output video data"})
 		return
@@ -1174,7 +1174,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			UpdatedAt:               time.Now(),
 		}
 
-		translatedTranscriptionID, err := h.mediaService.CreateTranscription(translatedTranscription)
+		translatedTranscriptionID, err := h.mediaService.CreateTranscription(translatedTranscription, true, false)
 		if err != nil {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -1277,7 +1277,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			UpdatedAt:       time.Now(),
 		}
 
-		audioID, err := h.mediaService.CreateAudio(audio)
+		audioID, err := h.mediaService.CreateAudio(audio, true)
 		if err != nil {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)

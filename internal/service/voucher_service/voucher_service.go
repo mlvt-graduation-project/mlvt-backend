@@ -3,6 +3,7 @@ package voucher_service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"mlvt/internal/entity"
@@ -19,7 +20,7 @@ type VoucherService interface {
 	CreateVoucher(ctx context.Context, vc entity.VoucherCode) (primitive.ObjectID, error)
 	UseVoucher(ctx context.Context, code string, userID uint64) (*entity.VoucherCode, error)
 	UpdateVoucher(ctx context.Context, voucher entity.VoucherCode) error
-	GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error)
+	GetAllVouchers(ctx context.Context, req entity.GetAllVoucherRequest) ([]entity.VoucherCode, int64, error)
 	GetVoucherByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error)
 }
 
@@ -176,8 +177,19 @@ func (s *voucherService) UpdateVoucher(ctx context.Context, voucher entity.Vouch
 }
 
 // GetAllVouchers returns a list of all vouchers.
-func (s *voucherService) GetAllVouchers(ctx context.Context) ([]entity.VoucherCode, error) {
-	// log traffic
+func (s *voucherService) GetAllVouchers(ctx context.Context, req entity.GetAllVoucherRequest) ([]entity.VoucherCode, int64, error) {
+	sortField := req.SortBy
+	if req.SortBy == "" {
+		sortField = "EXPIRED_TIME"
+	} 
+	sortOrder := -1
+	if req.Sort == "ASC" {
+		sortOrder = 1
+	}
+	searchField := req.SearchCriteria
+	status := strings.ToUpper(req.Status)
+
+	// Log + repo
 	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
 		ActionType:  entity.AdminVoucherAction,
 		Description: "admin get all vouchers",
@@ -185,7 +197,7 @@ func (s *voucherService) GetAllVouchers(ctx context.Context) ([]entity.VoucherCo
 	}); err != nil {
 		log.Errorf("failed to log traffic: get all vouchers, err: %s", err)
 	}
-	return s.repo.GetAll(ctx)
+	return s.repo.GetAll(ctx, status, strings.ToLower(sortField), sortOrder, strings.ToLower(searchField), req.SearchKey, req.Offset, req.Limit)
 }
 
 func (s *voucherService) GetVoucherByID(ctx context.Context, id primitive.ObjectID) (*entity.VoucherCode, error) {

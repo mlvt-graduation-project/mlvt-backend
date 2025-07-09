@@ -1,15 +1,16 @@
 package initialize
 
 import (
-	"database/sql"
 	"fmt"
 	"mlvt/internal/infra/db"
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/infra/env"
+
+	"github.com/jmoiron/sqlx"
 )
 
 // InitDatabase establishes a database connection and runs migrations.
-func InitDatabase() (*sql.DB, *mongodb.MongoDBClient, error) {
+func InitDatabase() (*sqlx.DB, *mongodb.MongoDBClient, error) {
 	dbConn, err := db.InitializeDB()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to initialize the database: %w", err)

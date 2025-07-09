@@ -24,6 +24,11 @@ mkdir -p "$(dirname "$LOG_FILE")"
 
   echo "🔄 Pulling latest code..."
   git pull origin release/dev 
+  echo "✅ Done pulling code"
+
+  echo "🔄 Migrating db up..."
+  make migrate-up
+  echo "✅ Done migrate db up"
 
   echo "🛠️ Building binary..."
   make build

@@ -3,6 +3,7 @@ package voucher_handler
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/voucher_service"
+	"mlvt/internal/utils"
 )
 
 type VoucherController struct {
@@ -150,15 +152,50 @@ func (vc *VoucherController) UpdateVoucher(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /voucher/get-all [get]
 func (vc *VoucherController) GetAllVouchers(c *gin.Context) {
-	vouchers, err := vc.voucherSvc.GetAllVouchers(context.Background())
-	if err != nil {
-		log.Errorf("Failed to retrieve vouchers: %v", err)
-		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to retrieve vouchers"})
+	var req entity.GetAllVoucherRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid query parameters"})
 		return
 	}
 
-	c.JSON(http.StatusOK, vouchers)
+	// Validate allowed values (can move to helper)
+	if req.Status != "" && !utils.IsInListString(req.Status, []string{"ACTIVE", "EXPIRED", "USED"}) {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid status"})
+		return
+	}
+	if req.SortBy != "" && !utils.IsInListString(req.SortBy, []string{"ID", "CODE", "TOKEN", "MAX_USAGE", "USED_COUNT", "EXPIRED_TIME", "CREATED_AT", "UPDATED_AT"}) {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid sortby"})
+		return
+	}
+	if req.Sort != "" && !utils.IsInListString(req.Sort, []string{"ASC", "DESC"}) {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid sort"})
+		return
+	}
+	if req.SearchCriteria != "" && !utils.IsInListString(req.SearchCriteria, []string{"CODE", "TOKEN", "MAX_USAGE", "USED_COUNT", "EXPIRED_TIME"}) {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid searchCriteria"})
+		return
+	}
+	if utils.IsInListString(req.SearchCriteria, []string{"TOKEN", "MAX_USAGE", "USED_COUNT"}) {
+		if _, err := strconv.Atoi(req.SearchKey); err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "search key must be number"})
+			return
+		}
+	}
+
+	// Gọi service
+	vouchers, totalCount, err := vc.voucherSvc.GetAllVouchers(context.Background(), req)
+	resp := entity.GetAllVoucherResponse {
+		Vouchers: vouchers,
+		TotalCount: totalCount,
+	}
+	if err != nil {
+		log.Errorf("Failed to retrieve vouchers: %v", err)
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
 }
+
 
 // GetVoucherByID godoc
 // @Summary Get voucher by ID

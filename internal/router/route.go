@@ -6,6 +6,7 @@ import (
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler"
 	"mlvt/internal/handler/rest/v1/ping_handler"
+	"mlvt/internal/handler/rest/v1/process_handler"
 	"mlvt/internal/handler/rest/v1/progress_handler"
 	"mlvt/internal/handler/rest/v1/token_claim_handler"
 	"mlvt/internal/handler/rest/v1/user_handler"
@@ -21,6 +22,7 @@ type AppRouter struct {
 	mediaController    *media_handler.MediaController
 	mlvtController     *mlvt_handler.MlvtController
 	progressController *progress_handler.ProgressController
+	processController  *process_handler.ProcessController
 	pingController     *ping_handler.PingController
 	authMiddleware     *middleware.AuthUserMiddleware
 	adminController    *admin_handler.AdminController
@@ -37,6 +39,7 @@ func NewAppRouter(
 	mediaController *media_handler.MediaController,
 	mlvtController *mlvt_handler.MlvtController,
 	progressController *progress_handler.ProgressController,
+	processController *process_handler.ProcessController,
 	pingController *ping_handler.PingController,
 	authMiddleware *middleware.AuthUserMiddleware,
 	adminController *admin_handler.AdminController,
@@ -50,6 +53,7 @@ func NewAppRouter(
 		mediaController:    mediaController,
 		mlvtController:     mlvtController,
 		progressController: progressController,
+		processController:  processController,
 		pingController:     pingController,
 		authMiddleware:     authMiddleware,
 		adminController:    adminController,
@@ -67,6 +71,8 @@ func (a *AppRouter) RegisterUserRoutes(r *gin.RouterGroup) {
 	{
 		public.POST("/register", a.userController.RegisterUser)
 		public.POST("/login", a.userController.LoginUser)
+		public.POST("/verify-account", a.userController.VerifyAccountSignUp)
+		public.POST("/resend-verification", a.userController.ResendValidationEmail)
 	}
 
 	protected := r.Group("/users")
@@ -159,6 +165,8 @@ func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
 	public := r.Group("/progress")
 	{
 		public.GET("/:user_id", a.progressController.GetUserProgress)
+		public.POST("update-title/:progress_id", a.progressController.UpdateProgressTitle)
+		public.POST("delete-progress/:progress_id", a.progressController.DeleteProgress)
 	}
 }
 
@@ -249,5 +257,14 @@ func (a *AppRouter) RegisterSwaggerRoutes(r *gin.RouterGroup) {
 	// Check if SwaggerRouter is initialized before registering
 	if a.swaggerRouter != nil {
 		a.swaggerRouter.Register(r)
+	}
+}
+
+// RegisterMediaRoutes sets up the routes for process-related operations
+func (a *AppRouter) RegisterProcessRoutes(r *gin.RouterGroup) {
+	processProtected := r.Group("/process")
+	processProtected.Use(a.authMiddleware.MustAuth())
+	{
+		processProtected.GET("/all/:user_id", a.processController.GetAllProcess)
 	}
 }
