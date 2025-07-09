@@ -30,7 +30,7 @@ func NewEmailService() EmailService {
 	}
 }
 
-//go:embed emailtemplate/AccountSignUp.html
+//go:embed EmailTemplate/AccountSignUp.html
 var signupTemplate string
 
 type EmailData struct {
