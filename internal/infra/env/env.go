@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"mlvt/internal/infra/zap-logging/log"
+	"mlvt/internal/utility"
 
 	"github.com/spf13/viper"
 )
@@ -19,14 +20,17 @@ const defaultEnvFilePath = ".env"
 
 // Config holds all the environment variables used in the application.
 type Config struct {
-	AppName               string
-	AppEnv                string
-	AppDebug              bool
-	ServerPort            string
-	LogLevel              string
-	LogPath               string
-	DBDriver              string
-	DBConnection          string
+	AppName    string
+	AppEnv     string
+	AppDebug   bool
+	ServerPort string
+	LogLevel   string
+	LogPath    string
+
+	// db struct
+	DBDriver     string
+	DBConnection string
+
 	JWTSecret             string
 	SwaggerEnabled        bool
 	SwaggerURL            string
@@ -53,6 +57,10 @@ type Config struct {
 	VietinBankAccountNo   string
 	VietinBankAccountName string
 	VietinBankBinCode     string
+	SMTPEmail             string
+	SMTPPassword          string
+	SMTPHost              string
+	SMTPPort              string
 }
 
 // init loads the environment variables at startup
@@ -100,7 +108,7 @@ func initializeConfig() error {
 	// Adjust relative paths
 	logPath := resolvePath(rootDir, viper.GetString("LOG_PATH"))
 	i18nPath := resolvePath(rootDir, viper.GetString("I18N_PATH"))
-	dbPath := resolvePath(rootDir, viper.GetString("DB_CONNECTION"))
+	dbPath := utility.GetPostgresConnection()
 
 	EnvConfig = &Config{
 		AppName:               viper.GetString("APP_NAME"),
@@ -128,6 +136,10 @@ func initializeConfig() error {
 		Ec2Port:               viper.GetString("EC2_PORT"),
 		MigrationsPath:        viper.GetString("MIGRATIONS_PATH"),
 		MongoDBEndPoint:       viper.GetString("MONGODB_ENDPOINT"),
+		SMTPEmail:             viper.GetString("SENDER_EMAIL"),
+		SMTPPassword:          viper.GetString("SMTP_PASSWORD"),
+		SMTPHost:              viper.GetString("SMTP_HOST"),
+		SMTPPort:              viper.GetString("SMTP_PORT"),
 		I18NPath:              i18nPath,
 		RootDir:               rootDir,
 		TelegramBotToken:      viper.GetString("TELEGRAM_BOT_TOKEN"),

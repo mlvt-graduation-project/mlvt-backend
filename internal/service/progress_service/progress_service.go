@@ -11,6 +11,7 @@ import (
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/progress_repo"
+	"regexp"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,10 +20,12 @@ import (
 
 type ProgressService interface {
 	Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error)
-	GetByID(ctx context.Context, id uint64) (*entity.Progress, error)
+	GetByID(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, qo mongodb.QueryOptions) ([]entity.Progress, error)
-	GetProgressByUserID(ctx context.Context, userID uint64) ([]entity.Progress, error)
+	GetProgressByUserID(ctx context.Context, userID uint64, offset int, limit int, searchKey string, progressType []entity.ProgressType, progressStatus []entity.StatusEntity) ([]entity.Progress, int, error)
 	UpdateStatus(ctx context.Context, id primitive.ObjectID, newStatus entity.StatusEntity) error
+	UpdateTitle(ctx context.Context, id primitive.ObjectID, newTitle string) error
+	DeleteProgress(ctx context.Context, id primitive.ObjectID) error
 	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
 	GetProgressThumbnails(progresses []entity.Progress) ([]response.ProgressResponse, error)
 }
@@ -49,7 +52,7 @@ func (s *progressService) Create(ctx context.Context, p entity.Progress) (primit
 	return s.repo.Insert(ctx, p)
 }
 
-func (s *progressService) GetByID(ctx context.Context, id uint64) (*entity.Progress, error) {
+func (s *progressService) GetByID(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error) {
 	return s.repo.Get(ctx, id)
 }
 
@@ -62,6 +65,28 @@ func (s *progressService) UpdateStatus(ctx context.Context, id primitive.ObjectI
 
 	updateData := bson.M{
 		"status":     newStatus,
+		"updated_at": time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) UpdateTitle(ctx context.Context, id primitive.ObjectID, newTitle string) error {
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		"title":      newTitle,
+		"updated_at": time.Now(),
+	}
+
+	return s.repo.UpdateFields(ctx, filter, updateData)
+}
+
+func (s *progressService) DeleteProgress(ctx context.Context, id primitive.ObjectID) error {
+	filter := bson.M{"_id": id}
+
+	updateData := bson.M{
+		"is_deleted": true,
 		"updated_at": time.Now(),
 	}
 
@@ -87,28 +112,89 @@ func (s *progressService) UpdateFieldId(ctx context.Context, id primitive.Object
 func (s *progressService) GetProgressByUserID(
 	ctx context.Context,
 	userID uint64,
+	offset int,
+	limit int,
+	searchKey string,
+	progressType []entity.ProgressType,
+	progressStatus []entity.StatusEntity,
 ) (
 	[]entity.Progress,
+	int,
 	error,
 ) {
-	qo := mongodb.QueryOptions{
-		Filters: []mongodb.FilterCondition{
-			{
-				Key:       "user_id",
-				Operation: mongodb.OpEqual,
-				Value:     userID,
-			},
+	filters := []mongodb.FilterCondition{
+		{
+			Key:       "user_id",
+			Operation: mongodb.OpEqual,
+			Value:     userID,
 		},
+	}
+
+	if searchKey != "" {
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "title",
+			Operation: mongodb.OpRegex,
+			Value: primitive.Regex{
+				Pattern: ".*" + regexp.QuoteMeta(searchKey) + ".*",
+				Options: "i",
+			},
+		})
+	}
+
+	// Nếu có lọc theo progressType thì thêm điều kiện
+	if len(progressType) > 0 {
+		values := make([]interface{}, len(progressType))
+		for i, pt := range progressType {
+			values[i] = pt
+		}
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "progress_type",
+			Operation: mongodb.OpIn,
+			Value:     values,
+		})
+	}
+
+	if len(progressStatus) > 0 {
+		values := make([]interface{}, len(progressStatus))
+		for i, pt := range progressStatus {
+			values[i] = pt
+		}
+		filters = append(filters, mongodb.FilterCondition{
+			Key:       "status",
+			Operation: mongodb.OpIn,
+			Value:     values,
+		})
+	}
+
+	filters = append(filters, mongodb.FilterCondition{
+		Key:       "is_deleted",
+		Operation: mongodb.OpNotEqual,
+		Value:     true,
+	})
+
+	qo := mongodb.QueryOptions{
+		Filters: filters,
 		Sorts: []mongodb.SortCondition{
 			{
 				Field:     "created_at",
 				Direction: mongodb.SortDesc,
 			},
 		},
-		// Not set the Field to return all columns
+		Limit:  &limit,
+		Offset: &offset,
 	}
 
-	return s.repo.GetByFilter(ctx, qo)
+	progressList, err := s.repo.GetByFilter(ctx, qo)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount, err := s.repo.CountByFilter(ctx, filters)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count progress: %w", err)
+	}
+
+	return progressList, totalCount, nil
 }
 
 func (s *progressService) GetProgressThumbnails(
@@ -156,6 +242,7 @@ func (s *progressService) GetProgressThumbnails(
 			CreatedAt:                 progress.CreatedAt,
 			UpdatedAt:                 progress.UpdatedAt,
 			ThumbnailUrl:              thumbnailURL,
+			Title:                     progress.Title,
 		}
 
 		result = append(result, resp)

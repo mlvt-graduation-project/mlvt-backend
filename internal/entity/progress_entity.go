@@ -6,15 +6,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type ProgressType string
-
-const (
-	ProgressTypeTTT ProgressType = "ttt"
-	ProgressTypeSTT ProgressType = "stt"
-	ProgressTypeTTS ProgressType = "tts"
-	ProgressTypeLS  ProgressType = "ls"
-	ProgressTypeFP  ProgressType = "fp" // Full pipeline
-)
 
 type Progress struct {
 	ID                        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -28,4 +19,5 @@ type Progress struct {
 	Status                    StatusEntity       `json:"status" bson:"status"`
 	CreatedAt                 time.Time          `json:"created_at" bson:"created_at"`
 	UpdatedAt                 time.Time          `json:"updated_at" bson:"updated_at"`
+	Title					  string			 `json:"title" bson:"title"`
 }

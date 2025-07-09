@@ -25,6 +25,8 @@ type QueryOptions struct {
 	Filters []FilterCondition
 	Sorts   []SortCondition
 	Fields  []string
+	Limit   *int
+	Offset  *int 
 }
 
 func BuildQuery(qo QueryOptions) (bson.M, *options.FindOptions, error) {
@@ -33,9 +35,34 @@ func BuildQuery(qo QueryOptions) (bson.M, *options.FindOptions, error) {
 		return nil, nil, fmt.Errorf("failed to build BSON filter: %v", err)
 	}
 
-	findOpts := buidFindOptions(qo.Sorts, qo.Fields)
-	return bsonFilter, findOpts, nil
+	findOptions := options.Find()
+
+	if qo.Limit != nil {
+		findOptions.SetLimit(int64(*qo.Limit))
+	}
+	if qo.Offset != nil {
+		findOptions.SetSkip(int64(*qo.Offset))
+	}
+
+	if qo.Sorts != nil {
+		sortDoc := bson.D{}
+		for _, s := range qo.Sorts {
+			sortDoc = append(sortDoc, bson.E{Key: s.Field, Value: s.Direction})
+		}
+		findOptions.SetSort(sortDoc)
+	}
+
+	if qo.Fields != nil && len(qo.Fields) > 0 {
+		projection := bson.M{}
+		for _, field := range qo.Fields {
+			projection[field] = 1
+		}
+		findOptions.SetProjection(projection)
+	}
+
+	return bsonFilter, findOptions, nil
 }
+
 
 func buidFindOptions(sorts []SortCondition, fields []string) *options.FindOptions {
 	findOpts := options.Find()

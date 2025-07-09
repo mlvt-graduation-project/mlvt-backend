@@ -77,6 +77,14 @@ func (m *MongoDBAdapter[T]) Find(filter interface{}, opts ...*options.FindOption
 	return results, nil
 }
 
+func (m *MongoDBAdapter[T]) CountDocuments(filter interface{}) (int64, error) {
+	count, err := m.collection.CountDocuments(m.ctx, filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count documents: %v", err)
+	}
+	return count, nil
+}
+
 func (m *MongoDBAdapter[T]) UpdateOne(filter, update interface{}) error {
 	_, err := m.collection.UpdateOne(m.ctx, filter, bson.M{"$set": update})
 	if err != nil {

@@ -2,10 +2,11 @@ package wallet_repo
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"mlvt/internal/entity"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type WalletRepository interface {
@@ -15,10 +16,10 @@ type WalletRepository interface {
 }
 
 type walletRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewWalletRepo(db *sql.DB) WalletRepository {
+func NewWalletRepo(db *sqlx.DB) WalletRepository {
 	return &walletRepo{db: db}
 }
 
@@ -29,17 +30,16 @@ func (r *walletRepo) Deposit(ctx context.Context, userID uint64, amount int64) e
 	}
 	defer tx.Rollback()
 
-	// update user balance
-	_, err = tx.ExecContext(ctx, "UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?", amount, userID)
+	updateQuery := r.db.Rebind("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?")
+	_, err = tx.ExecContext(ctx, updateQuery, amount, userID)
 	if err != nil {
 		return err
 	}
 
-	// transaction record
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT INTO wallet_transactions (user_id, type, amount, created_at)
-         VALUES (?, ?, ?, ?)`,
+	insertQuery := r.db.Rebind(`
+		INSERT INTO wallet_transactions (user_id, type, amount, created_at)
+		VALUES (?, ?, ?, ?)`)
+	_, err = tx.ExecContext(ctx, insertQuery,
 		userID,
 		entity.TransactionTypeDeposit,
 		amount,
@@ -50,7 +50,6 @@ func (r *walletRepo) Deposit(ctx context.Context, userID uint64, amount int64) e
 	}
 
 	return tx.Commit()
-
 }
 
 func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) error {
@@ -60,8 +59,9 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 	}
 	defer tx.Rollback()
 
+	selectQuery := r.db.Rebind("SELECT wallet_balance FROM users WHERE id = ?")
 	var currentBalance int64
-	err = tx.QueryRowContext(ctx, "SELECT wallet_balance FROM users WHERE id = ?", userID).Scan(&currentBalance)
+	err = tx.QueryRowContext(ctx, selectQuery, userID).Scan(&currentBalance)
 	if err != nil {
 		return err
 	}
@@ -70,17 +70,16 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 		return errors.New("insufficient balance")
 	}
 
-	// update user balance
-	_, err = tx.ExecContext(ctx, "UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?", amount, userID)
+	updateQuery := r.db.Rebind("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?")
+	_, err = tx.ExecContext(ctx, updateQuery, amount, userID)
 	if err != nil {
 		return err
 	}
 
-	// transaction record
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT INTO wallet_transactions (user_id, type, amount, created_at)
-         VALUES (?, ?, ?, ?)`,
+	insertQuery := r.db.Rebind(`
+		INSERT INTO wallet_transactions (user_id, type, amount, created_at)
+		VALUES (?, ?, ?, ?)`)
+	_, err = tx.ExecContext(ctx, insertQuery,
 		userID,
 		entity.TransactionTypeUseToken,
 		amount,
@@ -94,8 +93,9 @@ func (r *walletRepo) UseToken(ctx context.Context, userID uint64, amount int64) 
 }
 
 func (r *walletRepo) GetBalance(ctx context.Context, userID uint64) (int64, error) {
+	query := r.db.Rebind("SELECT wallet_balance FROM users WHERE id = ?")
 	var balance int64
-	err := r.db.QueryRowContext(ctx, "SELECT wallet_balance FROM users WHERE id = ?", userID).Scan(&balance)
+	err := r.db.QueryRowContext(ctx, query, userID).Scan(&balance)
 	if err != nil {
 		return 0, err
 	}

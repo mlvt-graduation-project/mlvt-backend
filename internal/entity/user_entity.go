@@ -15,7 +15,7 @@ type UserPermission string
 const (
 	UserStatusActive   UserStatus = "active"
 	UserStatusInactive UserStatus = "inactive"
-
+    UserStatusPending UserStatus = "pending"
 	AdminRole UserPermission = "admin"
 	UserRole  UserPermission = "user"
 )

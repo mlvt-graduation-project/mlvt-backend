@@ -2,6 +2,7 @@ package response
 
 import (
 	"mlvt/internal/entity"
+	"strconv"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -118,6 +119,21 @@ type ListVideosByUserIDResponse struct {
 	ImageURL string       `json:"image_url"`
 }
 
+func (v *ListVideosByUserIDResponse) ToProcessResponse() *entity.Process {
+	return &entity.Process{
+		ID:              strconv.FormatUint(v.Video.ID, 10),
+		UserID:          v.Video.UserID,
+		MediaType:       "video",
+		OriginalVideoID: v.Video.OriginalVideoID,
+		Status:          v.Video.Status,
+		CreatedAt:       v.Video.CreatedAt,
+		UpdatedAt:       v.Video.UpdatedAt,
+		ThumbnailUrl:    v.ImageURL,
+		VideoUrl:        v.VideoURL,
+		Title:           v.Video.Title,
+	}
+}
+
 type PingStatusResponse struct {
 	Status entity.StatusEntity `json:"status"`
 }
@@ -136,6 +152,29 @@ type ProgressResponse struct {
 	CreatedAt                 time.Time           `json:"created_at"`
 	UpdatedAt                 time.Time           `json:"updated_at"`
 	ThumbnailUrl              string              `json:"thumbnail_url"`
+	Title                     string              `json:"title"`
+}
+type ProcessResponse struct {
+	TotalCount  int              `json:"total_count"`
+	ProcessList []entity.Process `json:"process_list"`
+}
+
+func (p *ProgressResponse) ToProcessResponse() *entity.Process {
+	return &entity.Process{
+		ID:                        p.ID.Hex(),
+		UserID:                    p.UserID,
+		ProgressType:              p.ProgressType,
+		OriginalVideoID:           p.OriginalVideoID,
+		OriginalTranscriptionID:   p.OriginalTranscriptionID,
+		TranslatedTranscriptionID: p.TranslatedTranscriptionID,
+		AudioID:                   p.AudioID,
+		ProgressedVideoID:         p.ProgressedVideoID,
+		Status:                    p.Status,
+		CreatedAt:                 p.CreatedAt,
+		UpdatedAt:                 p.CreatedAt,
+		ThumbnailUrl:              p.ThumbnailUrl,
+		Title:                     p.Title,
+	}
 }
 
 func (p *PingStatusResponse) ValidateStatus() {

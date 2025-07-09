@@ -4,6 +4,7 @@ import (
 	"errors"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/reason"
+	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo/user_repo"
 	"time"
 
@@ -36,6 +37,11 @@ func NewAuthService(userRepo user_repo.UserRepository, secretKey string) AuthSer
 func (s *AuthService) Login(email, password string) (string, uint64, entity.UserPermission, error) {
 	user, err := s.userRepo.GetUserByEmail(email)
 	if err != nil {
+		log.Error("Database error: ", err)
+		return "", 0, "", errors.New(reason.UserNotFound.Message())
+	}
+
+	if user == nil {
 		return "", 0, "", errors.New(reason.UserNotFound.Message())
 	}
 

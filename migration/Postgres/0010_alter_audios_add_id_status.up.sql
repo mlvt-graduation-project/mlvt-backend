@@ -1,0 +1,1 @@
+ALTER TABLE audios ALTER COLUMN status SET DEFAULT 'raw';

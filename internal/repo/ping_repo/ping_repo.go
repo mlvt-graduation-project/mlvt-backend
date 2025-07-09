@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt" // Import fmt for Sprintf
 	"mlvt/internal/pkg/response"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type PingRepository interface {
@@ -13,10 +15,10 @@ type PingRepository interface {
 }
 
 type pingRepo struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func NewPingRepo(db *sql.DB) PingRepository {
+func NewPingRepo(db *sqlx.DB) PingRepository {
 	return &pingRepo{db: db}
 }
 
@@ -28,6 +30,8 @@ const (
 
 func (r *pingRepo) pingStatus(table string, id uint64) (*response.PingStatusResponse, error) {
 	query := fmt.Sprintf(`SELECT status FROM %s WHERE id = ?`, table)
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+
 	row := r.db.QueryRow(query, id)
 	statusRes := &response.PingStatusResponse{}
 	err := row.Scan(&statusRes.Status)
