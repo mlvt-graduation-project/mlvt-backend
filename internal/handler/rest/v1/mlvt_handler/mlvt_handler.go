@@ -673,7 +673,9 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 				OutputLink:     audioUploadURL,
 				Model:          "",
 			},
-			Lang: transcription.Lang,
+			InputAudioFileName: "", // Empty since we don't have input audio for standalone TTS
+			InputAudioLink:     "", // Empty since we don't have input audio for standalone TTS
+			Lang:               transcription.Lang,
 		}
 
 		// Marshal the payload to JSON for curl logging
@@ -1314,7 +1316,9 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 				OutputLink:     audioUploadURL,
 				Model:          "",
 			},
-			Lang: targetLang,
+			InputAudioFileName: video.FileName,
+			InputAudioLink:     videoDownloadURL,
+			Lang:               targetLang,
 		}
 
 		// Marshal the payload to JSON for curl logging
