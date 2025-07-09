@@ -49,6 +49,9 @@ type MediaService interface {
 	GeneratePresignedDownloadURLForText(transcriptionID uint64) (string, error)
 	UpdateTranscription(transcription *entity.Transcription) error
 	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
+
+	// GetAll media
+	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) (response.ProcessResponse, error)
 }
 
 type mediaService struct {

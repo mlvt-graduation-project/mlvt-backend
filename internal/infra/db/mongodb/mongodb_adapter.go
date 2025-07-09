@@ -117,3 +117,11 @@ func (m *MongoDBAdapter[T]) InsertOne(data T) (primitive.ObjectID, error) {
 
 	return oid, nil
 }
+
+func (m *MongoDBAdapter[T]) CountDocuments(filter interface{}) (int, error) {
+	count, err := m.collection.CountDocuments(m.ctx, filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count documents: %v", err)
+	}
+	return int(count), nil
+}

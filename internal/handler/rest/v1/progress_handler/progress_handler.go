@@ -16,7 +16,7 @@ import (
 
 type ProgressController struct {
 	progressService progress_service.ProgressService
-	mediaService media_service.MediaService
+	mediaService    media_service.MediaService
 }
 
 func NewProgressService(
@@ -25,7 +25,7 @@ func NewProgressService(
 ) *ProgressController {
 	return &ProgressController{
 		progressService: progressService,
-		mediaService: mediaService,
+		mediaService:    mediaService,
 	}
 }
 
@@ -48,20 +48,20 @@ func (h *ProgressController) GetUserProgress(c *gin.Context) {
 		return
 	}
 
-	listProgress := []entity.ProgressType {
+	listProgress := []entity.ProgressType{
 		entity.ProgressTypeFP,
 		entity.ProgressTypeTTS,
 		entity.ProgressTypeSTT,
 		entity.ProgressTypeLS,
 		entity.ProgressTypeTTT,
 	}
-	listStatus := []entity.StatusEntity {
+	listStatus := []entity.StatusEntity{
 		entity.StatusFailed,
 		entity.StatusProcessing,
 		entity.StatusRaw,
 		entity.StatusSucceeded,
 	}
-	progresses, err := h.progressService.GetProgressByUserID(context.Background(), userId, 0, 15, "", listProgress, listStatus)
+	progresses, _, err := h.progressService.GetProgressByUserID(context.Background(), userId, 0, 15, "", listProgress, listStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "failed to get user progress"})
 		log.Errorf("failed to get user progress, err: ", err)
@@ -131,7 +131,7 @@ func (h *ProgressController) UpdateProgressTitle(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{} "Invalid progress ID or progress not found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
 // @Router /progress/{progress_id} [delete]
-func (h *ProgressController) DeleteProgress (c *gin.Context) {
+func (h *ProgressController) DeleteProgress(c *gin.Context) {
 	progressID := c.Param("progress_id")
 	id, err := primitive.ObjectIDFromHex(progressID)
 	if err != nil {
@@ -158,15 +158,15 @@ func (h *ProgressController) DeleteProgress (c *gin.Context) {
 			log.Errorf("failed to delete result audio: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result audio"})
 			return
-		}	
+		}
 	} else {
-		if progressInfo.ProgressedVideoID != 0{
+		if progressInfo.ProgressedVideoID != 0 {
 			err := h.mediaService.DeleteVideo(progressInfo.ProgressedVideoID)
 			if err != nil {
 				log.Errorf("failed to delete result video: %v", err)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result video"})
 				return
-			}	
+			}
 		}
 		if progressInfo.TranslatedTranscriptionID != 0 {
 			err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID)
@@ -188,4 +188,3 @@ func (h *ProgressController) DeleteProgress (c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Progress deleted"})
 }
-

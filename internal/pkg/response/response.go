@@ -119,18 +119,18 @@ type ListVideosByUserIDResponse struct {
 	ImageURL string       `json:"image_url"`
 }
 
-func (v *ListVideosByUserIDResponse) ToProcessResponse () *ProcessResponse {
-	return &ProcessResponse {
-		ID:  strconv.FormatUint(v.Video.ID, 10),
-		UserID:  v.Video.UserID,
-		MediaType: "video",
-		OriginalVideoID: v.Video.OriginalVideoID,   
-		Status: v.Video.Status,  
-		CreatedAt: v.Video.CreatedAt, 
-		UpdatedAt: v.Video.UpdatedAt,  
-		ThumbnailUrl: v.ImageURL,  
-		VideoUrl: v.VideoURL,  
-		Title: v.Video.Title,
+func (v *ListVideosByUserIDResponse) ToProcessResponse() *entity.Process {
+	return &entity.Process{
+		ID:              strconv.FormatUint(v.Video.ID, 10),
+		UserID:          v.Video.UserID,
+		MediaType:       "video",
+		OriginalVideoID: v.Video.OriginalVideoID,
+		Status:          v.Video.Status,
+		CreatedAt:       v.Video.CreatedAt,
+		UpdatedAt:       v.Video.UpdatedAt,
+		ThumbnailUrl:    v.ImageURL,
+		VideoUrl:        v.VideoURL,
+		Title:           v.Video.Title,
 	}
 }
 
@@ -152,43 +152,28 @@ type ProgressResponse struct {
 	CreatedAt                 time.Time           `json:"created_at"`
 	UpdatedAt                 time.Time           `json:"updated_at"`
 	ThumbnailUrl              string              `json:"thumbnail_url"`
-	Title					  string			  `json:"title"`
+	Title                     string              `json:"title"`
 }
-
 type ProcessResponse struct {
-	ID                        string  			  `json:"id"`
-	UserID                    uint64              `json:"user_id"`
-	Title					  string 			  `json:"title"`
-	ProgressType              entity.ProgressType `json:"progress_type"`
-	MediaType				  entity.MediaType	  `json:"media_type"`
-	OriginalVideoID           uint64              `json:"original_video_id"`
-	OriginalTranscriptionID   uint64              `json:"original_transcription_id"`
-	TranslatedTranscriptionID uint64              `json:"translated_transcription_id"`
-	AudioID                   uint64              `json:"audio_id"`
-	ProgressedVideoID         uint64              `json:"progressed_video_id"`
-	Status                    entity.StatusEntity `json:"status"`
-	CreatedAt                 time.Time           `json:"created_at"`
-	UpdatedAt                 time.Time           `json:"updated_at"`
-	ThumbnailUrl              string              `json:"thumbnail_url"`
-	VideoUrl				  string			  `json:"video_url"`
-	Language				  string			  `json:"language"`
+	TotalCount  int              `json:"total_count"`
+	ProcessList []entity.Process `json:"process_list"`
 }
 
-func (p *ProgressResponse) ToProcessResponse () *ProcessResponse {
-	return &ProcessResponse{
-		ID: p.ID.Hex(),
-		UserID: p.UserID,
-		ProgressType: p.ProgressType,
-		OriginalVideoID: p.OriginalVideoID,
-		OriginalTranscriptionID: p.OriginalTranscriptionID,
+func (p *ProgressResponse) ToProcessResponse() *entity.Process {
+	return &entity.Process{
+		ID:                        p.ID.Hex(),
+		UserID:                    p.UserID,
+		ProgressType:              p.ProgressType,
+		OriginalVideoID:           p.OriginalVideoID,
+		OriginalTranscriptionID:   p.OriginalTranscriptionID,
 		TranslatedTranscriptionID: p.TranslatedTranscriptionID,
-		AudioID: p.AudioID,
-		ProgressedVideoID: p.ProgressedVideoID,
-		Status: p.Status,
-		CreatedAt: p.CreatedAt,
-		UpdatedAt: p.CreatedAt,
-		ThumbnailUrl: p.ThumbnailUrl,
-		Title: p.Title,
+		AudioID:                   p.AudioID,
+		ProgressedVideoID:         p.ProgressedVideoID,
+		Status:                    p.Status,
+		CreatedAt:                 p.CreatedAt,
+		UpdatedAt:                 p.CreatedAt,
+		ThumbnailUrl:              p.ThumbnailUrl,
+		Title:                     p.Title,
 	}
 }
 

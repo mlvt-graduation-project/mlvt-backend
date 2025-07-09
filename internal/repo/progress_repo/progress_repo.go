@@ -15,6 +15,7 @@ type ProgressRepository interface {
 	Get(ctx context.Context, id primitive.ObjectID) (*entity.Progress, error)
 	GetByFilter(ctx context.Context, queryOpts mongodb.QueryOptions) ([]entity.Progress, error)
 	UpdateFields(ctx context.Context, filter interface{}, updateFields interface{}) error
+	CountByFilter(ctx context.Context, filters []mongodb.FilterCondition) (int, error)
 }
 
 type progressRepo struct {
@@ -72,4 +73,26 @@ func (r *progressRepo) UpdateFields(
 	updateFields interface{},
 ) error {
 	return r.adapter.UpdateOne(filter, updateFields)
+}
+
+func (r *progressRepo) CountByFilter(
+	ctx context.Context,
+	filters []mongodb.FilterCondition,
+) (int, error) {
+	// Tạo filter BSON từ FilterCondition
+	queryOpts := mongodb.QueryOptions{
+		Filters: filters,
+	}
+
+	filter, _, err := mongodb.BuildQuery(queryOpts)
+	if err != nil {
+		return 0, fmt.Errorf("failed to build query for count: %w", err)
+	}
+
+	count, err := r.adapter.CountDocuments(filter)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count progress: %w", err)
+	}
+
+	return count, nil
 }

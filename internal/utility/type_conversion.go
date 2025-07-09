@@ -6,64 +6,63 @@ import (
 	"strconv"
 )
 
-
-func AudioToProcessResponse (a entity.Audio) *response.ProcessResponse {
-	return &response.ProcessResponse{
-		ID: strconv.FormatUint(a.ID, 10),
-		UserID: a.UserID,
-		MediaType: "audio",
+func AudioToProcessResponse(a entity.Audio) *entity.Process {
+	return &entity.Process{
+		ID:                        strconv.FormatUint(a.ID, 10),
+		UserID:                    a.UserID,
+		MediaType:                 "audio",
 		TranslatedTranscriptionID: a.TranscriptionID,
-		AudioID: a.ID,
-		Status: a.Status,
-		CreatedAt: a.CreatedAt,
-		UpdatedAt: a.UpdatedAt,
-		Language: a.Lang,
-		Title: a.Title,
+		AudioID:                   a.ID,
+		Status:                    a.Status,
+		CreatedAt:                 a.CreatedAt,
+		UpdatedAt:                 a.UpdatedAt,
+		Language:                  a.Lang,
+		Title:                     a.Title,
 	}
 }
 
-func TranscriptionToProcessResponse(transcription entity.Transcription) *response.ProcessResponse {
-	return &response.ProcessResponse{
-		ID: strconv.FormatUint(transcription.ID, 10),
-		UserID: transcription.UserID,
-		MediaType: "transcription",
-		OriginalVideoID: transcription.VideoID,
+func TranscriptionToProcessResponse(transcription entity.Transcription) *entity.Process {
+	return &entity.Process{
+		ID:                      strconv.FormatUint(transcription.ID, 10),
+		UserID:                  transcription.UserID,
+		MediaType:               "transcription",
+		OriginalVideoID:         transcription.VideoID,
 		OriginalTranscriptionID: transcription.OriginalTranscriptionID,
-		Status: transcription.Status,
-		CreatedAt: transcription.CreatedAt,
-		UpdatedAt: transcription.UpdatedAt,
-		Language: transcription.Lang,
-		Title: transcription.Title,
+		Status:                  transcription.Status,
+		CreatedAt:               transcription.CreatedAt,
+		UpdatedAt:               transcription.UpdatedAt,
+		Language:                transcription.Lang,
+		Title:                   transcription.Title,
 	}
 }
 
-func ProgressResponseListToProcessResponseList (p []response.ProgressResponse) []response.ProcessResponse {
-	var res []response.ProcessResponse
-	for _, ele := range(p) {
+func ProgressResponseListToProcessResponseList(p []response.ProgressResponse) []entity.Process {
+	var res []entity.Process
+	for _, ele := range p {
 		res = append(res, *ele.ToProcessResponse())
 	}
 	return res
 }
 
-func TranscriptionListToProcessResponseList (p []entity.Transcription) []response.ProcessResponse {
-	var res []response.ProcessResponse 
-	for _, ele := range(p) {
+func TranscriptionListToProcessResponseList(p []entity.Transcription) []entity.Process {
+	var res []entity.Process
+	for _, ele := range p {
 		res = append(res, *TranscriptionToProcessResponse(ele))
 	}
 	return res
 }
 
-func AudioListToProcessResponseList (p []entity.Audio) []response.ProcessResponse {
-	var res []response.ProcessResponse 
-	for _, ele := range(p) {
+func AudioListToProcessResponseList(p []entity.Audio) []entity.Process {
+	var res []entity.Process
+	for _, ele := range p {
 		res = append(res, *AudioToProcessResponse(ele))
 	}
 	return res
 }
 
-func VideoResponseListToProcessResponseList (p []response.ListVideosByUserIDResponse) []response.ProcessResponse {
-	var res []response.ProcessResponse 
-	for _, ele := range(p) {
+func VideoResponseListToProcessResponseList(p []response.ListVideosByUserIDResponse) []entity.Process {
+	var res []entity.Process
+	for _, ele := range p {
 		res = append(res, *ele.ToProcessResponse())
 	}
 	return res
