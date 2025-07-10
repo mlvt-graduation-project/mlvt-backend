@@ -162,15 +162,15 @@ func GetProgressTitle(id int, progressType entity.ProgressType) string {
 
 	switch progressType {
 	case entity.ProgressTypeSTT:
-		prefixTitle = "Video transcription"
+		prefixTitle = "Text Generation"
 	case entity.ProgressTypeTTT:
-		prefixTitle = "Text translation"
+		prefixTitle = "Text Translation"
 	case entity.ProgressTypeTTS:
-		prefixTitle = "Audio generation"
+		prefixTitle = "Voice Generation"
 	case entity.ProgressTypeLS:
 		prefixTitle = "Lip Synchronization"
 	case entity.ProgressTypeFP:
-		prefixTitle = "Video translation"
+		prefixTitle = "Video Translation"
 	}
 
 	return fmt.Sprintf("%v - %v", prefixTitle, id)
