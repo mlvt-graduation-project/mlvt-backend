@@ -11,6 +11,7 @@ import (
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/progress_repo"
+	"mlvt/internal/utility"
 	"regexp"
 	"time"
 
@@ -27,6 +28,7 @@ type ProgressService interface {
 	UpdateTitle(ctx context.Context, id primitive.ObjectID, newTitle string) error
 	DeleteProgress(ctx context.Context, id primitive.ObjectID) error
 	UpdateFieldId(ctx context.Context, id primitive.ObjectID, fieldName string, value uint64) error
+	GetCountProgressTypeByUserId(ctx context.Context, userID uint64, progressType entity.ProgressType) (int, error)
 	GetProgressThumbnails(progresses []entity.Progress) ([]response.ProgressResponse, error)
 }
 
@@ -49,6 +51,11 @@ func NewProgressService(
 }
 
 func (s *progressService) Create(ctx context.Context, p entity.Progress) (primitive.ObjectID, error) {
+	count, err := s.GetCountProgressTypeByUserId(ctx, p.UserID, p.ProgressType)
+	if err != nil {
+		return primitive.NilObjectID, fmt.Errorf("failed to get total count of progress type")
+	}
+	p.Title = utility.GetProgressTitle(count+1, p.ProgressType)
 	return s.repo.Insert(ctx, p)
 }
 
@@ -266,4 +273,20 @@ func isValidProgressIDField(fieldName string) (string, error) {
 	default:
 		return "", errors.New("invalid field name")
 	}
+}
+
+func (s *progressService) GetCountProgressTypeByUserId(ctx context.Context, userID uint64, progressType entity.ProgressType) (int, error) {
+	filters := []mongodb.FilterCondition{
+		{
+			Key:       "user_id",
+			Operation: mongodb.OpEqual,
+			Value:     userID,
+		},
+		{
+			Key:       "progress_type",
+			Operation: mongodb.OpEqual,
+			Value:     progressType,
+		},
+	}
+	return s.repo.CountByFilter(ctx, filters)
 }
