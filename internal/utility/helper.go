@@ -156,3 +156,22 @@ func IsInListString(value string, list []string) bool {
 	}
 	return false
 }
+
+func GetProgressTitle(id int, progressType entity.ProgressType) string {
+	var prefixTitle string
+
+	switch progressType {
+	case entity.ProgressTypeSTT:
+		prefixTitle = "Text Generation"
+	case entity.ProgressTypeTTT:
+		prefixTitle = "Text Translation"
+	case entity.ProgressTypeTTS:
+		prefixTitle = "Voice Generation"
+	case entity.ProgressTypeLS:
+		prefixTitle = "Lip Synchronization"
+	case entity.ProgressTypeFP:
+		prefixTitle = "Video Translation"
+	}
+
+	return fmt.Sprintf("%v - %v", prefixTitle, id)
+}
