@@ -265,6 +265,6 @@ func (a *AppRouter) RegisterProcessRoutes(r *gin.RouterGroup) {
 	processProtected := r.Group("/process")
 	processProtected.Use(a.authMiddleware.MustAuth())
 	{
-		processProtected.GET("/all/:user_id", a.processController.GetAllProcess)
+		processProtected.POST("/get-all/:user_id", a.processController.GetAllProcess)
 	}
 }
