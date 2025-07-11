@@ -45,7 +45,7 @@ type MediaRepository interface {
 	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
 
 	// media
-	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Video, []entity.Audio, []entity.Transcription, int, error)
+	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity, mediaType []entity.MediaType) ([]entity.Video, []entity.Audio, []entity.Transcription, int, error)
 }
 
 type mediaRepo struct {

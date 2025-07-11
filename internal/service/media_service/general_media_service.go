@@ -14,9 +14,10 @@ func (s *mediaService) GetAllMedia(
 	limit int,
 	offset int,
 	status []entity.StatusEntity,
+	mediaType []entity.MediaType,
 ) (response.ProcessResponse, error) {
 	var res response.ProcessResponse
-	videos, audios, transcriptions, totalCount, err := s.mediaRepo.GetAllMedia(userID, searchKey, limit, offset, status)
+	videos, audios, transcriptions, totalCount, err := s.mediaRepo.GetAllMedia(userID, searchKey, limit, offset, status, mediaType)
 	if err != nil {
 		return res, err
 	}
