@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/zap-logging/log"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -17,6 +19,7 @@ func (r *mediaRepo) GetAllMedia(
 	limit int,
 	offset int,
 	status []entity.StatusEntity,
+	mediaType []entity.MediaType,
 ) ([]entity.Video, []entity.Audio, []entity.Transcription, int, error) {
 	type media struct {
 		ID         int       `db:"id"`
@@ -45,41 +48,62 @@ func (r *mediaRepo) GetAllMedia(
 	// Search keyword
 	likePattern := "%" + searchKey + "%"
 
-	query := `
+	// --- Build subqueries & args ---
+	var queries []string
+	var args []interface{}
+
+	if slices.Contains(mediaType, entity.MediaTypeVideo) {
+		queries = append(queries, `
+		SELECT id, 'video' AS type, title, created_at
+		FROM videos
+		WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
+	`)
+		args = append(args, userID, status, likePattern)
+	}
+	if slices.Contains(mediaType, entity.MediaTypeAudio) {
+		queries = append(queries, `
+		SELECT id, 'audio' AS type, title, created_at
+		FROM audios
+		WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
+	`)
+		args = append(args, userID, status, likePattern)
+	}
+	if slices.Contains(mediaType, entity.MediaTypeText) {
+		queries = append(queries, `
+		SELECT id, 'text' AS type, title, created_at
+		FROM transcriptions
+		WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
+	`)
+		args = append(args, userID, status, likePattern)
+	}
+
+	// No allowed media
+	if len(queries) == 0 {
+		return nil, nil, nil, 0, nil
+	}
+
+	// Ghép query tổng
+	innerQuery := strings.Join(queries, "\nUNION ALL\n")
+	finalQuery := fmt.Sprintf(`
 		SELECT id, type, title, created_at, COUNT(*) OVER () AS total
 		FROM (
-			SELECT id, 'video' AS type, title, created_at
-			FROM videos
-			WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
-
-			UNION ALL
-
-			SELECT id, 'audio' AS type, title, created_at
-			FROM audios
-			WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
-
-			UNION ALL
-
-			SELECT id, 'text' AS type, title, created_at
-			FROM transcriptions
-			WHERE is_deleted = false AND user_id = ? AND status IN (?) AND title ILIKE ?
+			%s
 		) AS all_media
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
-	`
+	`, innerQuery)
 
-	rawQuery, args, err := sqlx.In(query,
-		userID, status, likePattern,
-		userID, status, likePattern,
-		userID, status, likePattern,
-		limit, offset,
-	)
+	// Thêm limit, offset vào args
+	args = append(args, limit, offset)
+
+	// Sử dụng sqlx.In để mở rộng cho slice trong status (IN (?))
+	rawQuery, flatArgs, err := sqlx.In(finalQuery, args...)
 	if err != nil {
 		return nil, nil, nil, 0, fmt.Errorf("failed to build query: %w", err)
 	}
 	rawQuery = r.db.Rebind(rawQuery)
 
-	err = r.db.SelectContext(context.Background(), &generalMedia, rawQuery, args...)
+	err = r.db.SelectContext(context.Background(), &generalMedia, rawQuery, flatArgs...)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return resVideo, resAudio, resTranscription, 0, nil
@@ -87,7 +111,6 @@ func (r *mediaRepo) GetAllMedia(
 		log.Errorf("error querying general media list: %v", err)
 		return nil, nil, nil, 0, err
 	}
-	log.Infof("🎬 General media queried: %+v", generalMedia)
 
 	// Phân loại kết quả
 	for _, item := range generalMedia {
@@ -172,11 +195,8 @@ func (r *mediaRepo) GetAllMedia(
 		},
 	}
 
-	log.Info("Length of generalMedia: ", len(generalMedia))
-
 	for _, batch := range temp {
 		if len(batch.IDs) == 0 {
-			log.Infof("⏭️ Skipping %s, no IDs found", batch.mediaType)
 			continue
 		}
 		subQuery, subArgs, err := sqlx.In(batch.query, batch.IDs)
@@ -189,9 +209,6 @@ func (r *mediaRepo) GetAllMedia(
 			log.Errorf("error selecting %s items: %v", batch.mediaType, err)
 		}
 	}
-	log.Infof("🎞️ Videos fetched: %v", len(resVideo))
-	log.Infof("🎵 Audios fetched: %v", len(resAudio))
-	log.Infof("📝 Transcriptions fetched: %v", len(resTranscription))
 
 	return resVideo, resAudio, resTranscription, total, nil
 }

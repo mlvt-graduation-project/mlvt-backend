@@ -51,7 +51,7 @@ type MediaService interface {
 	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
 
 	// GetAll media
-	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) (response.ProcessResponse, error)
+	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity, mediaType []entity.MediaType) (response.ProcessResponse, error)
 }
 
 type mediaService struct {

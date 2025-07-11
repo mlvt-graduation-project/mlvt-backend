@@ -62,7 +62,7 @@ func (h *ProcessController) GetAllProcess(c *gin.Context) {
 		result.ProcessList = append(result.ProcessList, listProcess...)
 		result.TotalCount = totalCount
 	} else if len(request.MediaType) > 0 {
-		result, err = h.mediaService.GetAllMedia(userId, request.SearchKey, request.Limit, request.Offset, request.Status)
+		result, err = h.mediaService.GetAllMedia(userId, request.SearchKey, request.Limit, request.Offset, request.Status, request.MediaType)
 		if err != nil {
 			log.Errorf("failed to get media. Error: %v", err)
 			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get media"})
