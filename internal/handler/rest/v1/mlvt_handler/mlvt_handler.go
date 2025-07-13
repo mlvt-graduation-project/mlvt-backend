@@ -572,6 +572,53 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
+	videoIDStr := c.Param("video_id")
+	audioIDStr := c.Param("audio_id")
+
+	var inputAudioLink string
+	var inputAudioFileName string
+
+	if videoIDStr != "" {
+		videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid video ID"})
+			return
+		}
+		video, _, _, err := h.mediaService.GetVideoByID(videoID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
+			return
+		}
+		videoDownloadURL, err := h.mediaService.GeneratePresignedDownloadURLForVideo(videoID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to generate video download URL"})
+			return
+		}
+		inputAudioLink = videoDownloadURL
+		inputAudioFileName = video.FileName
+	} else if audioIDStr != "" {
+		audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid audio ID"})
+			return
+		}
+		audio, _, err := h.mediaService.GetAudioByID(audioID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Audio not found"})
+			return
+		}
+		audioDownloadURL, err := h.mediaService.GeneratePresignedDownloadURL(audioID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to generate audio download URL"})
+			return
+		}
+		inputAudioLink = audioDownloadURL
+		inputAudioFileName = audio.FileName
+	} else {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid video or audio ID"})
+		return
+	}
+
 	transcription, _, err := h.mediaService.GetTranscriptionByID(transcriptionID)
 	if err != nil || transcription == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Transcription not found"})
@@ -673,8 +720,8 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 				OutputLink:     audioUploadURL,
 				Model:          "",
 			},
-			InputAudioFileName: "", // Empty since we don't have input audio for standalone TTS
-			InputAudioLink:     "", // Empty since we don't have input audio for standalone TTS
+			InputAudioFileName: inputAudioFileName,
+			InputAudioLink:     inputAudioLink,
 			Lang:               transcription.Lang,
 		}
 
