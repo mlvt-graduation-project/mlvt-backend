@@ -81,27 +81,27 @@ func GetPaymentOptions() []PaymentOptionInfo {
 		},
 		{
 			Option:      PaymentOption10K,
-			TokenAmount: 1000,
+			TokenAmount: 1500,
 			VNDAmount:   10000,
-			Description: "1,000 tokens - 10,000 VND",
+			Description: "1,500 tokens - 10,000 VND",
 		},
 		{
 			Option:      PaymentOption20K,
-			TokenAmount: 2000,
+			TokenAmount: 3500,
 			VNDAmount:   20000,
-			Description: "2,000 tokens - 20,000 VND",
+			Description: "3,500 tokens - 20,000 VND",
 		},
 		{
 			Option:      PaymentOption50K,
-			TokenAmount: 5000,
+			TokenAmount: 10000,
 			VNDAmount:   50000,
-			Description: "5,000 tokens - 50,000 VND",
+			Description: "10,000 tokens - 50,000 VND",
 		},
 		{
 			Option:      PaymentOption100K,
-			TokenAmount: 10000,
+			TokenAmount: 25000,
 			VNDAmount:   100000,
-			Description: "10,000 tokens - 100,000 VND",
+			Description: "25,000 tokens - 100,000 VND",
 		},
 	}
 }
