@@ -572,8 +572,8 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
-	videoIDStr := c.Param("video_id")
-	audioIDStr := c.Param("audio_id")
+	videoIDStr := c.Query("video_id")
+	audioIDStr := c.Query("audio_id")
 
 	var inputAudioLink string
 	var inputAudioFileName string
