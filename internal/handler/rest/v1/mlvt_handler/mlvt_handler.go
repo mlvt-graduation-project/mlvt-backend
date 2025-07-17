@@ -1369,7 +1369,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		}
 
 		// Marshal the payload to JSON for curl logging
-		ttsPayloadBytes, _ := json.Marshal(ttsPayload)
+		ttsPayloadBytes, err := json.Marshal(ttsPayload)
 		if err != nil {
 			log.Warnf("Error marshaling Full Pipeline TTS payload: %v", err)
 		}
