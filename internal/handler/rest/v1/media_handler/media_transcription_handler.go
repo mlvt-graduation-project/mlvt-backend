@@ -5,6 +5,7 @@ import (
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/utility"
 	"net/http"
 	"strconv"
 
@@ -264,19 +265,34 @@ func (h *MediaController) ListTranscriptionsByVideoID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "error"
 // @Router /transcriptions/{transcription_id} [delete]
 func (h *MediaController) DeleteTranscription(c *gin.Context) {
-	transcriptionIDStr := c.Param("transcription_id")
-	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	userInfo, err := utility.GetUserFromContext(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid transcription ID"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
 		return
 	}
 
-	if err := h.mediaService.DeleteTranscription(transcriptionID); err != nil {
+	transcriptionIDStr := c.Param("transcription_id")
+	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid text ID"})
+		return
+	}
+	deleted, err := h.mediaService.DeleteTranscription(transcriptionID, userInfo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when deleting text"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "Permission denied or text not found"})
+		return
+	}
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, response.MessageResponse{Message: "Transcription deleted successfully"})
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "Text deleted successfully"})
 }
 
 type UpdateTranscriptionStatusRequest struct {
@@ -321,4 +337,55 @@ func (h *MediaController) UpdateTranscriptionStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response.MessageResponse{Message: "status updated successfully"})
+}
+
+// UpdateTranscriptionTitle godoc
+// @Summary Update transcription title
+// @Description Update the title of a specific transcription by its ID. Requires authentication.
+// @Tags transcriptions
+// @Accept json
+// @Produce json
+// @Param transcription_id path uint64 true "Transcription ID"
+// @Param body body object{title=string} true "New title for the transcription"
+// @Success 200 {object} response.MessageResponse "title updated successfully"
+// @Failure 400 {object} response.ErrorResponse "invalid request or missing/invalid title"
+// @Failure 401 {object} response.ErrorResponse "invalid token"
+// @Failure 500 {object} response.ErrorResponse "internal server error"
+// @Router /transcriptions/{transcription_id}/title [put]
+func (h *MediaController) UpdateTranscriptionTitle(c *gin.Context) {
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	transcriptionIDStr := c.Param("transcription_id")
+	transcriptionID, err := strconv.ParseUint(transcriptionIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid transcription id"})
+	}
+
+	var body map[string]string
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+
+	title, ok := body["title"]
+	if !ok || title == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Missing title in request body"})
+		return
+	}
+
+	deleted, err := h.mediaService.UpdateTranscriptionTitle(transcriptionID, userInfo.ID, title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when update text title"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Permission denied or text not exists"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "title updated successfully"})
 }

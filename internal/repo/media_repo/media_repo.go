@@ -16,9 +16,10 @@ type MediaRepository interface {
 	GetCountAudiosByUserId(userID uint64) (int, error)
 	GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, error)
 	ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error)
-	DeleteAudioByID(audioID uint64) error
+	DeleteAudioByID(audioID uint64, userID uint64) (bool, error)
 	UpdateAudio(audio *entity.Audio) error
 	UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error
+	UpdateAudioTitle(audioID uint64, userID uint64, title string) (bool, error)
 
 	// video
 	CreateVideo(video *entity.Video) (uint64, error)
@@ -26,10 +27,11 @@ type MediaRepository interface {
 	ListVideosByUserID(userID uint64) ([]entity.Video, error)
 	ListVideosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Video, error)
 	GetCountVideosByUserId(userID uint64) (int, error)
-	DeleteVideo(videoID uint64) error
+	DeleteVideo(videoID uint64, userID uint64) (bool, error)
 	UpdateVideo(video *entity.Video) error
 	GetVideoStatus(videoID uint64) (entity.StatusEntity, error)
 	UpdateVideoStatus(videoId uint64, status entity.StatusEntity) error
+	UpdateVideoTitle(audioID uint64, userID uint64, title string) (bool, error)
 
 	// transcription
 	CreateTranscription(transcription *entity.Transcription) (uint64, error)
@@ -40,9 +42,10 @@ type MediaRepository interface {
 	ListTranscriptionsByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Transcription, error)
 	GetCountTranscriptionsByUserId(userID uint64) (int, error)
 	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
-	DeleteTranscription(transcriptionID uint64) error
+	DeleteTranscription(transcriptionID uint64, userID uint64) (bool, error)
 	UpdateTranscription(transcription *entity.Transcription) error
 	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
+	UpdateTranscriptionTitle(audioID uint64, userID uint64, title string) (bool, error)
 
 	// media
 	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity, mediaType []entity.MediaType) ([]entity.Video, []entity.Audio, []entity.Transcription, int, error)

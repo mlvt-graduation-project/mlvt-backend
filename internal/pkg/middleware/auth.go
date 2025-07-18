@@ -62,8 +62,37 @@ func (am *AuthUserMiddleware) MustAuth() gin.HandlerFunc {
 			return
 		}
 
-		ctx.Set("userInfo", userInfo)
+		ctx.Set("userRole", userInfo.Role)
+		ctx.Set("userEmail", userInfo.Email)
 		ctx.Set("userID", userInfo.ID)
+		ctx.Set("userBalance", userInfo.WalletBalance)
+		ctx.Next()
+	}
+}
+
+// MustAuth ensures the user is authenticated; otherwise, returns an error
+func (am *AuthUserMiddleware) AdminAuth() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		token := extractToken(ctx)
+		if len(token) == 0 {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		userInfo, err := am.authService.GetUserByToken(token)
+		if err != nil || userInfo == nil || userInfo.Status == entity.UserStatusInactive {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+		if userInfo.Role != entity.AdminRole {
+			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "You don't have right to access this"})
+			return
+		}
+
+		ctx.Set("userRole", userInfo.Role)
+		ctx.Set("userEmail", userInfo.Email)
+		ctx.Set("userID", userInfo.ID)
+		ctx.Set("userBalance", userInfo.WalletBalance)
 		ctx.Next()
 	}
 }

@@ -8,6 +8,7 @@ package initialize
 
 import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
+	"mlvt/internal/handler/rest/v1/feature_flag_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler"
@@ -22,6 +23,7 @@ import (
 	"mlvt/internal/infra/db/mongodb"
 	"mlvt/internal/pkg/middleware"
 	"mlvt/internal/repo/admin_repo"
+	"mlvt/internal/repo/feature_flag_repo"
 	"mlvt/internal/repo/media_repo"
 	"mlvt/internal/repo/payment_repo"
 	"mlvt/internal/repo/ping_repo"
@@ -36,6 +38,7 @@ import (
 	"mlvt/internal/service/admin_service"
 	"mlvt/internal/service/auth_service"
 	"mlvt/internal/service/email_service"
+	feature_flag_service "mlvt/internal/service/feature_flag"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/notify_service"
 	"mlvt/internal/service/payment_service"
@@ -72,6 +75,16 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	userService := user_service.NewUserService(userRepository, s3ClientInterface, authServiceInterface, trafficService, emailService)
 	userController := user_handler.NewUserController(userService)
 
+	// Feature Flag
+	featureFlagRepo := feature_flag_repo.NewFeatureFlagRepo(db)
+	featureFlagService := feature_flag_service.NewFeatureFlagService(featureFlagRepo)
+	featureFlagHandler := feature_flag_handler.NewFeatureFlagHandler(featureFlagService)
+
+	// Wallet
+	walletRepository := wallet_repo.NewWalletRepo(db)
+	walletService := wallet_service.NewWalletService(walletRepository, trafficService)
+	walletController := wallet_handler.NewWalletController(walletService)
+	
 	// Media
 	mediaRepository := media_repo.NewMediaRepo(db)
 	mediaService := media_service.NewMediaService(mediaRepository, s3ClientInterface)
@@ -87,7 +100,7 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 
 	// MLVT + Nofiy
 	notifyService := notify_service.NewNotifyService()
-	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService, notifyService)
+	mlvtController := mlvt_handler.NewMlvtController(mediaService, progressService, trafficService, notifyService, featureFlagService, walletService)
 
 	// Ping 
 	pingRepository := ping_repo.NewPingRepo(db)
@@ -98,11 +111,6 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	adminRepository := admin_repo.NewAminRepo(mongoConn, db)
 	adminService := admin_service.NewAminService(userRepository, adminRepository, trafficService)
 	adminController := admin_handler.NewAdminController(adminService)
-
-	// Wallet
-	walletRepository := wallet_repo.NewWalletRepo(db)
-	walletService := wallet_service.NewWalletService(walletRepository, trafficService)
-	walletController := wallet_handler.NewWalletController(walletService)
 
 	// Voucher 
 	voucherRepository := voucher_repo.NewVoucherRepo(mongoConn)
@@ -121,7 +129,7 @@ func InitializeApp(db *sqlx.DB, mongoConn *mongodb.MongoDBClient) (*router.AppRo
 	paymentService := payment_service.NewPaymentService(paymentRepository, walletService, trafficService)
 	paymentController := payment_handler.NewPaymentController(paymentService)
 	swaggerRouter := router.NewSwaggerRouter()
-	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, processController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, paymentController, swaggerRouter)
+	appRouter := router.NewAppRouter(userController, mediaController, mlvtController, progressController, processController, pingController, authUserMiddleware, adminController, walletController, voucherController, tokenController, paymentController, featureFlagHandler, swaggerRouter)
 	return appRouter, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/env"
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/utility"
 	"net/http"
 	"strconv"
 
@@ -277,6 +278,12 @@ func (h *MediaController) ListAudiosByVideoID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "error"
 // @Router /audios/{audio_id} [delete]
 func (h *MediaController) DeleteAudio(c *gin.Context) {
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid token"})
+		return
+	}
+
 	// Parse audio ID from the URL path
 	audioIDStr := c.Param("audio_id")
 	audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
@@ -286,11 +293,67 @@ func (h *MediaController) DeleteAudio(c *gin.Context) {
 	}
 
 	// Call the service to delete the audio
-	if err := h.mediaService.DeleteAudio(audioID); err != nil {
+	deleted, err := h.mediaService.DeleteAudio(audioID, userInfo.ID)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete audio"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "Permission denied or audio not found"})
 		return
 	}
 
 	// Respond with success
 	c.JSON(http.StatusOK, response.MessageResponse{Message: "Audio deleted successfully"})
+}
+
+// UpdateAudioTitle godoc
+// @Summary Update audio title
+// @Description Updates the title of an audio file by its ID. Requires authentication.
+// @Tags audios
+// @Accept json
+// @Produce json
+// @Param transcription_id path uint64 true "ID of the audio file"
+// @Param body body map[string]string true "Request body with new title. Example: {\"title\": \"New Title\"}"
+// @Success 200 {object} response.MessageResponse "title updated successfully"
+// @Failure 400 {object} response.ErrorResponse "invalid request or permission denied"
+// @Failure 401 {object} response.ErrorResponse "invalid token"
+// @Failure 500 {object} response.ErrorResponse "internal server error"
+// @Router /audios/{transcription_id}/title [put]
+func (h *MediaController) UpdateAudioTitle(c *gin.Context) {
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	audioIDStr := c.Param("audio_id")
+	audioID, err := strconv.ParseUint(audioIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid audio id"})
+	}
+
+	var body map[string]string
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+
+	title, ok := body["title"]
+	if !ok || title == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Missing title in request body"})
+		return
+	}
+
+	deleted, err := h.mediaService.UpdateAudioTitle(audioID, userInfo.ID, title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when update audio title"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Permission denied or audio not exists"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "title updated successfully"})
 }

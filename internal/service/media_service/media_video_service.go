@@ -110,35 +110,36 @@ func (s *mediaService) ListVideosByUserIDAdvance(userID uint64, searchKey string
 	return videoWithURLsList, nil
 }
 
-func (s *mediaService) DeleteVideo(videoID uint64) error {
+func (s *mediaService) DeleteVideo(videoID uint64, userID uint64) (bool, error) {
+	// This block is used for hard delete
 	// Fetch the video record to get the file names
-	video, err := s.mediaRepo.GetVideoByID(videoID)
-	if err != nil {
-		return fmt.Errorf("failed to fetch video: %v", err)
-	}
-	if video == nil {
-		return fmt.Errorf("video not found")
-	}
+	// video, err := s.mediaRepo.GetVideoByID(videoID)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to fetch video: %v", err)
+	// }
+	// if video == nil {
+	// 	return fmt.Errorf("video not found")
+	// }
 
 	// Begin deletion process
 	// 1. Delete the video and frame files from S3
-	err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+	// err = s.s3Client.DeleteFile(video.Folder, video.FileName)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to delete video file from S3: %v", err)
+	// }
+
+	// err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to delete frame image from S3: %v", err)
+	// }
+
+	// // 2. Delete the video record from the database
+	deleted, err := s.mediaRepo.DeleteVideo(videoID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to delete video file from S3: %v", err)
+		return false, fmt.Errorf("failed to delete video from database: %v", err)
 	}
 
-	err = s.s3Client.DeleteFile(env.EnvConfig.VideoFramesFolder, video.Image)
-	if err != nil {
-		return fmt.Errorf("failed to delete frame image from S3: %v", err)
-	}
-
-	// 2. Delete the video record from the database
-	err = s.mediaRepo.DeleteVideo(videoID)
-	if err != nil {
-		return fmt.Errorf("failed to delete video from database: %v", err)
-	}
-
-	return nil
+	return deleted, nil
 }
 
 func (s *mediaService) UpdateVideo(video *entity.Video) error {
@@ -186,4 +187,8 @@ func (s *mediaService) GeneratePresignedDownloadURLForImage(videoID uint64) (str
 	}
 
 	return s.s3Client.GeneratePresignedDownloadURL(video.Folder, video.Image, "image/jpeg")
+}
+
+func (s *mediaService) UpdateVideoTitle(audioID uint64, userID uint64, title string) (bool, error) {
+	return s.mediaRepo.UpdateVideoTitle(audioID, userID, title)
 }

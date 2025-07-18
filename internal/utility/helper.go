@@ -6,14 +6,17 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mlvt/internal/entity"
 	"mlvt/internal/schema"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
@@ -174,4 +177,109 @@ func GetProgressTitle(id int, progressType entity.ProgressType) string {
 	}
 
 	return fmt.Sprintf("%v - %v", prefixTitle, id)
+}
+
+// GetUserFromContext extracts the full User from gin.Context
+func GetUserFromContext(ctx *gin.Context) (*entity.User, error) {
+	idVal, ok := ctx.Get("userID")
+	if !ok {
+		return nil, errors.New("userID not found in context")
+	}
+	userID, ok := idVal.(uint64)
+	if !ok {
+		return nil, errors.New("userID has invalid type")
+	}
+
+	emailVal, ok := ctx.Get("userEmail")
+	if !ok {
+		return nil, errors.New("userEmail not found in context")
+	}
+	email, ok := emailVal.(string)
+	if !ok {
+		return nil, errors.New("userEmail has invalid type")
+	}
+
+	roleVal, ok := ctx.Get("userRole")
+	if !ok {
+		return nil, errors.New("userRole not found in context")
+	}
+	role, ok := roleVal.(entity.UserPermission)
+	if !ok {
+		if roleStr, ok := roleVal.(string); ok {
+			role = entity.UserPermission(roleStr)
+		} else {
+			return nil, errors.New("userRole has invalid type")
+		}
+	}
+
+	balanceVal, ok := ctx.Get("userBalance")
+	if !ok {
+		return nil, errors.New("userID not found in context")
+	}
+	balance, ok := balanceVal.(uint64)
+	if !ok {
+		return nil, errors.New("userID has invalid type")
+	}
+
+	// Build entity.User tối giản
+	user := &entity.User{
+		ID:            userID,
+		Email:         email,
+		Role:          role,
+		WalletBalance: int64(balance),
+	}
+	return user, nil
+}
+
+func GetAllowedPipelines() map[string]struct{} {
+	var cfg entity.ModelCostConfig
+	typ := reflect.TypeOf(cfg)
+
+	result := make(map[string]struct{})
+	for i := 0; i < typ.NumField(); i++ {
+		jsonTag := typ.Field(i).Tag.Get("json")
+		if jsonTag != "" {
+			result[jsonTag] = struct{}{}
+		}
+	}
+	return result
+}
+
+func GetAllowedModelsByPipeline() map[string]map[string]struct{} {
+	var cfg entity.ModelCostConfig
+	typ := reflect.TypeOf(cfg)
+
+	result := make(map[string]map[string]struct{})
+	for i := 0; i < typ.NumField(); i++ {
+		pipelineTag := typ.Field(i).Tag.Get("json")
+		fieldType := typ.Field(i).Type
+
+		if pipelineTag == "" || fieldType.Kind() != reflect.Struct {
+			continue
+		}
+
+		modelMap := make(map[string]struct{})
+		for j := 0; j < fieldType.NumField(); j++ {
+			modelTag := fieldType.Field(j).Tag.Get("json")
+			if modelTag != "" {
+				modelMap[modelTag] = struct{}{}
+			}
+		}
+		result[pipelineTag] = modelMap
+	}
+	return result
+}
+
+func IsValidPipeline(pipeline string, allowed map[string]struct{}) bool {
+	_, ok := allowed[pipeline]
+	return ok
+}
+
+func IsValidModel(pipeline string, model string, modelMapByPipeline map[string]map[string]struct{}) bool {
+	models, ok := modelMapByPipeline[pipeline]
+	if !ok {
+		return false
+	}
+	_, found := models[model]
+	return found
 }

@@ -190,3 +190,14 @@ type DailyTokenClaimsResponse struct {
 type PremiumUsersResponse struct {
 	Users []entity.PremiumUser `json:"users"`
 }
+
+type ConfigResponse struct {
+	Key         string      `json:"key"`
+	Value       interface{} `json:"value"`
+	Description string      `json:"description,omitempty"`
+}
+
+type GetAllFeatureFlagResponse struct {
+	Key      string `json:"key"`
+	IsActive bool   `json:"is_active"`
+}

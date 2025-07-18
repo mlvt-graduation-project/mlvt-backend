@@ -65,6 +65,7 @@ func (s *AuthService) GenerateToken(user *entity.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": user.ID,
 		"email":  user.Email,
+		"role":   user.Role,
 		"exp":    time.Now().Add(time.Hour * 72).Unix(), // Token valid for 72 hours
 	})
 
@@ -102,7 +103,7 @@ func (s *AuthService) GetUserByToken(tokenStr string) (*entity.User, error) {
 	userID := uint64(userIDFloat)
 
 	user, err := s.userRepo.GetUserByID(userID)
-	if err != nil {
+	if user == nil || err != nil {
 		return nil, errors.New(reason.UserNotFound.Message())
 	}
 

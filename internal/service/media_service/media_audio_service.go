@@ -92,8 +92,8 @@ func (s *mediaService) ListAudiosByVideoID(videoID uint64) ([]entity.Audio, erro
 	return s.mediaRepo.ListAudiosByVideoID(videoID)
 }
 
-func (s *mediaService) DeleteAudio(audioID uint64) error {
-	return s.mediaRepo.DeleteAudioByID(audioID)
+func (s *mediaService) DeleteAudio(audioID uint64, userID uint64) (bool, error) {
+	return s.mediaRepo.DeleteAudioByID(audioID, userID)
 }
 
 func (s *mediaService) UpdateAudio(audio *entity.Audio) error {
@@ -102,4 +102,8 @@ func (s *mediaService) UpdateAudio(audio *entity.Audio) error {
 
 func (s *mediaService) UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error {
 	return s.mediaRepo.UpdateAudioStatus(audioID, status)
+}
+
+func (s *mediaService) UpdateAudioTitle(audioID uint64, userID uint64, title string) (bool, error) {
+	return s.mediaRepo.UpdateAudioTitle(audioID, userID, title)
 }

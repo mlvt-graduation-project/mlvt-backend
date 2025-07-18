@@ -2,6 +2,7 @@ package router
 
 import (
 	"mlvt/internal/handler/rest/v1/admin_handler"
+	"mlvt/internal/handler/rest/v1/feature_flag_handler"
 	"mlvt/internal/handler/rest/v1/media_handler"
 	"mlvt/internal/handler/rest/v1/mlvt_handler"
 	"mlvt/internal/handler/rest/v1/payment_handler"
@@ -18,20 +19,20 @@ import (
 )
 
 type AppRouter struct {
-	userController     *user_handler.UserController
-	mediaController    *media_handler.MediaController
-	mlvtController     *mlvt_handler.MlvtController
-	progressController *progress_handler.ProgressController
-	processController  *process_handler.ProcessController
-	pingController     *ping_handler.PingController
-	authMiddleware     *middleware.AuthUserMiddleware
-	adminController    *admin_handler.AdminController
-	walletController   *wallet_handler.WalletController
-	voucherController  *voucher_handler.VoucherController
-	tokenController    *token_claim_handler.TokenController
-	paymentController  *payment_handler.PaymentController
-
-	swaggerRouter *SwaggerRouter
+	userController        *user_handler.UserController
+	mediaController       *media_handler.MediaController
+	mlvtController        *mlvt_handler.MlvtController
+	progressController    *progress_handler.ProgressController
+	processController     *process_handler.ProcessController
+	pingController        *ping_handler.PingController
+	authMiddleware        *middleware.AuthUserMiddleware
+	adminController       *admin_handler.AdminController
+	walletController      *wallet_handler.WalletController
+	voucherController     *voucher_handler.VoucherController
+	tokenController       *token_claim_handler.TokenController
+	paymentController     *payment_handler.PaymentController
+	featureflagController *feature_flag_handler.FeatureFlagHandler
+	swaggerRouter         *SwaggerRouter
 }
 
 func NewAppRouter(
@@ -47,21 +48,23 @@ func NewAppRouter(
 	voucherController *voucher_handler.VoucherController,
 	tokenController *token_claim_handler.TokenController,
 	paymentController *payment_handler.PaymentController,
+	featureFlagController *feature_flag_handler.FeatureFlagHandler,
 	swaggerRouter *SwaggerRouter) *AppRouter {
 	return &AppRouter{
-		userController:     userController,
-		mediaController:    mediaController,
-		mlvtController:     mlvtController,
-		progressController: progressController,
-		processController:  processController,
-		pingController:     pingController,
-		authMiddleware:     authMiddleware,
-		adminController:    adminController,
-		walletController:   walletController,
-		voucherController:  voucherController,
-		tokenController:    tokenController,
-		paymentController:  paymentController,
-		swaggerRouter:      swaggerRouter,
+		userController:        userController,
+		mediaController:       mediaController,
+		mlvtController:        mlvtController,
+		progressController:    progressController,
+		processController:     processController,
+		pingController:        pingController,
+		authMiddleware:        authMiddleware,
+		adminController:       adminController,
+		walletController:      walletController,
+		voucherController:     voucherController,
+		tokenController:       tokenController,
+		paymentController:     paymentController,
+		swaggerRouter:         swaggerRouter,
+		featureflagController: featureFlagController,
 	}
 }
 
@@ -95,12 +98,13 @@ func (a *AppRouter) RegisterMediaRoutes(r *gin.RouterGroup) {
 	videoProtected := r.Group("/videos")
 	videoProtected.Use(a.authMiddleware.MustAuth())
 	{
-		videoProtected.POST("/", a.mediaController.AddVideo)                                               // Add a new video
-		videoProtected.GET("/:video_id", a.mediaController.GetVideoByID)                                   // Get video by ID
-		videoProtected.GET("/user/:user_id", a.mediaController.ListVideosByUserID)                         // List videos by user ID
-		videoProtected.DELETE("/:video_id", a.mediaController.DeleteVideo)                                 // Delete video by ID
-		videoProtected.GET("/:video_id/status", a.mediaController.GetVideoStatus)                          // Get video status
-		videoProtected.PUT("/:video_id/status", a.mediaController.UpdateVideoStatus)                       // Update video status
+		videoProtected.POST("/", a.mediaController.AddVideo)                         // Add a new video
+		videoProtected.GET("/:video_id", a.mediaController.GetVideoByID)             // Get video by ID
+		videoProtected.GET("/user/:user_id", a.mediaController.ListVideosByUserID)   // List videos by user ID
+		videoProtected.DELETE("/:video_id", a.mediaController.DeleteVideo)           // Delete video by ID
+		videoProtected.GET("/:video_id/status", a.mediaController.GetVideoStatus)    // Get video status
+		videoProtected.PUT("/:video_id/status", a.mediaController.UpdateVideoStatus) // Update video status
+		videoProtected.PATCH("/title/:video_id", a.mediaController.UpdateVideoTitle)
 		videoProtected.POST("/generate-upload-url/video", a.mediaController.GenerateUploadURLForVideo)     // Generate presigned upload URL for video
 		videoProtected.POST("/generate-upload-url/image", a.mediaController.GenerateUploadURLForImage)     // Generate presigned upload URL for image
 		videoProtected.GET("/:video_id/download-url/video", a.mediaController.GenerateDownloadURLForVideo) // Generate presigned download URL for video
@@ -117,17 +121,19 @@ func (a *AppRouter) RegisterMediaRoutes(r *gin.RouterGroup) {
 		transcriptionProtected.GET("/user/:user_id", a.mediaController.ListTranscriptionsByUserID)                   // List transcriptions by user ID
 		transcriptionProtected.GET("/video/:video_id", a.mediaController.ListTranscriptionsByVideoID)                // List transcriptions by video ID
 		transcriptionProtected.DELETE("/:transcription_id", a.mediaController.DeleteTranscription)                   // Delete transcription by ID
-		transcriptionProtected.POST("/generate-upload-url", a.mediaController.GenerateUploadURLForText)              // Generate presigned upload URL
-		transcriptionProtected.GET("/:transcription_id/download-url", a.mediaController.GenerateDownloadURLForText)  // Generate presigned download URL
+		transcriptionProtected.PATCH("/title/:transcription_id", a.mediaController.UpdateTranscriptionTitle)
+		transcriptionProtected.POST("/generate-upload-url", a.mediaController.GenerateUploadURLForText)             // Generate presigned upload URL
+		transcriptionProtected.GET("/:transcription_id/download-url", a.mediaController.GenerateDownloadURLForText) // Generate presigned download URL
 		transcriptionProtected.PUT("/:transcription_id/status", a.mediaController.UpdateTranscriptionStatus)
 	}
 
 	audioProtected := r.Group("/audios")
 	audioProtected.Use(a.authMiddleware.MustAuth())
 	{
-		audioProtected.POST("/", a.mediaController.AddAudio)                                  // Add a new audio
-		audioProtected.GET("/:audio_id", a.mediaController.GetAudio)                          // Get a specific audio by ID
-		audioProtected.DELETE("/:audio_id", a.mediaController.DeleteAudio)                    // Delete an audio
+		audioProtected.POST("/", a.mediaController.AddAudio)               // Add a new audio
+		audioProtected.GET("/:audio_id", a.mediaController.GetAudio)       // Get a specific audio by ID
+		audioProtected.DELETE("/:audio_id", a.mediaController.DeleteAudio) // Delete an audio
+		audioProtected.PATCH("/title/:audio_id", a.mediaController.UpdateAudioTitle)
 		audioProtected.GET("/user/:user_id", a.mediaController.ListAudiosByUserID)            // Get all audios by user
 		audioProtected.GET("/video/:video_id", a.mediaController.ListAudiosByVideoID)         // Get all audios by video
 		audioProtected.GET("/:audio_id/user/:user_id", a.mediaController.GetAudioByUser)      // Get specific audio by audio ID and user ID
@@ -162,12 +168,14 @@ func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
 
 // RegisterProgressRoutes sets up the routes for all progress-related operations
 func (a *AppRouter) RegisterProgressRoutes(r *gin.RouterGroup) {
-	public := r.Group("/progress")
+	progressProtected := r.Group("/progress")
+	progressProtected.Use(a.authMiddleware.MustAuth())
 	{
-		public.GET("/:user_id", a.progressController.GetUserProgress)
-		public.POST("update-title/:progress_id", a.progressController.UpdateProgressTitle)
-		public.POST("delete-progress/:progress_id", a.progressController.DeleteProgress)
+		progressProtected.GET("/:user_id", a.progressController.GetUserProgress)
+		progressProtected.POST("update-title/:progress_id", a.progressController.UpdateProgressTitle)
+		progressProtected.POST("delete-progress/:progress_id", a.progressController.DeleteProgress)
 	}
+
 }
 
 // RegisterAdminRoutes sets up the routes for all permission-related operations
@@ -233,6 +241,23 @@ func (a *AppRouter) RegisteVoucherRoutes(r *gin.RouterGroup) {
 		protected.PATCH("/:voucherID", a.voucherController.UpdateVoucher)
 		protected.GET("/get-all", a.voucherController.GetAllVouchers)
 		protected.GET("/:voucherID", a.voucherController.GetVoucherByID)
+	}
+}
+
+func (a *AppRouter) RegisterFeatureFlag(r *gin.RouterGroup) {
+	// 🔓 Public feature flag routes
+	public := r.Group("/feature-flag")
+	{
+		public.GET("/get-all", a.featureflagController.GetAllFeatureFlags)
+		public.GET("/pipeline-model-cost", a.featureflagController.GetPipelineCost)
+	}
+
+	// 🔐 Admin-only routes
+	admin := r.Group("/feature-flag")
+	admin.Use(a.authMiddleware.AdminAuth())
+	{
+		admin.PATCH("/pipeline-model", a.featureflagController.SetPipelineCost)
+		admin.PUT("/config", a.featureflagController.SetFeatureFlagActive)
 	}
 }
 

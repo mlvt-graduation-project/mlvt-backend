@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/zap-logging/log"
 	"strings"
 	"time"
 
@@ -65,7 +66,6 @@ func (r *mediaRepo) CreateAudio(audio *entity.Audio) (uint64, error) {
 	return insertedID, nil
 }
 
-
 // GetAudioByID fetches an audio by its ID
 func (r *mediaRepo) GetAudioByID(audioID uint64) (*entity.Audio, error) {
 	query := `
@@ -117,7 +117,6 @@ func (r *mediaRepo) GetAudioByID(audioID uint64) (*entity.Audio, error) {
 
 	return &a, nil
 }
-
 
 // GetAudioByIDAndUserID retrieves a single audio by its ID and User ID (owner)
 func (r *mediaRepo) GetAudioByIDAndUserID(audioID, userID uint64) (*entity.Audio, error) {
@@ -409,19 +408,22 @@ func (r *mediaRepo) ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error) 
 	return audios, nil
 }
 
-
 // DeleteAudioByID deletes an audio record by its ID
-func (r *mediaRepo) DeleteAudioByID(audioID uint64) error {
-	query := "UPDATE audios SET is_deleted = true WHERE id = ?"
-	query = sqlx.Rebind(sqlx.DOLLAR, query) // ? → $1
+func (r *mediaRepo) DeleteAudioByID(audioID uint64, userID uint64) (bool, error) {
+	query := "UPDATE audios SET is_deleted = true WHERE id = ? and user_id = ?"
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
-	_, err := r.db.Exec(query, audioID)
+	res, err := r.db.Exec(query, audioID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to delete audio %d: %w", audioID, err)
+		return false, fmt.Errorf("failed to delete audio %d: %w", audioID, err)
 	}
-	return nil
-}
 
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
+}
 
 // UpdateAudio updates the entire Audio record
 func (r *mediaRepo) UpdateAudio(audio *entity.Audio) error {
@@ -493,7 +495,6 @@ func (r *mediaRepo) UpdateAudio(audio *entity.Audio) error {
 	return nil
 }
 
-
 // UpdateAudioStatus updates only the status of an Audio record
 func (r *mediaRepo) UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error {
 	query := `
@@ -518,4 +519,20 @@ func (r *mediaRepo) UpdateAudioStatus(audioID uint64, status entity.StatusEntity
 	}
 
 	return nil
+}
+
+func (r *mediaRepo) UpdateAudioTitle(audioID uint64, userID uint64, title string) (bool, error) {
+	query := `UPDATE audios SET title = ?, updated_at = ? WHERE id = ? and user_id = ?`
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	now := time.Now()
+	res, err := r.db.Exec(query, title, now, audioID, userID)
+	if err != nil {
+		log.Errorf("error update audio title from repository: %v", err)
+		return false, fmt.Errorf("failed to updated audio title: %v", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
 }
