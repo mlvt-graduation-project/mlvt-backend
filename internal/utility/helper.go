@@ -214,11 +214,11 @@ func GetUserFromContext(ctx *gin.Context) (*entity.User, error) {
 
 	balanceVal, ok := ctx.Get("userBalance")
 	if !ok {
-		return nil, errors.New("userID not found in context")
+		return nil, errors.New("userBalance not found in context")
 	}
-	balance, ok := balanceVal.(uint64)
+	balance, ok := balanceVal.(int64)
 	if !ok {
-		return nil, errors.New("userID has invalid type")
+		return nil, errors.New("userBalance has invalid type")
 	}
 
 	// Build entity.User tối giản

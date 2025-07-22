@@ -156,13 +156,14 @@ func (a *AppRouter) RegisterPingStatusRoutes(r *gin.RouterGroup) {
 }
 
 func (a *AppRouter) RegiserMlvtRoutes(r *gin.RouterGroup) {
-	public := r.Group("/mlvt")
+	protected := r.Group("/mlvt")
+	protected.Use(a.authMiddleware.MustAuth())
 	{
-		public.POST("/ttt/:transcription_id", a.mlvtController.ProcessTextToText)
-		public.POST("/stt/:video_id", a.mlvtController.ProcessSpeechToText)
-		public.POST("/tts/:transcription_id", a.mlvtController.ProcessTextToSpeech)
-		public.POST("/lipsync/:video_id/:audio_id", a.mlvtController.ProcessLipSync)
-		public.POST("/pipeline/full/:video_id", a.mlvtController.ProcessFullPipeline)
+		protected.POST("/ttt/:transcription_id", a.mlvtController.ProcessTextToText)
+		protected.POST("/stt/:video_id", a.mlvtController.ProcessSpeechToText)
+		protected.POST("/tts/:transcription_id", a.mlvtController.ProcessTextToSpeech)
+		protected.POST("/lipsync/:video_id/:audio_id", a.mlvtController.ProcessLipSync)
+		protected.POST("/pipeline/full/:video_id", a.mlvtController.ProcessFullPipeline)
 	}
 }
 
