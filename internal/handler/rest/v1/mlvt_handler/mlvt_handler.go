@@ -219,7 +219,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeSTT)), model)
 	if isActive {
 		if cost > int(userInfo.WalletBalance) {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
 			return
 		} else {
 			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
@@ -435,7 +435,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeTTT)), model)
 	if isActive {
 		if cost > int(userInfo.WalletBalance) {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
 			return
 		} else {
 			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
@@ -692,7 +692,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeTTS)), model)
 	if isActive {
 		if cost > int(userInfo.WalletBalance) {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
 			return
 		} else {
 			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
@@ -909,7 +909,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeLS)), model)
 	if isActive {
 		if cost > int(userInfo.WalletBalance) {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
 			return
 		} else {
 			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
@@ -1138,7 +1138,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeFP)), model)
 	if isActive {
 		if cost > int(userInfo.WalletBalance) {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
 			return
 		} else {
 			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
