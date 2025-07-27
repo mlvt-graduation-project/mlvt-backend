@@ -60,7 +60,7 @@ func (r *paymentRepo) GetByTransactionID(ctx context.Context, transactionID stri
 
 func (r *paymentRepo) GetByUserID(ctx context.Context, userID uint64) ([]entity.PaymentTransaction, error) {
 	filter := bson.M{"user_id": userID}
-	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
+	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
 
 	return r.adapter.Find(filter, opts)
 }
@@ -88,7 +88,7 @@ func (r *paymentRepo) MarkAsCompleted(ctx context.Context, id primitive.ObjectID
 
 func (r *paymentRepo) GetPendingPayments(ctx context.Context) ([]entity.PaymentTransaction, error) {
 	filter := bson.M{"status": entity.PaymentStatusPending}
-	opts := options.Find().SetSort(bson.D{{"created_at", -1}})
+	opts := options.Find().SetSort(bson.D{{Key: "created_at", Value: -1}})
 
 	return r.adapter.Find(filter, opts)
 }
