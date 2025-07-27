@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/zap-logging/log"
 	"strings"
 	"time"
 
@@ -113,7 +114,6 @@ func (r *mediaRepo) GetTranscriptionByID(transcriptionID uint64) (*entity.Transc
 
 	return &t, nil
 }
-
 
 // GetTranscriptionByIDAndUserID retrieves a transcription by its ID and User ID
 func (r *mediaRepo) GetTranscriptionByIDAndUserID(transcriptionID, userID uint64) (*entity.Transcription, error) {
@@ -408,15 +408,20 @@ func (r *mediaRepo) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transc
 }
 
 // DeleteTranscription deletes a transcription by its ID
-func (r *mediaRepo) DeleteTranscription(transcriptionID uint64) error {
-	query := "UPDATE transcriptions SET is_deleted = true WHERE id = ?"
+func (r *mediaRepo) DeleteTranscription(transcriptionID uint64, userID uint64) (bool, error) {
+	query := "UPDATE transcriptions SET is_deleted = true WHERE id = ? and user_id = ?"
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
-	_, err := r.db.Exec(query, transcriptionID)
+	res, err := r.db.Exec(query, transcriptionID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to delete transcription %d: %w", transcriptionID, err)
+		return false, fmt.Errorf("failed to delete transcription %d: %w", transcriptionID, err)
 	}
-	return nil
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
 }
 
 func (r *mediaRepo) GetCountTranscriptionsByUserId(userID uint64) (int, error) {
@@ -503,4 +508,20 @@ func (r *mediaRepo) UpdateTranscriptionStatus(transcriptionID uint64, status ent
 	}
 
 	return nil
+}
+
+func (r *mediaRepo) UpdateTranscriptionTitle(transcriptionID uint64, userID uint64, title string) (bool, error) {
+	query := `UPDATE transcriptions SET title = ?, updated_at = ? WHERE id = ? and user_id = ?`
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	now := time.Now()
+	res, err := r.db.Exec(query, title, now, transcriptionID, userID)
+	if err != nil {
+		log.Errorf("error update transcriptions title from repository: %v", err)
+		return false, fmt.Errorf("failed to updated transcriptions title: %v", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
 }

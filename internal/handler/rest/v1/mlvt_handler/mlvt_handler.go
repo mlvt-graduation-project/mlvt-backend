@@ -11,10 +11,13 @@ import (
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/request"
 	"mlvt/internal/pkg/response"
+	feature_flag_service "mlvt/internal/service/feature_flag"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/notify_service"
 	"mlvt/internal/service/progress_service"
 	"mlvt/internal/service/traffic_service"
+	"mlvt/internal/service/wallet_service"
+	"mlvt/internal/utility"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,10 +27,12 @@ import (
 )
 
 type MlvtController struct {
-	mediaService    media_service.MediaService
-	progressService progress_service.ProgressService
-	trafficService  traffic_service.TrafficService
-	notifyService   notify_service.NotifyService
+	mediaService       media_service.MediaService
+	progressService    progress_service.ProgressService
+	trafficService     traffic_service.TrafficService
+	featureFlagService feature_flag_service.FeatureFlagService
+	walletService      wallet_service.WalletService
+	notifyService      notify_service.NotifyService
 }
 
 func NewMlvtController(
@@ -35,12 +40,16 @@ func NewMlvtController(
 	progressService progress_service.ProgressService,
 	trafficService traffic_service.TrafficService,
 	notifyService notify_service.NotifyService,
+	featureFlagService feature_flag_service.FeatureFlagService,
+	walletService wallet_service.WalletService,
 ) *MlvtController {
 	return &MlvtController{
-		mediaService:    mediaService,
-		progressService: progressService,
-		trafficService:  trafficService,
-		notifyService:   notifyService,
+		mediaService:       mediaService,
+		progressService:    progressService,
+		trafficService:     trafficService,
+		notifyService:      notifyService,
+		featureFlagService: featureFlagService,
+		walletService:      walletService,
 	}
 }
 
@@ -74,7 +83,7 @@ func sendRequestToEC2(requestPayload interface{}, ec2Endpoint string, timeout ti
 	return &ec2Response, nil
 }
 
-func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, userID uint64, entityID uint64) {
+func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, userID uint64, entityID uint64, token int64) {
 	ctx := context.Background()
 	switch trafficType {
 	case entity.ProcessSTTModelAction:
@@ -84,6 +93,7 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 			UserID:         userID,
 			UserPermission: entity.UserRole,
 			Timestamp:      time.Now().Unix(),
+			Token:          token,
 		}); err != nil {
 			log.Errorf("failed to log traffic of %s", trafficType)
 		}
@@ -95,6 +105,7 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 			UserID:         userID,
 			UserPermission: entity.UserRole,
 			Timestamp:      time.Now().Unix(),
+			Token:          token,
 		}); err != nil {
 			log.Errorf("failed to log traffic of %s", trafficType)
 		}
@@ -106,6 +117,7 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 			UserID:         userID,
 			UserPermission: entity.UserRole,
 			Timestamp:      time.Now().Unix(),
+			Token:          token,
 		}); err != nil {
 			log.Errorf("failed to log traffic of %s", trafficType)
 		}
@@ -117,6 +129,7 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 			UserID:         userID,
 			UserPermission: entity.UserRole,
 			Timestamp:      time.Now().Unix(),
+			Token:          token,
 		}); err != nil {
 			log.Errorf("failed to log traffic of %s", trafficType)
 		}
@@ -128,6 +141,7 @@ func (h *MlvtController) quickLogTraffic(trafficType entity.TrafficActionType, u
 			UserID:         userID,
 			UserPermission: entity.UserRole,
 			Timestamp:      time.Now().Unix(),
+			Token:          token,
 		}); err != nil {
 			log.Errorf("failed to log traffic of %s", trafficType)
 		}
@@ -189,11 +203,32 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "source_language and target_language are required"})
 		return
 	}
+	model := c.Query("model")
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
 
 	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
 		return
+	}
+
+	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeSTT)), model)
+	if isActive {
+		if cost > int(userInfo.WalletBalance) {
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			return
+		} else {
+			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
+				c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when using token"})
+				return
+			}
+		}
+	} else {
+		cost = 0
 	}
 
 	folder := env.EnvConfig.TranscriptionsFolder
@@ -219,7 +254,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID)
+	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID, int64(cost))
 
 	// Send notification about STT processing start
 	h.sendNotification(fmt.Sprintf("🎤 <b>Speech-to-Text Processing Started</b>\n\n"+
@@ -384,10 +419,32 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		return
 	}
 
+	model := c.Query("model")
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	originalTranscription, _, err := h.mediaService.GetTranscriptionByID(transcriptionID)
 	if err != nil || originalTranscription == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Transcription not found"})
 		return
+	}
+
+	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeTTT)), model)
+	if isActive {
+		if cost > int(userInfo.WalletBalance) {
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			return
+		} else {
+			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
+				c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when using token"})
+				return
+			}
+		}
+	} else {
+		cost = 0
 	}
 
 	folder := env.EnvConfig.TranscriptionsFolder
@@ -414,7 +471,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessTTTModelAction, originalTranscription.UserID, translatedTranscriptionID)
+	h.quickLogTraffic(entity.ProcessTTTModelAction, originalTranscription.UserID, translatedTranscriptionID, int64(cost))
 
 	// Send notification about TTT processing start
 	h.sendNotification(fmt.Sprintf("🔄 <b>Text-to-Text Translation Started</b>\n\n"+
@@ -619,10 +676,32 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
+	model := c.Query("model")
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	transcription, _, err := h.mediaService.GetTranscriptionByID(transcriptionID)
 	if err != nil || transcription == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Transcription not found"})
 		return
+	}
+
+	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeTTS)), model)
+	if isActive {
+		if cost > int(userInfo.WalletBalance) {
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			return
+		} else {
+			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
+				c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when using token"})
+				return
+			}
+		}
+	} else {
+		cost = 0
 	}
 
 	folder := env.EnvConfig.AudioFolder
@@ -649,7 +728,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessTTSModelAction, transcription.UserID, audioID)
+	h.quickLogTraffic(entity.ProcessTTSModelAction, transcription.UserID, audioID, int64(cost))
 
 	// Send notification about TTS processing start
 	h.sendNotification(fmt.Sprintf("🎵 <b>Text-to-Speech Processing Started</b>\n\n"+
@@ -808,6 +887,13 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		return
 	}
 
+	model := c.Query("model")
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
@@ -818,6 +904,21 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 	if err != nil || audio == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Audio not found"})
 		return
+	}
+
+	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeLS)), model)
+	if isActive {
+		if cost > int(userInfo.WalletBalance) {
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			return
+		} else {
+			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
+				c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when using token"})
+				return
+			}
+		}
+	} else {
+		cost = 0
 	}
 
 	folder := env.EnvConfig.VideosFolder
@@ -844,7 +945,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
+	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID, int64(cost))
 
 	// Send notification about LipSync processing start
 	h.sendNotification(fmt.Sprintf("👄 <b>Lip Sync Processing Started</b>\n\n"+
@@ -1021,10 +1122,32 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		return
 	}
 
+	model := c.Query("model")
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	video, _, _, err := h.mediaService.GetVideoByID(videoID)
 	if err != nil || video == nil {
 		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Video not found"})
 		return
+	}
+
+	cost, isActive, err := h.featureFlagService.GetPipelineActiveAndCost(strings.ToUpper(string(entity.ProgressTypeFP)), model)
+	if isActive {
+		if cost > int(userInfo.WalletBalance) {
+			c.JSON(http.StatusPaymentRequired, response.ErrorResponse{Error: "Not enough token to start this pipeline"})
+			return
+		} else {
+			if err := h.walletService.UseToken(context.Background(), userInfo.ID, int64(cost)); err != nil {
+				c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when using token"})
+				return
+			}
+		}
+	} else {
+		cost = 0
 	}
 
 	// Create initial Transcription entity
@@ -1049,7 +1172,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID)
+	h.quickLogTraffic(entity.ProcessSTTModelAction, video.UserID, transcriptionID, int64(0))
 
 	// Create output Video entity
 	videoFolder := env.EnvConfig.VideosFolder
@@ -1074,8 +1197,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		return
 	}
 
-	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID)
-	h.quickLogTraffic(entity.ProcessFullPipelineModelAction, video.UserID, outputVideoID)
+	h.quickLogTraffic(entity.ProcessLSModelAction, video.UserID, outputVideoID, int64(0))
+	h.quickLogTraffic(entity.ProcessFullPipelineModelAction, video.UserID, outputVideoID, int64(cost))
 
 	// Send notification about Full Pipeline processing start
 	h.sendNotification(fmt.Sprintf("🚀 <b>Full Pipeline Processing Started</b>\n\n"+
@@ -1231,7 +1354,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			return
 		}
 
-		h.quickLogTraffic(entity.ProcessTTTModelAction, video.UserID, translatedTranscriptionID)
+		h.quickLogTraffic(entity.ProcessTTTModelAction, video.UserID, translatedTranscriptionID, int64(0))
 
 		// Update translated transcription ID to mongodb progress
 		h.progressService.UpdateFieldId(context.Background(), documentId, "TranslatedTranscriptionID", translatedTranscriptionID)
@@ -1334,7 +1457,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			return
 		}
 
-		h.quickLogTraffic(entity.ProcessTTSModelAction, video.UserID, audioID)
+		h.quickLogTraffic(entity.ProcessTTSModelAction, video.UserID, audioID, int64(0))
 
 		// update audio ID to mongodb progress collection
 		h.progressService.UpdateFieldId(context.Background(), documentId, "AudioID", audioID)

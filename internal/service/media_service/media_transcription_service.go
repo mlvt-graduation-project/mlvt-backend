@@ -82,8 +82,8 @@ func (s *mediaService) ListTranscriptionsByVideoID(videoID uint64) ([]entity.Tra
 	return s.mediaRepo.ListTranscriptionsByVideoID(videoID)
 }
 
-func (s *mediaService) DeleteTranscription(transcriptionID uint64) error {
-	return s.mediaRepo.DeleteTranscription(transcriptionID)
+func (s *mediaService) DeleteTranscription(transcriptionID uint64, userID uint64) (bool, error) {
+	return s.mediaRepo.DeleteTranscription(transcriptionID, userID)
 }
 
 func (s *mediaService) GeneratePresignedUploadURLForText(folder, fileName, fileType string) (string, error) {
@@ -108,4 +108,8 @@ func (s *mediaService) UpdateTranscription(transcription *entity.Transcription) 
 
 func (s *mediaService) UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error {
 	return s.mediaRepo.UpdateTranscriptionStatus(transcriptionID, status)
+}
+
+func (s *mediaService) UpdateTranscriptionTitle(transcriptionID uint64, userID uint64, title string) (bool, error) {
+	return s.mediaRepo.UpdateTranscriptionTitle(transcriptionID, userID, title)
 }

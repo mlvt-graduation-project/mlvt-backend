@@ -1,6 +1,7 @@
 package entity
 
 type StatusEntity string
+
 const (
 	StatusRaw        StatusEntity = "raw"
 	StatusProcessing StatusEntity = "processing"
@@ -9,6 +10,7 @@ const (
 )
 
 type MediaType string
+
 const (
 	MediaTypeVideo MediaType = "video"
 	MediaTypeAudio MediaType = "audio"
@@ -16,6 +18,7 @@ const (
 )
 
 type ProgressType string
+
 const (
 	ProgressTypeTTT ProgressType = "ttt"
 	ProgressTypeSTT ProgressType = "stt"

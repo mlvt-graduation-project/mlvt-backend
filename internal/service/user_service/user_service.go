@@ -78,6 +78,7 @@ func (s *userService) RegisterUser(user *entity.User) error {
 
 	// set user status to pending
 	user.Status = entity.UserStatusPending
+	// only allow registering "user" role
 	if user.Role == "" {
 		user.Role = entity.UserRole
 	}
@@ -98,7 +99,7 @@ func (s *userService) RegisterUser(user *entity.User) error {
 		return err
 	}
 
-	expiredTime := utility.SetExpireTime(180)
+	expiredTime := utility.SetExpireTime(15)
 
 	// Encrypt token for account sign up
 	token, err := utility.EncryptToken(user.UserName, expiredTime)

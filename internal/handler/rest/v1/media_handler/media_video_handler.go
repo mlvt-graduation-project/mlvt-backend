@@ -5,6 +5,7 @@ import (
 	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/pkg/response"
+	"mlvt/internal/utility"
 	"net/http"
 	"strconv"
 
@@ -274,6 +275,12 @@ func (h *MediaController) GetVideoByID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse
 // @Router /videos/{video_id} [delete]
 func (h *MediaController) DeleteVideo(c *gin.Context) {
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
 	videoIDStr := c.Param("video_id")
 	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
 	if err != nil {
@@ -281,12 +288,13 @@ func (h *MediaController) DeleteVideo(c *gin.Context) {
 		return
 	}
 
-	if err := h.mediaService.DeleteVideo(videoID); err != nil {
-		if err.Error() == "video not found" {
-			c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "video not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "internal server error"})
-		}
+	deleted, err := h.mediaService.DeleteVideo(videoID, userInfo.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error deleting video"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "Permission denied or video not found"})
 		return
 	}
 
@@ -321,4 +329,55 @@ func (h *MediaController) ListVideosByUserID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"videos": videosWithURLs,
 	})
+}
+
+// UpdateVidoTitle godoc
+// @Summary Update video title
+// @Description Updates the title of a video file by its ID. Requires authentication.
+// @Tags videos
+// @Accept json
+// @Produce json
+// @Param video_id path uint64 true "ID of the video file"
+// @Param body body map[string]string true "Request body with new title. Example: {\"title\": \"New Title\"}"
+// @Success 200 {object} response.MessageResponse "title updated successfully"
+// @Failure 400 {object} response.ErrorResponse "invalid request or permission denied"
+// @Failure 401 {object} response.ErrorResponse "invalid token"
+// @Failure 500 {object} response.ErrorResponse "internal server error"
+// @Router /videos/{video_id}/title [put]
+func (h *MediaController) UpdateVideoTitle(c *gin.Context) {
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
+		return
+	}
+
+	videoIDStr := c.Param("video_id")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid video id"})
+	}
+
+	var body map[string]string
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+
+	title, ok := body["title"]
+	if !ok || title == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Missing title in request body"})
+		return
+	}
+
+	deleted, err := h.mediaService.UpdateVideoTitle(videoID, userInfo.ID, title)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Error when update video title"})
+		return
+	}
+	if !deleted {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Permission denied or video not exists"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response.MessageResponse{Message: "title updated successfully"})
 }

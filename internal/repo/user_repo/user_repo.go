@@ -100,13 +100,13 @@ func (r *userRepo) GetUserByCondition(user *entity.User) (*entity.User, error) {
 
 // GetUserByID retrieves a user by their ID
 func (r *userRepo) GetUserByID(userID uint64) (*entity.User, error) {
-	query := `SELECT id, first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at
+	query := `SELECT id, first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at, wallet_balance
 	          FROM users WHERE id = $1`
 	row := r.db.QueryRow(query, userID)
 
 	user := &entity.User{}
 	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.UserName, &user.Email, &user.Password,
-		&user.Status, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt)
+		&user.Status, &user.Role, &user.Avatar, &user.AvatarFolder, &user.CreatedAt, &user.UpdatedAt, &user.WalletBalance)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
