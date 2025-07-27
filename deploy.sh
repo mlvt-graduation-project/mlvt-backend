@@ -27,11 +27,19 @@ mkdir -p "$(dirname "$LOG_FILE")"
   echo "✅ Done pulling code"
 
   echo "🔄 Migrating db up..."
-  make migrate-up
+  echo "🔧 Running migrate-up..."
+  if ! make migrate-up; then
+    echo "❌ migrate-up failed!"
+    exit 2
+  fi
   echo "✅ Done migrate db up"
 
   echo "🛠️ Building binary..."
-  make build
+  echo "🛠️ Building binary..."
+  if ! make build; then
+    echo "❌ Build failed!"
+    exit 2
+  fi
 
   if [ ! -f "$CMD_DIR/$APP_NAME" ]; then
       echo "❌ Build failed: Binary not found!"
