@@ -1,5 +1,5 @@
 
-# Project MLVT.
+# Project MLVT
 
 ## Table of Contents
 
