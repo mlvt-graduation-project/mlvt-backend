@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/db/mongodb"
-	"mlvt/internal/utils"
+	"mlvt/internal/utility"
 	"regexp"
 	"strconv"
 	"time"
@@ -90,20 +90,20 @@ func (r *voucherRepo) GetAll(
 	now := time.Now()
 
 	switch status {
-		case "ACTIVE":
-			filter["expired_time"] = bson.M{"$gt": now}
-			filter["$expr"] = bson.M{
-				"$lt": []interface{}{"$used_count", "$max_usage"},
-			}
-		case "EXPIRED":
-			filter["expired_time"] = bson.M{"$lte": now}
-		case "USED":
-			filter["$expr"] = bson.M{
-				"$gte": []interface{}{"$used_count", "$max_usage"},
-			}
+	case "ACTIVE":
+		filter["expired_time"] = bson.M{"$gt": now}
+		filter["$expr"] = bson.M{
+			"$lt": []interface{}{"$used_count", "$max_usage"},
+		}
+	case "EXPIRED":
+		filter["expired_time"] = bson.M{"$lte": now}
+	case "USED":
+		filter["$expr"] = bson.M{
+			"$gte": []interface{}{"$used_count", "$max_usage"},
+		}
 	}
 	if searchField != "" && searchKey != "" {
-		if utils.IsInListString(searchField, []string{"used_count", "token", "max_usage"}) {
+		if utility.IsInListString(searchField, []string{"used_count", "token", "max_usage"}) {
 			key, _ := strconv.Atoi(searchKey)
 			filter[searchField] = key
 		} else {

@@ -67,3 +67,14 @@ func VideoResponseListToProcessResponseList(p []response.ListVideosByUserIDRespo
 	}
 	return res
 }
+
+func FeatureFlagsToMap(f []entity.FeatureFlag) map[string]entity.FeatureFlagMapValue {
+	res := make(map[string]entity.FeatureFlagMapValue)
+	for _, ele := range f {
+		res[ele.FlagKey] = entity.FeatureFlagMapValue{
+			IsActive:      ele.IsActive,
+			ConfigDetails: ele.ConfigDetails,
+		}
+	}
+	return res
+}

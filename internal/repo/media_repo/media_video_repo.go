@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"mlvt/internal/entity"
+	"mlvt/internal/infra/zap-logging/log"
 	"strings"
 	"time"
 
@@ -257,15 +258,19 @@ func (r *mediaRepo) ListVideosByUserIDAdvance(userID uint64, searchKey string, l
 	return videos, nil
 }
 
-func (r *mediaRepo) DeleteVideo(videoID uint64) error {
-	query := "UPDATE videos SET is_deleted = true WHERE id = ?"
+func (r *mediaRepo) DeleteVideo(videoID uint64, userID uint64) (bool, error) {
+	query := "UPDATE videos SET is_deleted = true WHERE id = ? and user_id = ?"
 	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
-	_, err := r.db.Exec(query, videoID)
+	res, err := r.db.Exec(query, videoID, userID)
 	if err != nil {
-		return fmt.Errorf("failed to delete video %d: %w", videoID, err)
+		return false, fmt.Errorf("failed to delete video %d: %w", videoID, err)
 	}
-	return nil
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
 }
 
 func (r *mediaRepo) UpdateVideo(video *entity.Video) error {
@@ -389,4 +394,20 @@ func (r *mediaRepo) GetVideoStatus(videoID uint64) (entity.StatusEntity, error) 
 		return "", fmt.Errorf("failed to get status for video %d: %w", videoID, err)
 	}
 	return status, nil
+}
+
+func (r *mediaRepo) UpdateVideoTitle(videoID uint64, userID uint64, title string) (bool, error) {
+	query := `UPDATE videos SET title = ?, updated_at = ? WHERE id = ? and user_id = ?`
+	query = sqlx.Rebind(sqlx.DOLLAR, query)
+	now := time.Now()
+	res, err := r.db.Exec(query, title, now, videoID, userID)
+	if err != nil {
+		log.Errorf("error update video title from repository: %v", err)
+		return false, fmt.Errorf("failed to updated video title: %v", err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return rowsAffected > 0, nil
 }

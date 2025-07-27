@@ -52,6 +52,7 @@ type Traffic struct {
 	UserID         uint64             `json:"user_id" bson:"user_id"`
 	UserPermission UserPermission     `json:"user_permission" bson:"user_permission"`
 	Timestamp      int64              `json:"timestamp" bson:"timestamp"`
+	Token          int64              `json:"token" bson:"token"`
 }
 
 func (t *Traffic) SetCurrentTimestamp() {

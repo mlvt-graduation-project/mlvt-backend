@@ -18,16 +18,18 @@ type MediaService interface {
 	ListAudiosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Audio, error)
 	GetAudioByVideoID(videoID, audioID uint64) (*entity.Audio, string, error)
 	ListAudiosByVideoID(videoID uint64) ([]entity.Audio, error)
-	DeleteAudio(audioID uint64) error
+	DeleteAudio(audioID uint64, userID uint64) (bool, error)
 	UpdateAudio(audio *entity.Audio) error
 	UpdateAudioStatus(audioID uint64, status entity.StatusEntity) error
+	UpdateAudioTitle(audioID uint64, userID uint64, title string) (bool, error)
 
 	// video
 	CreateVideo(video *entity.Video, isFullPipeline bool) (uint64, error)
 	GetVideoByID(videoID uint64) (*entity.Video, string, string, error) // Returns the video record and presigned URLs for video and image
 	ListVideosByUserID(userID uint64) ([]response.ListVideosByUserIDResponse, error)
 	ListVideosByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]response.ListVideosByUserIDResponse, error)
-	DeleteVideo(videoID uint64) error
+	DeleteVideo(videoID uint64, userID uint64) (bool, error)
+	UpdateVideoTitle(audioID uint64, userID uint64, title string) (bool, error)
 	UpdateVideo(video *entity.Video) error
 	UpdateVideoStatus(videoID uint64, status entity.StatusEntity) error
 	GetVideoStatus(videoID uint64) (entity.StatusEntity, error)
@@ -44,11 +46,12 @@ type MediaService interface {
 	ListTranscriptionsByUserID(userID uint64) ([]entity.Transcription, error)
 	ListTranscriptionsByUserIDAdvance(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity) ([]entity.Transcription, error)
 	ListTranscriptionsByVideoID(videoID uint64) ([]entity.Transcription, error)
-	DeleteTranscription(transcriptionID uint64) error
+	DeleteTranscription(transcriptionID uint64, userID uint64) (bool, error)
 	GeneratePresignedUploadURLForText(folder, fileName, fileType string) (string, error)
 	GeneratePresignedDownloadURLForText(transcriptionID uint64) (string, error)
 	UpdateTranscription(transcription *entity.Transcription) error
 	UpdateTranscriptionStatus(transcriptionID uint64, status entity.StatusEntity) error
+	UpdateTranscriptionTitle(audioID uint64, userID uint64, title string) (bool, error)
 
 	// GetAll media
 	GetAllMedia(userID uint64, searchKey string, limit int, offset int, status []entity.StatusEntity, mediaType []entity.MediaType) (response.ProcessResponse, error)

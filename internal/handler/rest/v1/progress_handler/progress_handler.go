@@ -7,6 +7,7 @@ import (
 	"mlvt/internal/pkg/response"
 	"mlvt/internal/service/media_service"
 	"mlvt/internal/service/progress_service"
+	"mlvt/internal/utility"
 	"net/http"
 	"strconv"
 
@@ -96,24 +97,24 @@ func (h *ProgressController) UpdateProgressTitle(c *gin.Context) {
 	progressID := c.Param("progress_id")
 	id, err := primitive.ObjectIDFromHex(progressID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid progress id"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid progress id"})
 		return
 	}
 
 	var body map[string]string
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid request body"})
 		return
 	}
 
 	title, ok := body["title"]
 	if !ok || title == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing title"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Missing title"})
 		return
 	}
 
 	if err := h.progressService.UpdateTitle(context.Background(), id, title); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update title"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to update title"})
 		return
 	}
 
@@ -135,54 +136,70 @@ func (h *ProgressController) DeleteProgress(c *gin.Context) {
 	progressID := c.Param("progress_id")
 	id, err := primitive.ObjectIDFromHex(progressID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid progress id"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid progress id"})
+		return
+	}
+
+	userInfo, err := utility.GetUserFromContext(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid token"})
 		return
 	}
 
 	progressInfo, err := h.progressService.GetByID(context.Background(), id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Progress not found"})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Progress not found"})
+		return
+	}
+
+	if progressInfo.UserID != userInfo.ID {
+		c.JSON(http.StatusForbidden, response.ErrorResponse{Error: "You don't have permission to delete this resource"})
 		return
 	}
 
 	if err := h.progressService.DeleteProgress(context.Background(), id); err != nil {
 		log.Errorf("failed to delete progress: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete progress"})
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete progress"})
 		return
 	}
 
-	if progressInfo.ProgressType == entity.ProgressTypeTTS {
-		// delete audio
-		err := h.mediaService.DeleteAudio(progressInfo.AudioID)
+	// delete media base on progress type
+	isFullPipeline := progressInfo.ProgressType == entity.ProgressTypeSTT
+	if progressInfo.ProgressType == entity.ProgressTypeSTT || isFullPipeline {
+		// delete result text
+		log.Info("Delete original transcription", progressInfo.OriginalTranscriptionID)
+		_, err := h.mediaService.DeleteTranscription(progressInfo.OriginalTranscriptionID, userInfo.ID)
 		if err != nil {
-			log.Errorf("failed to delete result audio: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result audio"})
+			log.Errorf("failed to delete result text: %v", err)
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete result text"})
 			return
 		}
-	} else {
-		if progressInfo.ProgressedVideoID != 0 {
-			err := h.mediaService.DeleteVideo(progressInfo.ProgressedVideoID)
-			if err != nil {
-				log.Errorf("failed to delete result video: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result video"})
-				return
-			}
+	} else if progressInfo.ProgressType == entity.ProgressTypeTTT || isFullPipeline {
+		// delete result text
+		log.Info("Delete translated transcription", progressInfo.TranslatedTranscriptionID)
+		_, err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID, userInfo.ID)
+		if err != nil {
+			log.Errorf("failed to delete result text: %v", err)
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete result text"})
+			return
 		}
-		if progressInfo.TranslatedTranscriptionID != 0 {
-			err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID)
-			if err != nil {
-				log.Errorf("failed to delete result transcription: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete result transcription"})
-				return
-			}
+	} else if progressInfo.ProgressType == entity.ProgressTypeTTS || isFullPipeline {
+		// delete result audio
+		log.Info("Delete audio", progressInfo.AudioID)
+		_, err := h.mediaService.DeleteAudio(progressInfo.AudioID, userInfo.ID)
+		if err != nil {
+			log.Errorf("failed to delete result audio: %v", err)
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete result audio"})
+			return
 		}
-		if progressInfo.ProgressType == entity.ProgressTypeFP && progressInfo.OriginalTranscriptionID != 0 {
-			err := h.mediaService.DeleteTranscription(progressInfo.TranslatedTranscriptionID)
-			if err != nil {
-				log.Errorf("failed to delete extracted transcription: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete extracted transcription"})
-				return
-			}
+	} else if progressInfo.ProgressType == entity.ProgressTypeLS || isFullPipeline {
+		// delete result video
+		log.Info("Delete video", progressInfo.ProgressedVideoID)
+		_, err := h.mediaService.DeleteVideo(progressInfo.ProgressedVideoID, userInfo.ID)
+		if err != nil {
+			log.Errorf("failed to delete result video: %v", err)
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete result video"})
+			return
 		}
 	}
 
