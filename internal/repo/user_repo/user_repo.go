@@ -34,10 +34,10 @@ func NewUserRepo(db *sqlx.DB) UserRepository {
 // CreateUser inserts a new user into the database
 func (r *userRepo) CreateUser(user *entity.User) error {
 	query := `
-		INSERT INTO users (first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
+		INSERT INTO users (first_name, last_name, username, email, password, status, role, avatar, avatar_folder, created_at, updated_at, wallet_balance)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
 	_, err := r.db.Exec(query, user.FirstName, user.LastName, user.UserName, user.Email, user.Password, user.Status,
-		user.Role, user.Avatar, user.AvatarFolder, user.CreatedAt, user.UpdatedAt)
+		user.Role, user.Avatar, user.AvatarFolder, user.CreatedAt, user.UpdatedAt, user.WalletBalance)
 	return err
 }
 

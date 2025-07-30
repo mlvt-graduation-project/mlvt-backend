@@ -135,7 +135,7 @@ func (h *UserController) VerifyAccountSignUp(c *gin.Context) {
 	err := h.userService.VerifyAccountSignUp(credentials.Email, credentials.Token)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 
@@ -173,7 +173,7 @@ func (h *UserController) ResendValidationEmail(c *gin.Context) {
 	err := h.userService.ResendValidationEmail(credentials.Username, credentials.Email)
 
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.ErrorResponse{Error: err.Error()})
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
 		return
 	}
 

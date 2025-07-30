@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"mlvt/internal/entity"
 	"mlvt/internal/infra/aws"
+	"mlvt/internal/infra/env"
 	"mlvt/internal/infra/zap-logging/log"
 	"mlvt/internal/repo/user_repo"
 	"mlvt/internal/service/auth_service"
@@ -66,6 +67,9 @@ func (s *userService) RegisterUser(user *entity.User) error {
 	user.Status = entity.UserStatusActive
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
+	user.AvatarFolder = env.EnvConfig.AvatarFolder
+	user.Avatar = "anonymous.jpg"
+	user.WalletBalance = 20
 
 	ctx := context.Background()
 	if _, err := s.trafficService.CreateTraffic(ctx, entity.Traffic{
@@ -102,7 +106,7 @@ func (s *userService) RegisterUser(user *entity.User) error {
 	expiredTime := utility.SetExpireTime(15)
 
 	// Encrypt token for account sign up
-	token, err := utility.EncryptToken(user.UserName, expiredTime)
+	token, err := utility.EncryptToken(user.Email, expiredTime)
 	if err != nil {
 		log.Errorf("failed to encrypt token", err)
 		return err

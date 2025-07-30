@@ -82,9 +82,9 @@ func SetExpireTime(minutes int) time.Time {
 }
 
 // EncryptToken encrypts username + expire_date to a base64 string
-func EncryptToken(username string, expireDate time.Time) (string, error) {
+func EncryptToken(email string, expireDate time.Time) (string, error) {
 	payload := schema.TokenPayload{
-		Username:   username,
+		Email:      email,
 		ExpireDate: expireDate,
 	}
 
@@ -148,7 +148,7 @@ func DecryptToken(token string) (string, time.Time, error) {
 		return "", time.Time{}, err
 	}
 
-	return payload.Username, payload.ExpireDate, nil
+	return payload.Email, payload.ExpireDate, nil
 }
 
 func IsInListString(value string, list []string) bool {
