@@ -61,7 +61,7 @@ func (r *featureFlagRepo) SetPipelineCost(pipeline string, model string, cost in
 	}
 	defer tx.Rollback()
 
-	query := `SELECT config_details FROM feature_flags WHERE flag_key = 'model charge' AND FOR UPDATE`
+	query := `SELECT config_details FROM feature_flags WHERE flag_key = 'model charge' FOR UPDATE`
 	err = tx.Get(&raw, query)
 	if err != nil {
 		log.Errorf("DB error: failed to SELECT FOR UPDATE config_details: %v", err)
@@ -85,7 +85,7 @@ func (r *featureFlagRepo) SetPipelineCost(pipeline string, model string, cost in
 		return 0, err
 	}
 
-	updateQuery := `UPDATE feature_flags SET config_details = $1, updated_at = NOW() WHERE flag_key = 'model charge' AND is_active = false`
+	updateQuery := `UPDATE feature_flags SET config_details = $1, updated_at = NOW() WHERE flag_key = 'model charge'`
 	_, err = tx.Exec(updateQuery, newConfig)
 	if err != nil {
 		log.Errorf("DB error: failed to UPDATE config_details: %v", err)
