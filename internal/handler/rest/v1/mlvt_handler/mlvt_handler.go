@@ -185,11 +185,14 @@ func (h *MlvtController) formatNotificationMessage(message string) string {
 // @Tags transcriptions
 // @Accept  json
 // @Produce  json
-// @Param   video_id   path    uint64     true  "Video ID"
+// @Param   video_id         path    uint64     true  "Video ID"
+// @Param   source_language  query   string     true  "Source language code"
+// @Param   model            query   string     false "Model to use for processing"
 // @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse "Invalid request parameters"
+// @Failure 402 {object} response.ErrorResponse "Not enough token to start this pipeline"
+// @Failure 404 {object} response.ErrorResponse "Video not found"
+// @Failure 500 {object} response.ErrorResponse "Server error"
 // @Router /transcriptions/process/{video_id} [post]
 func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 	videoIDStr := c.Param("video_id")
@@ -398,10 +401,12 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 // @Param   transcription_id  path    uint64     true  "Transcription ID"
 // @Param   source_language   query   string     true  "Source language code"
 // @Param   target_language   query   string     true  "Target language code"
+// @Param   model             query   string     false "Model to use for processing"
 // @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse "Invalid request parameters"
+// @Failure 402 {object} response.ErrorResponse "Not enough token to start this pipeline"
+// @Failure 404 {object} response.ErrorResponse "Transcription not found"
+// @Failure 500 {object} response.ErrorResponse "Server error"
 // @Router /transcriptions/translate/{transcription_id} [post]
 func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 	transcriptionIDStr := c.Param("transcription_id")
@@ -616,10 +621,14 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param   transcription_id  path    uint64     true  "Transcription ID"
+// @Param   video_id         query   string     false "Video ID for input audio (optional)"
+// @Param   audio_id         query   string     false "Audio ID for input audio (optional)"
+// @Param   model            query   string     false "Model to use for processing"
 // @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse "Invalid request parameters"
+// @Failure 402 {object} response.ErrorResponse "Not enough token to start this pipeline"
+// @Failure 404 {object} response.ErrorResponse "Transcription, video, or audio not found"
+// @Failure 500 {object} response.ErrorResponse "Server error"
 // @Router /audios/process/{transcription_id} [post]
 func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 	transcriptionIDStr := c.Param("transcription_id")
@@ -866,10 +875,12 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 // @Produce  json
 // @Param   video_id   path    uint64     true  "Video ID"
 // @Param   audio_id   path    uint64     true  "Audio ID"
+// @Param   model      query   string     false "Model to use for processing"
 // @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse "Invalid request parameters"
+// @Failure 402 {object} response.ErrorResponse "Not enough token to start this pipeline"
+// @Failure 404 {object} response.ErrorResponse "Video or audio not found"
+// @Failure 500 {object} response.ErrorResponse "Server error"
 // @Router /lipsync/{video_id}/{audio_id} [post]
 func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 	videoIDStr := c.Param("video_id")
@@ -1051,7 +1062,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
-			log.Errorf("EC2 processing failed: %v", err)
+			log.Errorf("EC2 Lip Sync processing failed: %v", err)
 
 			// Send failure notification
 			h.sendNotification(fmt.Sprintf("❌ <b>Lip Sync Processing Failed</b>\n\n"+
@@ -1099,10 +1110,13 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 // @Param   video_id         path    uint64     true  "Video ID"
 // @Param   source_language  query   string     true  "Source language code"
 // @Param   target_language  query   string     true  "Target language code"
+// @Param   model            query   string     false "Model to use for processing"
+// @Param   sample_audio_id  query   string     false "Sample audio ID for TTS processing (optional)"
 // @Success 202 {object} response.MessageCreateResponseWithID "Accepted for processing"
-// @Failure 400 {object} response.ErrorResponse
-// @Failure 404 {object} response.ErrorResponse
-// @Failure 500 {object} response.ErrorResponse
+// @Failure 400 {object} response.ErrorResponse "Invalid request parameters"
+// @Failure 402 {object} response.ErrorResponse "Not enough token to start this pipeline"
+// @Failure 404 {object} response.ErrorResponse "Video or sample audio not found"
+// @Failure 500 {object} response.ErrorResponse "Server error"
 // @Router /pipeline/full/{video_id} [post]
 func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 	videoIDStr := c.Param("video_id")
@@ -1127,6 +1141,32 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "invalid token"})
 		return
+	}
+
+	sampleAudioIDStr := c.Query("sample_audio_id")
+	var sampleAudioURL, sampleAudioFileName string
+	if sampleAudioIDStr != "" {
+		sampleAudioID, err := strconv.ParseUint(sampleAudioIDStr, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Invalid sample audio ID"})
+			return
+		}
+		_, sampleAudioURL, err = h.mediaService.GetAudioByID(sampleAudioID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get sample audio by ID"})
+			return
+		}
+		sampleAudio, _, err := h.mediaService.GetAudioByID(sampleAudioID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get sample audio by ID"})
+			return
+		}
+		sampleAudioFileName = sampleAudio.FileName
+		sampleAudioURL, err = h.mediaService.GeneratePresignedDownloadURL(sampleAudioID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to generate sample audio download URL"})
+			return
+		}
 	}
 
 	video, _, _, err := h.mediaService.GetVideoByID(videoID)
@@ -1478,6 +1518,16 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 			return
 		}
 
+		inputAudioLink := videoDownloadURL
+		if sampleAudioURL != "" {
+			inputAudioLink = sampleAudioURL
+		}
+
+		inputAudioFileName := video.FileName
+		if sampleAudioFileName != "" {
+			inputAudioFileName = sampleAudioFileName
+		}
+
 		ttsPayload := request.TTSRequest{
 			BaseRequest: request.BaseRequest{
 				InputFileName:  translatedFileName,
@@ -1486,8 +1536,8 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 				OutputLink:     audioUploadURL,
 				Model:          "",
 			},
-			InputAudioFileName: video.FileName,
-			InputAudioLink:     videoDownloadURL,
+			InputAudioFileName: inputAudioFileName,
+			InputAudioLink:     inputAudioLink,
 			Lang:               targetLang,
 		}
 
