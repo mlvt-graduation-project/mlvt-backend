@@ -339,7 +339,7 @@ func (h *MlvtController) ProcessSpeechToText(c *gin.Context) {
 		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
 		fmt.Println("STT Curl Command:", curlCmd)
 
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 100*time.Minute)
 		log.Infof("ec2 response: %v\n\n", ec2Response)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(transcriptionID, entity.StatusFailed)
@@ -560,7 +560,7 @@ func (h *MlvtController) ProcessTextToText(c *gin.Context) {
 		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
 		fmt.Println("TTT Curl Command:", curlCmd)
 
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 100*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -816,7 +816,7 @@ func (h *MlvtController) ProcessTextToSpeech(c *gin.Context) {
 		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
 		fmt.Println("TTS Curl Command:", curlCmd)
 
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 5*time.Minute)
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 100*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -1047,7 +1047,7 @@ func (h *MlvtController) ProcessLipSync(c *gin.Context) {
 		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2ServerURL, string(payloadBytes))
 		fmt.Println("LS Curl Command:", curlCmd)
 
-		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 25*time.Minute)
+		ec2Response, err := sendRequestToEC2(requestPayload, ec2ServerURL, 100*time.Minute)
 		if err != nil || ec2Response.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -1303,7 +1303,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		curlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2STTURL, string(sttPayloadBytes))
 		fmt.Println("Full Pipeline STT Curl Command:", curlCmd)
 
-		ec2STTResponse, err := sendRequestToEC2(sttPayload, ec2STTURL, 5*time.Minute)
+		ec2STTResponse, err := sendRequestToEC2(sttPayload, ec2STTURL, 100*time.Minute)
 		if err != nil || ec2STTResponse.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
@@ -1401,7 +1401,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		tttCurlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2TTTURL, string(tttPayloadBytes))
 		fmt.Println("Full Pipeline TTT Curl Command:", tttCurlCmd)
 
-		ec2TTTResponse, err := sendRequestToEC2(tttPayload, ec2TTTURL, 5*time.Minute)
+		ec2TTTResponse, err := sendRequestToEC2(tttPayload, ec2TTTURL, 100*time.Minute)
 		if err != nil || ec2TTTResponse.Status != "succeeded" {
 			h.mediaService.UpdateTranscriptionStatus(translatedTranscriptionID, entity.StatusFailed)
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
@@ -1503,7 +1503,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		ttsCurlCmd := fmt.Sprintf(`curl -X POST "%s" -H "Content-Type: application/json" -d '%s'`, ec2TTSURL, string(ttsPayloadBytes))
 		fmt.Println("Full Pipeline TTS Curl Command:", ttsCurlCmd)
 
-		ec2TTSResponse, err := sendRequestToEC2(ttsPayload, ec2TTSURL, 5*time.Minute)
+		ec2TTSResponse, err := sendRequestToEC2(ttsPayload, ec2TTSURL, 100*time.Minute)
 		if err != nil || ec2TTSResponse.Status != "succeeded" {
 			h.mediaService.UpdateAudioStatus(audioID, entity.StatusFailed)
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
@@ -1592,7 +1592,7 @@ func (h *MlvtController) ProcessFullPipeline(c *gin.Context) {
 		fmt.Println(curlCmd)
 
 		ec2LSURL := fmt.Sprintf("http://%s:%s/ls", env.EnvConfig.Ec2IPAddress, env.EnvConfig.Ec2Port)
-		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 25*time.Minute)
+		ec2LSResponse, err := sendRequestToEC2(lsPayload, ec2LSURL, 100*time.Minute)
 		if err != nil || ec2LSResponse.Status != "succeeded" {
 			h.mediaService.UpdateVideoStatus(outputVideoID, entity.StatusFailed)
 			h.progressService.UpdateStatus(context.Background(), documentId, entity.StatusFailed)
